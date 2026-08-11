@@ -6,6 +6,7 @@ import { parseFlowSource, toJsonString, toYamlString } from '../../utils/flowSou
 import { buildShareUrl, copyToClipboard } from '../../utils/shareLink'
 import { ScenarioCard } from './ScenarioCard'
 import { CustomScenarioEditorModal } from './CustomScenarioEditorModal'
+import { ScenarioPreviewModal } from './ScenarioPreviewModal'
 
 function downloadText(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime })
@@ -47,6 +48,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
     { open: false } | { open: true; scenarioId?: string; seedSource?: string; seedName?: string }
   >({ open: false })
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [previewState, setPreviewState] = useState<{ name: string; source: string } | null>(null)
 
   function loadAndReturn(load: () => void) {
     load()
@@ -83,6 +85,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                 description={scenario.description}
                 badge="Built-in"
                 onLoad={() => loadAndReturn(() => loadBuiltInScenario(scenario.id))}
+                onView={() => setPreviewState({ name: scenario.name, source: scenario.source })}
                 onDuplicate={() =>
                   setEditorState({ open: true, seedSource: scenario.source, seedName: `Copy of ${scenario.name}` })
                 }
@@ -112,6 +115,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                   badge="Custom"
                   meta={`Updated ${new Date(scenario.updatedAt).toLocaleString()}`}
                   onLoad={() => loadAndReturn(() => loadCustomScenario(scenario.id))}
+                  onView={() => setPreviewState({ name: scenario.name, source: scenario.source })}
                   onEdit={() => setEditorState({ open: true, scenarioId: scenario.id })}
                   onDuplicate={() => duplicateAsCustomScenario(scenario.source, scenario.format, scenario.name)}
                   onExportJson={() => exportScenario(scenario.name, scenario.source, 'json')}
@@ -132,6 +136,15 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
           scenarioId={editorState.scenarioId}
           seedSource={editorState.seedSource}
           seedName={editorState.seedName}
+        />
+      )}
+
+      {previewState && (
+        <ScenarioPreviewModal
+          open
+          onClose={() => setPreviewState(null)}
+          name={previewState.name}
+          source={previewState.source}
         />
       )}
 

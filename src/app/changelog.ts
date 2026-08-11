@@ -11,6 +11,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.0',
+    date: '2026-08-11',
+    changes: [
+      'New: "View" button on every scenario card (Scenarios page) opens a read-only quick look — toggle between JSON and YAML source (with one-click Copy) and the flow graph, without loading the scenario or opening the full editor.',
+    ],
+  },
+  {
     version: '0.3.0',
     date: '2026-08-11',
     changes: [

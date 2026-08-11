@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, Copy, FileJson, FileText, Pencil, Trash2, Link2, Check } from 'lucide-react'
+import { Play, Copy, FileJson, FileText, Pencil, Trash2, Link2, Check, Eye } from 'lucide-react'
 
 interface ScenarioCardProps {
   name: string
@@ -7,6 +7,7 @@ interface ScenarioCardProps {
   badge: 'Built-in' | 'Custom'
   meta?: string
   onLoad: () => void
+  onView: () => void
   onDuplicate: () => void
   onExportJson: () => void
   onExportYaml: () => void
@@ -21,6 +22,7 @@ export function ScenarioCard({
   badge,
   meta,
   onLoad,
+  onView,
   onDuplicate,
   onExportJson,
   onExportYaml,
@@ -64,6 +66,14 @@ export function ScenarioCard({
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer"
         >
           <Play size={12.5} /> Load
+        </button>
+        <button
+          type="button"
+          onClick={onView}
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 cursor-pointer"
+          title="Quick look: JSON/YAML source and flow graph"
+        >
+          <Eye size={12.5} /> View
         </button>
         {onEdit && (
           <button
