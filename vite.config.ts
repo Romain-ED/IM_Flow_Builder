@@ -5,12 +5,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
-  // GitHub Pages serves this as a project site under /Vonage_test/, not at
-  // the domain root, so production builds need every asset URL prefixed
+  // GitHub Pages serves this as a project site under /IM_Flow_Builder/, not
+  // at the domain root, so production builds need every asset URL prefixed
   // with that sub-path. The dev server keeps base "/" so `npm run dev`
   // behaves exactly as before. See src/utils/assetUrl.ts for how
   // scenario-authored "/assets/..." paths pick this up at runtime.
-  const base = command === 'build' ? '/Vonage_test/' : '/'
+  const base = command === 'build' ? '/IM_Flow_Builder/' : '/'
 
   return {
     base,

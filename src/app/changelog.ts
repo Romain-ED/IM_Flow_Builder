@@ -11,6 +11,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.2',
+    date: '2026-08-11',
+    changes: [
+      'Infra: repository renamed to IM_Flow_Builder and made public (GitHub Pages requires either a public repo or a paid plan) — updated the GitHub Pages base path and all URL references to match.',
+    ],
+  },
+  {
     version: '0.4.1',
     date: '2026-08-11',
     changes: [
