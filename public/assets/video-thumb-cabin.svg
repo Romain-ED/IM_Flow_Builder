@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <rect width="480" height="270" fill="#0f172a"/>
+  <g opacity="0.5" stroke="#475569" stroke-width="2">
+    <line x1="0" y1="90" x2="480" y2="90"/>
+    <line x1="0" y1="180" x2="480" y2="180"/>
+  </g>
+  <g fill="#1e293b">
+    <rect x="40" y="100" width="60" height="70" rx="6"/>
+    <rect x="120" y="100" width="60" height="70" rx="6"/>
+    <rect x="300" y="100" width="60" height="70" rx="6"/>
+    <rect x="380" y="100" width="60" height="70" rx="6"/>
+  </g>
+  <text x="240" y="230" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#94a3b8">Cabin tour preview</text>
+</svg>

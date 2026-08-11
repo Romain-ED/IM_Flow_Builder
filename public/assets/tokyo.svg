@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="duskSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbcfe8"/>
+      <stop offset="1" stop-color="#fde68a"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#duskSky)"/>
+  <circle cx="380" cy="70" r="34" fill="#fff7ed" opacity="0.9"/>
+  <g fill="#0f172a" opacity="0.85">
+    <rect x="20" y="140" width="40" height="110"/>
+    <rect x="70" y="100" width="34" height="150"/>
+    <rect x="115" y="160" width="46" height="90"/>
+    <rect x="170" y="80" width="30" height="170"/>
+    <rect x="210" y="130" width="50" height="120"/>
+    <rect x="270" y="60" width="26" height="190"/>
+    <rect x="305" y="150" width="40" height="100"/>
+    <rect x="355" y="110" width="34" height="140"/>
+    <rect x="400" y="170" width="44" height="80"/>
+  </g>
+  <rect x="264" y="30" width="10" height="34" fill="#0f172a" opacity="0.85"/>
+  <text x="240" y="20" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="#7c2d12">Tokyo skyline (illustration)</text>
+</svg>

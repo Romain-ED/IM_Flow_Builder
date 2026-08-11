@@ -1,0 +1,33 @@
+import singaporeAirlinesSource from './singapore-airlines.yaml?raw'
+import ecommerceSource from './ecommerce.yaml?raw'
+import restaurantSource from './restaurant.yaml?raw'
+
+export interface BuiltInScenario {
+  id: string
+  name: string
+  description: string
+  source: string
+}
+
+export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
+  {
+    id: 'singapore-airlines',
+    name: 'Airline boarding pass',
+    description: 'Check-in reminder → seat selection → digital boarding pass.',
+    source: singaporeAirlinesSource,
+  },
+  {
+    id: 'ecommerce',
+    name: 'E-commerce delivery',
+    description: 'Shipping notice → delivery preferences → confirmation.',
+    source: ecommerceSource,
+  },
+  {
+    id: 'restaurant',
+    name: 'Restaurant reservation',
+    description: 'Reservation reminder → table confirmation → pre-order.',
+    source: restaurantSource,
+  },
+]
+
+export const DEFAULT_SCENARIO = BUILT_IN_SCENARIOS[0]

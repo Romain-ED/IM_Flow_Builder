@@ -1,0 +1,361 @@
+# Business Messaging Flow Simulator — example scenario
+#
+# Fictional airline check-in journey. All passenger, flight and booking
+# details below are invented for demonstration purposes only and do not
+# represent real flight operations.
+version: "1.0"
+
+metadata:
+  id: singapore-airlines-checkin
+  name: "Airline check-in & digital boarding pass"
+  description: >-
+    Proactive check-in reminder through seat selection to a digital boarding
+    pass, inspired by an airline's RCS/WhatsApp business messaging journey.
+  channel: rcs
+  tags: [airline, travel, boarding-pass, demo]
+
+brand:
+  name: "Singapore Airlines (Demo)"
+  shortName: "SIA Demo"
+  avatar: "/assets/brand-avatar.svg"
+  logo: "/assets/brand-logo.svg"
+  verified: true
+  website: "https://www.singaporeair.com"
+  supportPhone: "+65 6223 8888"
+
+defaults:
+  messageDelayMs: 500
+  typingDurationMs: 900
+  locale: en-SG
+  timezone: Asia/Singapore
+  showTimestamps: true
+
+variables:
+  customerName: Romain
+  passengerName: Romain Martin
+  flightNumber: SQ634
+  airline: Singapore Airlines
+  aircraftType: Airbus A350-900
+  originCode: SIN
+  originCity: Singapore
+  destinationCode: HND
+  destinationCity: Tokyo Haneda
+  departureTime: "09:20"
+  arrivalTime: "17:05"
+  flightDate: 13 Aug 2026
+  terminal: Terminal 3
+  gate: B7
+  boardingTime: "08:35"
+  bookingReference: ABC123
+  seat: ""
+  seatType: ""
+  cabinClass: Economy
+  boardingGroup: "3"
+  loyaltyStatus: KrisFlyer Gold
+  frequentFlyerNumber: KF778812
+  supportPhone: "+65 6223 8888"
+  checkedIn: false
+  enteredReference: ""
+
+start: welcome
+
+nodes:
+  - id: welcome
+    messages:
+      - type: text
+        text: "Good morning {{customerName}}.\n\nYour flight {{flightNumber}} to {{destinationCity}} departs in 2 days.\n\nOnline check-in is now available."
+    actions:
+      - label: Check in
+        next: check_in_router
+      - label: View booking
+        next: view_booking
+      - label: Manage booking
+        next: manage_booking_menu
+      - label: Not now
+        next: not_now
+
+  - id: view_booking
+    messages:
+      - type: flight_card
+        airline: "{{airline}}"
+        flightNumber: "{{flightNumber}}"
+        origin: { code: "{{originCode}}", city: "{{originCity}}" }
+        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
+        departureTime: "{{departureTime}}"
+        arrivalTime: "{{arrivalTime}}"
+        date: "{{flightDate}}"
+        terminal: "{{terminal}}"
+        gate: "{{gate}}"
+        bookingReference: "{{bookingReference}}"
+        status: On time
+      - type: document
+        filename: "Itinerary-{{flightNumber}}.pdf"
+        title: Your e-ticket
+        description: "{{originCity}} → {{destinationCity}}"
+        fileType: PDF
+      - type: text
+        text: "Would you like to check in now?"
+    actions:
+      - label: Check in
+        next: check_in_router
+      - label: Not now
+        next: not_now
+
+  - id: manage_booking_menu
+    messages:
+      - type: list
+        title: Manage your booking
+        buttonLabel: View options
+        sections:
+          - title: Flight
+            rows:
+              - id: seat
+                title: Choose seat
+                description: View available seats
+                next: seat_selection
+              - id: aircraft
+                title: About the aircraft
+                description: "{{aircraftType}}"
+                next: aircraft_info
+              - id: reference
+                title: Enter booking reference
+                description: Look up a different booking
+                next: lookup_reference
+          - title: Support
+            rows:
+              - id: call
+                title: Contact support
+                description: Speak to our customer care team
+                next: call_support
+      - type: suggested_replies
+        options:
+          - label: Check in
+            next: check_in_router
+          - label: Back to start
+            next: welcome
+
+  - id: aircraft_info
+    messages:
+      - type: image
+        url: "/assets/aircraft-a350.svg"
+        alt: "Airbus A350-900"
+        caption: "Your aircraft today: {{aircraftType}}"
+      - type: video
+        thumbnailUrl: "/assets/video-thumb-cabin.svg"
+        caption: Cabin tour
+        durationLabel: "0:45"
+      - type: rich_card
+        image: "/assets/tokyo.svg"
+        title: "Flying to {{destinationCity}}"
+        description: "Discover Tokyo with {{airline}}."
+        mediaHeight: medium
+        actions:
+          - type: open_url
+            label: Explore Tokyo guide
+            url: "https://www.singaporeair.com"
+    actions:
+      - label: Back to menu
+        next: manage_booking_menu
+      - label: Check in
+        next: check_in_router
+
+  - id: lookup_reference
+    messages:
+      - type: input
+        inputType: text
+        placeholder: Enter booking reference
+        submitLabel: Submit
+        variable: enteredReference
+        next: reference_result
+
+  - id: reference_result
+    messages:
+      - type: text
+        text: "Thanks. Reference {{enteredReference}} matches booking {{bookingReference}} for {{passengerName}}."
+    actions:
+      - label: Back to menu
+        next: manage_booking_menu
+
+  - id: call_support
+    messages:
+      - type: text
+        text: "You can reach {{airline}} customer care any time."
+      - type: suggested_actions
+        actions:
+          - type: call
+            label: Call support
+            phoneNumber: "{{supportPhone}}"
+          - type: open_url
+            label: Visit help center
+            url: "https://www.singaporeair.com/help"
+    actions:
+      - label: Back to menu
+        next: manage_booking_menu
+
+  - id: not_now
+    messages:
+      - type: text
+        text: "No problem, {{customerName}}. We'll remind you before your flight. ✈️"
+      - type: delay
+        duration: 900
+      - type: text
+        sender: user
+        text: "Thanks!"
+      - type: delay
+        duration: 500
+      - type: text
+        text: "You're welcome. Safe travels! 🛫"
+    end: true
+
+  - id: check_in_router
+    condition:
+      variable: checkedIn
+      operator: equals
+      value: true
+    then: already_checked_in
+    else: check_in_intro
+
+  - id: already_checked_in
+    messages:
+      - type: text
+        text: "You're already checked in, {{customerName}}! Your seat is {{seat}}."
+    actions:
+      - label: View boarding pass
+        next: check_in_success
+      - label: Back to start
+        next: welcome
+
+  - id: check_in_intro
+    messages:
+      - type: flight_card
+        airline: "{{airline}}"
+        flightNumber: "{{flightNumber}}"
+        origin: { code: "{{originCode}}", city: "{{originCity}}" }
+        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
+        departureTime: "{{departureTime}}"
+        arrivalTime: "{{arrivalTime}}"
+        date: "{{flightDate}}"
+        terminal: "{{terminal}}"
+        gate: "{{gate}}"
+        bookingReference: "{{bookingReference}}"
+        status: On time
+      - type: text
+        text: "Ready to check in for {{flightNumber}}?"
+    actions:
+      - label: Continue
+        next: confirm_passenger
+      - label: Choose seat
+        next: seat_selection
+      - label: Cancel
+        next: not_now
+
+  - id: confirm_passenger
+    messages:
+      - type: text
+        text: "Confirming passenger {{passengerName}} for {{flightNumber}}. Is this correct?"
+    actions:
+      - label: "Yes, that's me"
+        next: seat_selection
+      - label: Cancel
+        next: not_now
+
+  - id: seat_selection
+    messages:
+      - type: text
+        text: "Choose your seat:"
+      - type: carousel
+        cards:
+          - id: seat-21a
+            image: "/assets/seat-window.svg"
+            title: 21A
+            subtitle: Window
+            description: Available
+            badges: [Window]
+            actions:
+              - type: reply
+                label: Select 21A
+                next: seat_confirmed
+                set: { seat: 21A, seatType: "Window seat" }
+          - id: seat-21c
+            image: "/assets/seat-aisle.svg"
+            title: 21C
+            subtitle: Aisle
+            description: Available
+            badges: [Aisle]
+            actions:
+              - type: reply
+                label: Select 21C
+                next: seat_confirmed
+                set: { seat: 21C, seatType: "Aisle seat" }
+          - id: seat-32a
+            image: "/assets/seat-legroom.svg"
+            title: 32A
+            subtitle: Window
+            description: Extra legroom
+            price: "+SGD 35"
+            badges: [Window, Extra legroom]
+            actions:
+              - type: reply
+                label: Select 32A
+                next: seat_confirmed
+                set: { seat: 32A, seatType: "Window seat, extra legroom" }
+    actions:
+      - label: Cancel
+        next: not_now
+
+  - id: seat_confirmed
+    messages:
+      - type: text
+        text: "{{seat}} selected.\n\n{{seatType}}\n{{cabinClass}} Class"
+    next: check_in_success
+
+  - id: check_in_success
+    set:
+      checkedIn: true
+    messages:
+      - type: text
+        text: "You're checked in, {{customerName}}.\n\nYour boarding pass is ready."
+      - type: delay
+        duration: 700
+      - type: boarding_pass
+        passengerName: "{{passengerName}}"
+        airline: "{{airline}}"
+        flightNumber: "{{flightNumber}}"
+        date: "{{flightDate}}"
+        origin: { code: "{{originCode}}", city: "{{originCity}}" }
+        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
+        departureTime: "{{departureTime}}"
+        boardingTime: "{{boardingTime}}"
+        gate: "{{gate}}"
+        terminal: "{{terminal}}"
+        seat: "{{seat}}"
+        boardingGroup: "{{boardingGroup}}"
+        bookingReference: "{{bookingReference}}"
+        cabinClass: "{{cabinClass}}"
+        frequentFlyerNumber: "{{frequentFlyerNumber}}"
+        frequentFlyerStatus: "{{loyaltyStatus}}"
+        actions:
+          - type: download
+            label: Download boarding pass
+            next: post_download
+          - type: add_to_wallet
+            label: Add to wallet
+          - type: view
+            label: View boarding pass
+
+  - id: post_download
+    messages:
+      - type: text
+        text: "Boarding pass saved.\n\nWe'll send you another message if your gate or flight status changes.\n\nHave a pleasant flight."
+    end: true
+
+  - id: gate_change_reminder
+    label: "(Demo) Proactive gate change notification"
+    messages:
+      - type: text
+        text: "Update on {{flightNumber}}: your gate has changed to {{gate}}. Please proceed to the new gate at least 30 minutes before boarding."
+    actions:
+      - label: View boarding pass
+        next: check_in_success
+      - label: Back to start
+        next: welcome

@@ -1,0 +1,147 @@
+# Business Messaging Flow Simulator — example scenario
+# Fictional restaurant reservation journey.
+version: "1.0"
+
+metadata:
+  id: restaurant-reservation
+  name: "Restaurant table reservation"
+  description: "Reservation reminder through table confirmation and pre-order."
+  channel: generic
+  tags: [restaurant, reservation, demo]
+
+brand:
+  name: "Riverside Bistro (Demo)"
+  shortName: "Riverside"
+  avatar: "/assets/brand-avatar-restaurant.svg"
+  verified: false
+  website: "https://example.com"
+  supportPhone: "+1 555 0188"
+
+defaults:
+  messageDelayMs: 450
+  typingDurationMs: 800
+  locale: en-US
+  timezone: America/Chicago
+  showTimestamps: true
+
+variables:
+  customerName: Jordan
+  partySize: "2"
+  reservationTime: "7:30pm"
+  reservationDate: "Friday, 14 Aug"
+  tableArea: "Main dining room"
+  preOrder: "None"
+
+start: reminder
+
+nodes:
+  - id: reminder
+    messages:
+      - type: text
+        text: "Hi {{customerName}}, this is a reminder of your reservation at Riverside Bistro for {{partySize}} on {{reservationDate}} at {{reservationTime}}."
+    actions:
+      - label: Confirm
+        next: confirmed
+      - label: Change time
+        next: change_time
+      - label: Cancel
+        next: cancelled
+
+  - id: change_time
+    messages:
+      - type: carousel
+        cards:
+          - id: slot-1
+            title: "6:00pm"
+            subtitle: "Friday, 14 Aug"
+            description: Available
+            actions:
+              - type: reply
+                label: Choose 6:00pm
+                next: time_changed
+                set: { reservationTime: "6:00pm" }
+          - id: slot-2
+            title: "7:00pm"
+            subtitle: "Friday, 14 Aug"
+            description: Available
+            actions:
+              - type: reply
+                label: Choose 7:00pm
+                next: time_changed
+                set: { reservationTime: "7:00pm" }
+          - id: slot-3
+            title: "8:30pm"
+            subtitle: "Friday, 14 Aug"
+            description: Available
+            actions:
+              - type: reply
+                label: Choose 8:30pm
+                next: time_changed
+                set: { reservationTime: "8:30pm" }
+
+  - id: time_changed
+    messages:
+      - type: text
+        text: "Updated — see you at {{reservationTime}} on {{reservationDate}}."
+    next: confirmed
+
+  - id: cancelled
+    messages:
+      - type: text
+        text: "Your reservation has been cancelled. We hope to see you another time, {{customerName}}."
+    end: true
+
+  - id: confirmed
+    messages:
+      - type: rich_card
+        image: "/assets/restaurant-table.svg"
+        title: "Table confirmed"
+        description: "{{tableArea}} · {{partySize}} guests · {{reservationTime}}"
+      - type: text
+        text: "Would you like to pre-order anything from our tasting menu?"
+    actions:
+      - label: "View menu"
+        next: menu
+      - label: "No thanks"
+        next: done
+
+  - id: menu
+    messages:
+      - type: list
+        title: Tasting menu
+        buttonLabel: View dishes
+        sections:
+          - title: Starters
+            rows:
+              - id: burrata
+                title: Burrata & heirloom tomato
+                description: "$14"
+                next: preorder_set
+              - id: soup
+                title: Roasted tomato soup
+                description: "$9"
+                next: preorder_set
+          - title: Mains
+            rows:
+              - id: salmon
+                title: Grilled salmon
+                description: "$28"
+                next: preorder_set
+              - id: risotto
+                title: Wild mushroom risotto
+                description: "$22"
+                next: preorder_set
+
+  - id: preorder_set
+    set:
+      preOrder: "Selected from tasting menu"
+    messages:
+      - type: text
+        text: "Great choice! We'll have that ready when you arrive."
+    next: done
+
+  - id: done
+    messages:
+      - type: text
+        text: "See you {{reservationDate}} at {{reservationTime}}, {{customerName}}!"
+    end: true

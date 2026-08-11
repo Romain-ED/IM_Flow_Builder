@@ -1,0 +1,121 @@
+# Business Messaging Flow Simulator — example scenario
+# Fictional e-commerce order tracking & delivery journey.
+version: "1.0"
+
+metadata:
+  id: ecommerce-delivery
+  name: "E-commerce order & delivery tracking"
+  description: "Order shipped notification through delivery preferences to confirmation."
+  channel: whatsapp
+  tags: [ecommerce, delivery, demo]
+
+brand:
+  name: "Northwind Store (Demo)"
+  shortName: "Northwind"
+  avatar: "/assets/brand-avatar-shop.svg"
+  verified: true
+  website: "https://example.com"
+  supportPhone: "+1 555 0100"
+
+defaults:
+  messageDelayMs: 450
+  typingDurationMs: 800
+  locale: en-US
+  timezone: America/New_York
+  showTimestamps: true
+
+variables:
+  customerName: Alex
+  orderNumber: "NW-48213"
+  itemName: "Wireless Headphones"
+  carrier: "Northwind Express"
+  trackingNumber: "1Z999AA10123456784"
+  eta: "Thursday, by 8pm"
+  deliveryAddress: "221B Baker Street, Springfield"
+  deliverySlot: ""
+
+start: shipped_notice
+
+nodes:
+  - id: shipped_notice
+    messages:
+      - type: text
+        text: "Hi {{customerName}}! Your order {{orderNumber}} ({{itemName}}) has shipped via {{carrier}}."
+      - type: rich_card
+        image: "/assets/package.svg"
+        title: "On its way"
+        description: "Estimated arrival: {{eta}}"
+        actions:
+          - type: reply
+            label: Track package
+            next: tracking
+
+  - id: tracking
+    messages:
+      - type: document
+        filename: "Receipt-{{orderNumber}}.pdf"
+        title: Order receipt
+        description: "{{itemName}} — {{orderNumber}}"
+        fileType: PDF
+      - type: text
+        text: "Tracking number: {{trackingNumber}}\nDelivering to: {{deliveryAddress}}"
+    actions:
+      - label: Change delivery options
+        next: delivery_options
+      - label: "No changes needed"
+        next: confirmed
+
+  - id: delivery_options
+    messages:
+      - type: list
+        title: Delivery preferences
+        buttonLabel: Choose a slot
+        sections:
+          - title: Available slots
+            rows:
+              - id: today
+                title: "Today, 6pm–9pm"
+                next: slot_selected
+              - id: tomorrow-am
+                title: "Tomorrow, 9am–12pm"
+                next: slot_selected
+              - id: tomorrow-pm
+                title: "Tomorrow, 1pm–5pm"
+                next: slot_selected
+
+  - id: slot_selected
+    set:
+      deliverySlot: "the selected time window"
+    messages:
+      - type: text
+        text: "Got it — we'll deliver during {{deliverySlot}}."
+    next: confirmed
+
+  - id: confirmed
+    messages:
+      - type: suggested_replies
+        options:
+          - label: "Need help?"
+            next: help
+          - label: Done
+            next: done
+
+  - id: help
+    messages:
+      - type: suggested_actions
+        actions:
+          - type: call
+            label: Call support
+            phoneNumber: "{{supportPhone}}"
+          - type: open_url
+            label: Visit help center
+            url: "https://example.com/help"
+    actions:
+      - label: Back
+        next: confirmed
+
+  - id: done
+    messages:
+      - type: text
+        text: "Thanks for shopping with Northwind, {{customerName}}! We'll notify you when {{itemName}} is delivered."
+    end: true

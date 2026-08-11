@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bfe0fb"/>
+      <stop offset="1" stop-color="#e8f4fd"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="270" fill="url(#sky)"/>
+  <circle cx="400" cy="55" r="30" fill="#ffffff" opacity="0.8"/>
+  <ellipse cx="120" cy="230" rx="220" ry="18" fill="#ffffff" opacity="0.6"/>
+  <g transform="translate(60,90) rotate(-6)">
+    <ellipse cx="170" cy="50" rx="170" ry="26" fill="#f8fafc"/>
+    <ellipse cx="170" cy="50" rx="170" ry="26" fill="none" stroke="#0b57d0" stroke-width="2"/>
+    <path d="M60 50 L10 20 L34 50 L10 80 Z" fill="#0b57d0"/>
+    <path d="M180 26 L260 -30 L272 -22 L215 30 Z" fill="#dbeafe" stroke="#0b57d0" stroke-width="1.5"/>
+    <path d="M180 74 L260 130 L272 122 L215 70 Z" fill="#dbeafe" stroke="#0b57d0" stroke-width="1.5"/>
+    <path d="M300 40 L336 30 L336 70 L300 60 Z" fill="#0b57d0"/>
+    <rect x="90" y="38" width="150" height="5" rx="2.5" fill="#0b57d0" opacity="0.5"/>
+  </g>
+  <text x="240" y="250" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">Airbus A350-900 (illustration)</text>
+</svg>
