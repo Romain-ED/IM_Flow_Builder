@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
-import { X, Upload, Check, RefreshCcw } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { X, Upload, Check, RefreshCcw, Code2, Waypoints } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
-import { detectFormat, validateFlowSourceForPreview } from '../../utils/flowSource'
+import { detectFormat, parseFlowSource, validateFlowSourceForPreview } from '../../utils/flowSource'
+import { validateFlow } from '../../engine/flowValidator'
+import { computeFlowGraphLayout } from '../../engine/flowGraph'
 import { EXAMPLE_FLOW_TEMPLATE } from '../../utils/exampleFlowTemplate'
 import { ToolbarButton } from '../editor/ToolbarButton'
+import { FlowGraphView, FlowGraphLegend } from '../debug/FlowGraphView'
 
 interface CustomScenarioEditorModalProps {
   open: boolean
@@ -31,6 +34,7 @@ export function CustomScenarioEditorModal({
   const [name, setName] = useState('')
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<'source' | 'graph'>('source')
 
   useEffect(() => {
     if (!open) return
@@ -45,6 +49,13 @@ export function CustomScenarioEditorModal({
     // Re-initializes only when the modal opens or switches target scenario —
     // `existing`/`seedSource`/`seedName` are read fresh at that moment.
   }, [open, scenarioId])
+
+  const graphLayout = useMemo(() => {
+    const parsed = parseFlowSource(draft)
+    if (!parsed.success) return null
+    const validated = validateFlow(parsed.data)
+    return validated.success ? computeFlowGraphLayout(validated.flow) : null
+  }, [draft])
 
   if (!open) return null
 
@@ -107,13 +118,43 @@ export function CustomScenarioEditorModal({
             />
           </label>
 
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            spellCheck={false}
-            className="flex-1 min-h-0 w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12.5px] font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-slate-900/20"
-            aria-label="Flow definition source"
-          />
+          <div className="flex rounded-md border border-slate-200 overflow-hidden w-fit">
+            <button
+              type="button"
+              onClick={() => setView('source')}
+              aria-pressed={view === 'source'}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium cursor-pointer ${view === 'source' ? 'bg-violet-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            >
+              <Code2 size={12.5} /> Source
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('graph')}
+              aria-pressed={view === 'graph'}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium cursor-pointer ${view === 'graph' ? 'bg-violet-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            >
+              <Waypoints size={12.5} /> Graph
+            </button>
+          </div>
+
+          {view === 'source' ? (
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              spellCheck={false}
+              className="flex-1 min-h-0 w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12.5px] font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-slate-900/20"
+              aria-label="Flow definition source"
+            />
+          ) : graphLayout ? (
+            <div className="flex-1 min-h-0 flex flex-col gap-2">
+              <FlowGraphView layout={graphLayout} interactive={false} />
+              <FlowGraphLegend />
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 flex items-center justify-center text-[12.5px] text-slate-400 border border-dashed border-slate-300 rounded-lg">
+              Fix validation errors in the source to preview the graph.
+            </div>
+          )}
 
           {error && <p className="text-[12px] text-rose-700 bg-rose-50 rounded-lg px-2.5 py-2 m-0">{error}</p>}
           {!error && preview && (

@@ -82,6 +82,22 @@ nodes:
               - id: tomorrow-pm
                 title: "Tomorrow, 1pm–5pm"
                 next: slot_selected
+          - title: Upgrade
+            rows:
+              - id: priority
+                title: "Priority delivery — arrives today"
+                description: "$6.99"
+                next: priority_upgrade
+
+  - id: priority_upgrade
+    messages:
+      - type: payment_request
+        title: Priority delivery upgrade
+        description: "Get {{itemName}} delivered today instead of {{eta}}"
+        amount: "$6.99"
+        next: slot_selected
+        set:
+          deliverySlot: "today, priority"
 
   - id: slot_selected
     set:
@@ -95,10 +111,36 @@ nodes:
     messages:
       - type: suggested_replies
         options:
+          - label: "Browse more"
+            next: browse_catalog
           - label: "Need help?"
             next: help
           - label: Done
             next: done
+
+  - id: browse_catalog
+    messages:
+      - type: text
+        text: "You might also like:"
+      - type: product_catalog
+        products:
+          - id: case
+            image: "/assets/package.svg"
+            title: "Headphone case"
+            price: "$14.99"
+            description: "Protective travel case"
+          - id: cable
+            image: "/assets/package.svg"
+            title: "USB-C cable, 2m"
+            price: "$8.99"
+          - id: standx
+            image: "/assets/package.svg"
+            title: "Desk stand"
+            price: "$19.99"
+            description: "Foldable aluminum stand"
+    actions:
+      - label: Back
+        next: confirmed
 
   - id: help
     messages:

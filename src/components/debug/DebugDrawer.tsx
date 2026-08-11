@@ -1,5 +1,8 @@
-import type { ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { List, Waypoints } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
+import { computeFlowGraphLayout } from '../../engine/flowGraph'
+import { FlowGraphView, FlowGraphLegend } from './FlowGraphView'
 
 export function DebugDrawer() {
   const flow = useSimulatorStore((s) => s.flow)
@@ -9,6 +12,9 @@ export function DebugDrawer() {
   const validation = useSimulatorStore((s) => s.validation)
   const events = useSimulatorStore((s) => s.events)
   const jumpToNode = useSimulatorStore((s) => s.jumpToNode)
+  const [nodesView, setNodesView] = useState<'list' | 'graph'>('graph')
+
+  const layout = useMemo(() => (flow ? computeFlowGraphLayout(flow) : null), [flow])
 
   return (
     <aside className="flex flex-col h-full overflow-y-auto thin-scrollbar p-4 gap-5 text-[12.5px]">
@@ -51,20 +57,57 @@ export function DebugDrawer() {
         </ol>
       </Section>
 
-      <Section title="All nodes (jump)">
-        <div className="flex flex-wrap gap-1">
-          {flow?.nodes.map((node) => (
+      <Section
+        title="Flow graph"
+        action={
+          <div className="flex rounded-md border border-slate-200 overflow-hidden">
             <button
-              key={node.id}
               type="button"
-              onClick={() => jumpToNode(node.id)}
-              title={node.label ?? node.id}
-              className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono text-slate-600 hover:bg-slate-100 cursor-pointer truncate max-w-[9rem]"
+              onClick={() => setNodesView('list')}
+              aria-pressed={nodesView === 'list'}
+              className={`flex items-center gap-1 px-1.5 py-1 text-[10.5px] font-medium cursor-pointer ${nodesView === 'list' ? 'bg-teal-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
             >
-              {node.id}
+              <List size={11} /> List
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              onClick={() => setNodesView('graph')}
+              aria-pressed={nodesView === 'graph'}
+              className={`flex items-center gap-1 px-1.5 py-1 text-[10.5px] font-medium cursor-pointer ${nodesView === 'graph' ? 'bg-teal-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
+            >
+              <Waypoints size={11} /> Graph
+            </button>
+          </div>
+        }
+      >
+        {nodesView === 'list' ? (
+          <div className="flex flex-wrap gap-1">
+            {flow?.nodes.map((node) => (
+              <button
+                key={node.id}
+                type="button"
+                onClick={() => jumpToNode(node.id)}
+                title={node.label ?? node.id}
+                className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono text-slate-600 hover:bg-slate-100 cursor-pointer truncate max-w-[9rem]"
+              >
+                {node.id}
+              </button>
+            ))}
+          </div>
+        ) : (
+          layout && (
+            <div className="flex flex-col gap-2">
+              <FlowGraphView
+                layout={layout}
+                currentNodeId={currentNodeId}
+                interactive
+                onNodeClick={jumpToNode}
+                maxHeight="18rem"
+              />
+              <FlowGraphLegend />
+            </div>
+          )
+        )}
       </Section>
 
       {validation && !validation.success && (
@@ -99,10 +142,13 @@ export function DebugDrawer() {
   )
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
     <section>
-      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">{title}</h3>
+      <div className="flex items-center justify-between mb-1.5">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 m-0">{title}</h3>
+        {action}
+      </div>
       {children}
     </section>
   )

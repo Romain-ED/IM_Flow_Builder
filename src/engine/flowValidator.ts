@@ -80,8 +80,15 @@ export function validateFlow(raw: unknown): FlowValidationResult {
           }
         }
       }
-      if (message.type === 'input') {
-        checkRef(node.id, message.next, 'input')
+      if (message.type === 'input' || message.type === 'otp') {
+        checkRef(node.id, message.next, message.type)
+      }
+      if (
+        message.type === 'payment_request' ||
+        message.type === 'calendar_event' ||
+        message.type === 'whatsapp_flow'
+      ) {
+        checkRef(node.id, message.next, message.type)
       }
       if (message.type === 'carousel') {
         for (const card of message.cards) {

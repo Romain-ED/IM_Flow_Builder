@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react'
 import { ArrowDown, Sparkles } from 'lucide-react'
-import pkg from '../../../package.json'
+import { APP_VERSION } from '../../app/version'
+import { CHANGELOG } from '../../app/changelog'
 
 const TOC = [
   { id: 'overview', label: 'Overview' },
   { id: 'interface', label: 'Interface guide' },
   { id: 'flow-format', label: 'Flow definition reference' },
   { id: 'architecture', label: 'Technical architecture' },
+  { id: 'changelog', label: 'Changelog' },
   { id: 'limitations', label: 'Limitations & roadmap' },
 ]
 
@@ -22,7 +24,7 @@ export function ManualPage() {
             </span>
           </div>
           <p className="text-[13px] text-slate-500 m-0">
-            Created by <span className="font-medium text-slate-700">Romain</span> · version {pkg.version} · this
+            Created by <span className="font-medium text-slate-700">Romain</span> · version {APP_VERSION} · this
             manual covers what the tool does, every control and flow-definition parameter, and how it's built.
           </p>
           <p className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-1 max-w-xl">
@@ -66,13 +68,13 @@ export function ManualPage() {
           <P>The main Simulator screen has three regions: a control sidebar, the phone preview, and an optional flow inspector.</P>
           <ParamTable
             rows={[
-              ['Scenario', 'Shows the loaded flow\'s name, a dropdown of built-in examples, "Edit flow" (opens the quick JSON/YAML editor for the live flow) and "Export" (downloads the current flow as YAML).'],
-              ['Channel', 'Switches the rendering between RCS, WhatsApp, and Generic. The same flow definition renders through each channel\'s own visual language and capability set.'],
+              ['Scenario', 'Shows the loaded flow\'s name, a dropdown of built-in examples, "Edit flow" (opens the quick JSON/YAML editor for the live flow), "Export" (downloads the current flow as YAML), and "Copy share link" (encodes the flow into a URL — opening it loads the same scenario, no file needed).'],
+              ['Channel', 'Switches the rendering between RCS, WhatsApp, and Generic. The same flow definition renders through each channel\'s own visual language and capability set. "Compare all channels" shows all three at once, driven by the same live conversation — tap a button in any one and the others follow.'],
               ['Variables', 'Editable list of the flow\'s top-level variables (e.g. customer name, booking reference, seat). Edits apply on the next Restart, not live — this lets a presenter line up several fields before restarting the demo.'],
               ['Debug options', '"Fast demo mode" shrinks all typing/message delays; "Show capability warnings" toggles the inline notes shown when a message type falls back to a generic rendering on a channel that doesn\'t natively support it; "Flow inspector panel" toggles the right-hand debug drawer; "Start node" overrides which node Restart jumps to.'],
               ['Playback', 'Restart (replays from the start node using the current variable values), Back (undoes the last user interaction using a state snapshot), Pause/Resume (freezes automatic playback), Clear (same as Restart).'],
               ['Phone preview', 'The focal point — a realistic mobile chat UI rendering the live conversation for the selected channel.'],
-              ['Flow inspector', 'Shows the current node id, live variable values, the node-visit history (click any entry to jump straight to that node), a full node list for quick jumping, validation errors if any, and a recent event log.'],
+              ['Flow inspector', 'Shows the current node id, live variable values, the node-visit history (click any entry to jump straight to that node), validation errors if any, and a recent event log. The "Flow graph" section has a List/Graph toggle — Graph lays out every node and connection automatically and lets you click any box to jump straight to it live. The same graph view (read-only there) is also available while editing a scenario on the Scenarios page.'],
               ['Presenter mode', 'Hides all configuration chrome and enlarges the phone for screen-sharing with customers; a small floating control keeps Restart and fullscreen within reach.'],
             ]}
           />
@@ -111,6 +113,12 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
               ['list', 'Opens a bottom-sheet menu of grouped rows.'],
               ['input', 'Free-text/email/phone/numeric/date entry that drives the composer and stores the value in a variable.'],
               ['flight_card / boarding_pass', 'Purpose-built travel components; boarding passes get Download / Add to wallet / View buttons for free.'],
+              ['location', 'A map-preview card with a label/address and an "Open in Maps" simulated action.'],
+              ['otp', 'A segmented verification-code entry with its own Verify button; stores the code in a variable like input.'],
+              ['payment_request', 'A "Pay now" card (title, description, amount) that simulates a charge and can transition on completion.'],
+              ['calendar_event', 'A rich calendar-invite card (title, time, location) with "Add to calendar".'],
+              ['product_catalog', 'A horizontally scrollable row of products, each with its own "Add to cart" (simulated, no real cart state).'],
+              ['whatsapp_flow', 'A placeholder card representing an embedded WhatsApp Flow, with a configurable CTA that simulates completion.'],
               ['delay', 'Pseudo-message: pause without rendering anything.'],
             ]}
           />
@@ -136,16 +144,42 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
           />
         </Section>
 
+        <Section id="changelog" title="Changelog" accent="amber">
+          <P>
+            Version numbers follow a lightweight scheme while the app is in beta (0.x): a bump in the middle number
+            means new features shipped, a bump in the last number means fixes only.
+          </P>
+          <div className="flex flex-col gap-4">
+            {CHANGELOG.map((entry) => (
+              <div key={entry.version} className="rounded-lg border border-slate-200 overflow-hidden">
+                <div className="flex items-center justify-between px-3.5 py-2 bg-slate-50 border-b border-slate-200">
+                  <span className="text-[12.5px] font-semibold text-slate-800">v{entry.version}</span>
+                  <span className="text-[11.5px] text-slate-400">{entry.date}</span>
+                </div>
+                <ul className="m-0 px-7 py-2.5 flex flex-col gap-1.5 list-disc">
+                  {entry.changes.map((change, i) => (
+                    <li key={i} className="text-[12.5px] text-slate-600 leading-relaxed">
+                      {change}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Section>
+
         <Section id="limitations" title="Limitations & roadmap" accent="rose">
           <P>
-            No backend, no real message delivery. Video/wallet actions are simulated; only the boarding-pass
-            "Download" produces a real file (a client-side generated PNG). The boarding pass QR/barcode are seeded
-            decorative placeholders with no real data encoded. "Back" restores discrete snapshots taken before each
-            interaction rather than rewinding an arbitrary point mid-animation.
+            No backend, no real message delivery. Video/wallet/payment actions are simulated; only the boarding-pass
+            "Download" produces a real file (a client-side generated PNG). The boarding pass QR/barcode and the
+            location map preview are seeded decorative placeholders with no real data encoded. "Back" restores
+            discrete snapshots taken before each interaction rather than rewinding an arbitrary point mid-animation.
+            The flow graph viewer is read-only — it's built for navigating and understanding a flow, not yet for
+            dragging nodes around or editing fields inline (that's still done in the JSON/YAML editor).
           </P>
           <P>
-            Planned next: location/OTP/payment message types, a visual node-graph editor, multi-scenario demo
-            playlists, and shareable read-only scenario links.
+            Planned next: inline field editing directly on the graph, multi-scenario demo playlists, and an
+            "unattended record & replay" mode for booth demos.
           </P>
         </Section>
       </div>
@@ -159,6 +193,7 @@ const SECTION_ACCENTS = {
   emerald: 'text-emerald-600',
   teal: 'text-teal-600',
   rose: 'text-rose-600',
+  amber: 'text-amber-600',
 } as const
 
 function Section({

@@ -7,6 +7,7 @@ import { Sidebar } from './components/layout/Sidebar'
 import { PresenterFloatingControls } from './components/layout/PresenterFloatingControls'
 import { PhoneFrame } from './components/phone/PhoneFrame'
 import { PhoneScreen } from './components/phone/PhoneScreen'
+import { ComparePhones } from './components/phone/ComparePhones'
 import { DebugDrawer } from './components/debug/DebugDrawer'
 import { ScenarioEditorModal } from './components/editor/ScenarioEditorModal'
 import { ScenariosPage } from './components/scenarios/ScenariosPage'
@@ -16,6 +17,7 @@ function App() {
   const initialize = useSimulatorStore((s) => s.initialize)
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
   const debugPanelOpen = useSimulatorStore((s) => s.debugPanelOpen)
+  const compareMode = useSimulatorStore((s) => s.compareMode)
 
   const [page, setPage] = useState<AppPage>('simulator')
   const [editorOpen, setEditorOpen] = useState(false)
@@ -57,13 +59,17 @@ function App() {
             <Sidebar onOpenEditor={() => setEditorOpen(true)} />
           </div>
 
-          <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
-            <div className="h-full w-full max-w-[420px]">
-              <PhoneFrame>
-                <PhoneScreen />
-              </PhoneFrame>
-            </div>
-          </main>
+          {compareMode ? (
+            <ComparePhones />
+          ) : (
+            <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
+              <div className="h-full w-full max-w-[420px]">
+                <PhoneFrame>
+                  <PhoneScreen />
+                </PhoneFrame>
+              </div>
+            </main>
+          )}
 
           {debugPanelOpen && (
             <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">

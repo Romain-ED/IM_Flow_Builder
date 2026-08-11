@@ -97,13 +97,30 @@ nodes:
         image: "/assets/restaurant-table.svg"
         title: "Table confirmed"
         description: "{{tableArea}} · {{partySize}} guests · {{reservationTime}}"
+      - type: calendar_event
+        title: "Dinner at Riverside Bistro"
+        startTime: "{{reservationDate}}, {{reservationTime}}"
+        location: "Riverside Bistro, {{tableArea}}"
+        description: "Reservation for {{partySize}} guests"
       - type: text
         text: "Would you like to pre-order anything from our tasting menu?"
     actions:
       - label: "View menu"
         next: menu
+      - label: "Join loyalty program"
+        next: loyalty_signup
       - label: "No thanks"
         next: done
+
+  - id: loyalty_signup
+    messages:
+      - type: whatsapp_flow
+        title: "Join Riverside Rewards"
+        description: "Sign up in a few taps to earn points on every visit."
+        cta: "Sign up"
+        next: done
+        set:
+          preOrder: "{{preOrder}} · joined loyalty program"
 
   - id: menu
     messages:

@@ -1,11 +1,12 @@
 import { X } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
+import { useActiveChannel } from '../../app/ChannelContext'
 import { BoardingPass } from '../../messages/BoardingPass'
 
 export function BoardingPassPreviewModal() {
   const message = useSimulatorStore((s) => s.boardingPassPreview)
   const close = useSimulatorStore((s) => s.closeBoardingPassPreview)
-  const channel = useSimulatorStore((s) => s.channel)
+  const channel = useActiveChannel()
 
   if (!message) return null
 

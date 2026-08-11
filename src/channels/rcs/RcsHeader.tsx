@@ -17,11 +17,11 @@ export function RcsHeader({ brand }: { brand: BrandDefinition }) {
               <BadgeCheck size={14} className="text-[#0b57d0] shrink-0" aria-label="Verified business" />
             )}
           </div>
-          <div className="flex items-center gap-1">
-            <span className="inline-flex items-center rounded-[4px] border border-[#0b57d0] text-[#0b57d0] text-[9.5px] font-semibold px-1 leading-tight">
+          <div className="flex items-center gap-1 min-w-0">
+            <span className="inline-flex items-center shrink-0 rounded-[4px] border border-[#0b57d0] text-[#0b57d0] text-[9.5px] font-semibold px-1 leading-tight">
               RCS
             </span>
-            <span className="text-[11.5px] text-slate-500">Business messaging</span>
+            <span className="block truncate text-[11.5px] text-slate-500">Business messaging</span>
           </div>
         </div>
         <div className="flex items-center gap-3 text-slate-500 shrink-0">

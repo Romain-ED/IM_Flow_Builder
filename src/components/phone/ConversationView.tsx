@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useSimulatorStore } from '../../store/simulatorStore'
+import { useActiveChannel } from '../../app/ChannelContext'
 import { MessageRenderer } from '../../messages/MessageRenderer'
 import { TypingIndicator } from './TypingIndicator'
 
 export function ConversationView() {
-  const channel = useSimulatorStore((s) => s.channel)
+  const channel = useActiveChannel()
   const history = useSimulatorStore((s) => s.history)
   const isTyping = useSimulatorStore((s) => s.isTyping)
   const scrollRef = useRef<HTMLDivElement>(null)

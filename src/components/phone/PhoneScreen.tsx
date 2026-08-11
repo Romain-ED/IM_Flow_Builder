@@ -1,5 +1,7 @@
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { channelRenderers } from '../../channels/registry'
+import { ChannelProvider } from '../../app/ChannelContext'
+import type { ChannelId } from '../../schema/flow'
 import { ConversationView } from './ConversationView'
 import { ActionBar } from './ActionBar'
 import { Composer } from './Composer'
@@ -8,9 +10,15 @@ import { BoardingPassPreviewModal } from './BoardingPassPreviewModal'
 import { ExternalActionModal } from './ExternalActionModal'
 import { Toast } from './Toast'
 
-export function PhoneScreen() {
+interface PhoneScreenProps {
+  /** Pins this screen to a specific channel, used by Compare Mode. Defaults to the store's global channel. */
+  channelOverride?: ChannelId
+}
+
+export function PhoneScreen({ channelOverride }: PhoneScreenProps = {}) {
   const flow = useSimulatorStore((s) => s.flow)
-  const channel = useSimulatorStore((s) => s.channel)
+  const storeChannel = useSimulatorStore((s) => s.channel)
+  const channel = channelOverride ?? storeChannel
 
   if (!flow) {
     return (
@@ -23,14 +31,16 @@ export function PhoneScreen() {
   const ChannelRenderer = channelRenderers[channel]
 
   return (
-    <ChannelRenderer brand={flow.brand}>
-      <ConversationView />
-      <ActionBar />
-      <Composer />
-      <ListSheet />
-      <BoardingPassPreviewModal />
-      <ExternalActionModal />
-      <Toast />
-    </ChannelRenderer>
+    <ChannelProvider channel={channel}>
+      <ChannelRenderer brand={flow.brand}>
+        <ConversationView />
+        <ActionBar />
+        <Composer />
+        <ListSheet />
+        <BoardingPassPreviewModal />
+        <ExternalActionModal />
+        <Toast />
+      </ChannelRenderer>
+    </ChannelProvider>
   )
 }

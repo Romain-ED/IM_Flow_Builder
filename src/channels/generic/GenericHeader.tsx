@@ -13,7 +13,7 @@ export function GenericHeader({ brand }: { brand: BrandDefinition }) {
             <span className="text-[14.5px] font-medium truncate">{brand.shortName ?? brand.name}</span>
             {brand.verified && <BadgeCheck size={13} className="shrink-0" aria-label="Verified business" />}
           </div>
-          <span className="text-[11.5px] text-white/60">Business messaging</span>
+          <span className="block truncate text-[11.5px] text-white/60">Business messaging</span>
         </div>
         <MoreVertical size={18} className="shrink-0" aria-hidden="true" />
       </div>

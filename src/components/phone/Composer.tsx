@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Send, Mic } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
+import { useActiveChannel } from '../../app/ChannelContext'
 import { findActiveInput } from '../../utils/selectors'
 import { channelThemes } from '../../channels/theme'
 
@@ -13,7 +14,7 @@ const INPUT_TYPE_MAP: Record<string, string> = {
 }
 
 export function Composer() {
-  const channel = useSimulatorStore((s) => s.channel)
+  const channel = useActiveChannel()
   const history = useSimulatorStore((s) => s.history)
   const currentNodeId = useSimulatorStore((s) => s.currentNodeId)
   const pendingOutcome = useSimulatorStore((s) => s.pendingOutcome)

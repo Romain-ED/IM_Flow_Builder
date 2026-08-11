@@ -11,7 +11,8 @@ It is **not connected to any real messaging API**. It's built for demos, custome
 - Renders the live conversation through a **channel renderer** (RCS / WhatsApp / Generic) inside a polished phone mockup.
 - Lets a presenter tweak variables (customer name, booking reference, seat, …), restart, step back, jump to any node, switch channels live, and demo cleanly in **Presenter Mode**.
 - Ships with three complete example scenarios — an airline check-in/boarding-pass journey (the default), an e-commerce delivery tracker, and a restaurant reservation flow.
-- Has three pages, reachable from the top nav: **Simulator** (the demo tool itself), **Scenarios** (load/duplicate/edit/import/export/delete flow definitions — custom ones are saved to `localStorage`), and **Manual** (an in-app guide covering usage, every parameter, and the technical architecture).
+- Has three pages, reachable from the top nav: **Simulator** (the demo tool itself), **Scenarios** (load/duplicate/edit/import/export/delete flow definitions — custom ones are saved to `localStorage`), and **Manual** (an in-app guide covering usage, every parameter, the technical architecture, and a changelog).
+- Installable and fully offline-capable (PWA) after the first load, and supports **shareable scenario links** (a flow encoded straight into a URL) and a **side-by-side channel comparison** view.
 
 ## Installation & development
 
@@ -53,17 +54,27 @@ The engine never imports React, and no message component hardcodes a specific de
 
 ```
 src/
-  app/                    (reserved for future app-level composition)
+  app/                    pages.ts (page routing type), version.ts, changelog.ts,
+                           ChannelContext.tsx (per-phone-screen channel override,
+                           used by Compare Mode)
   components/
-    layout/               AppHeader, Sidebar, PresenterFloatingControls
-    phone/                PhoneFrame, PhoneScreen, ConversationView, Composer,
-                           ActionBar, MessageShell, ChoiceChips, ActionButton,
-                           ListSheet, Toast, ExternalActionModal, …
-    controls/              ScenarioControls, ChannelSelector, VariablesEditor,
-                           DebugOptions, PlaybackControls
-    editor/                ScenarioEditorModal (paste/import/validate/export)
-    debug/                 DebugDrawer (flow inspector)
-    common/                ImageWithFallback, CodePlaceholder (QR/barcode)
+    layout/               AppHeader (nav + version badge), Sidebar,
+                           PresenterFloatingControls
+    phone/                PhoneFrame, PhoneScreen, ComparePhones, ConversationView,
+                           Composer, ActionBar, MessageShell, ChoiceChips,
+                           ActionButton, ListSheet, Toast, ExternalActionModal, …
+    controls/              ScenarioControls, ChannelSelector (+ Compare toggle),
+                           VariablesEditor, DebugOptions, PlaybackControls
+    editor/                ScenarioEditorModal (paste/import/validate/export),
+                           ToolbarButton
+    debug/                 DebugDrawer (flow inspector), FlowGraphView (visual
+                           node graph, List/Graph toggle)
+    scenarios/             ScenariosPage, ScenarioCard, CustomScenarioEditorModal
+                           (has its own Source/Graph tabs)
+    manual/                ManualPage (usage guide + parameter reference +
+                           architecture + changelog)
+    common/                ImageWithFallback, CodePlaceholder (QR/barcode),
+                           SectionHeading
 
   channels/
     capabilities.ts        shared ChannelCapabilities type + helpers
@@ -81,6 +92,7 @@ src/
     templateRenderer.ts     safe {{variable}} substitution (regex only, no eval)
     conditionEvaluator.ts   equals / not_equals / exists / contains / >/< 
     flowValidator.ts        Zod parse + duplicate-id / dangling-reference checks
+    flowGraph.ts             pure BFS layout engine for the visual graph view
     eventStore.ts           ConversationEvent union + variable-diff helper
     types.ts                NormalizedMessage, PlayStep, NodeOutcome, …
 
@@ -90,17 +102,21 @@ src/
 
   store/
     simulatorStore.ts        Zustand store: playback, variables, channel,
-                             presenter mode, snapshots for Back, persistence
-    persistence.ts           localStorage read/write helpers
+                             compare mode, custom scenarios, presenter mode,
+                             snapshots for Back, persistence
+    persistence.ts           localStorage read/write helpers (prefs, last
+                             scenario, custom scenarios)
 
   scenarios/                 singapore-airlines.yaml (default), ecommerce.yaml,
                              restaurant.yaml, index.ts (registry)
 
   utils/                     flowSource (JSON/YAML parse+serialize),
+                             shareLink (gzip + base64url URL encoding),
                              boardingPassFile (canvas → PNG download),
-                             selectors, id, sleep, time
+                             exampleFlowTemplate, accents, selectors, id, sleep, time
 
-public/assets/                Bundled offline SVG placeholder illustrations
+public/                       Bundled offline SVG placeholder illustrations +
+                             PWA icons (pwa-icon-192.png, pwa-icon-512.png)
 ```
 
 ### Why a "plan/execute" split in the engine?
@@ -179,6 +195,12 @@ A **node** can: play one or more messages in sequence (with per-message `delayMs
 | `input` | `text`/`email`/`phone`/`numeric`/`date`; drives the composer, stores the value in a variable |
 | `flight_card` | airline route summary card |
 | `boarding_pass` | polished boarding pass with Download / Add to wallet / View buttons built in for free |
+| `location` | map-preview card with an "Open in Maps" simulated action |
+| `otp` | segmented verification-code entry with its own Verify button |
+| `payment_request` | "Pay now" card that simulates a charge and can transition on completion |
+| `calendar_event` | rich calendar-invite card with "Add to calendar" |
+| `product_catalog` | horizontally scrollable products, each with "Add to cart" (simulated) |
+| `whatsapp_flow` | placeholder card for an embedded WhatsApp Flow, with a configurable CTA |
 | `delay` | pseudo-message: pause without rendering anything |
 
 Messages can be authored with `"sender": "user"` for scripted autoplay lines, in addition to the normal `"sender": "business"` (the default).
@@ -217,10 +239,12 @@ Each channel declares which message types it natively supports in `capabilities.
 - The QR/barcode on the boarding pass are decorative placeholders seeded from the booking reference; they encode no real data.
 - Undo ("Back") restores full state snapshots taken before each user-driven interaction; it does not rewind mid-animation to an arbitrary point in time.
 - Carousel/list/action ordering assumes each node's interactive content is meant to stay live only until the node changes — this app does not support multiple *concurrent* independent conversation threads.
+- The flow graph view is read-only navigation/visualization, not a drag-and-drop editor — node positions are auto-computed, not stored, and there's no inline field editing on the graph yet.
+- Shareable links encode the whole flow source in the URL (gzip-compressed); very large custom flows will produce a long URL. The offline PWA cache is precache-all, so it's a good fit for this app's fully-bundled build but wouldn't scale as-is to an app with large runtime-fetched datasets.
 
 ## Possible next improvements
 
-- Location/OTP/payment/calendar-native/product-catalog message types (the schema is designed to make this additive).
-- A visual node-graph editor instead of raw JSON/YAML.
+- Inline field editing directly on the flow graph (turning the viewer into a true visual editor).
 - Optional multi-scenario "playlists" for longer sales demos.
-- Export a shareable, read-only link to a scenario + variable preset.
+- Unattended "record & replay" mode for booth demos.
+- Payment/OTP/location message types with pluggable, scenario-defined validation rules.

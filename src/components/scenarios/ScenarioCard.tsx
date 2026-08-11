@@ -1,4 +1,5 @@
-import { Play, Copy, FileJson, FileText, Pencil, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { Play, Copy, FileJson, FileText, Pencil, Trash2, Link2, Check } from 'lucide-react'
 
 interface ScenarioCardProps {
   name: string
@@ -9,6 +10,7 @@ interface ScenarioCardProps {
   onDuplicate: () => void
   onExportJson: () => void
   onExportYaml: () => void
+  onShareLink: () => Promise<boolean>
   onEdit?: () => void
   onDelete?: () => void
 }
@@ -22,9 +24,20 @@ export function ScenarioCard({
   onDuplicate,
   onExportJson,
   onExportYaml,
+  onShareLink,
   onEdit,
   onDelete,
 }: ScenarioCardProps) {
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  async function handleShare() {
+    const ok = await onShareLink()
+    if (ok) {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 1800)
+    }
+  }
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
@@ -86,6 +99,15 @@ export function ScenarioCard({
           className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-medium bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 cursor-pointer"
         >
           <FileText size={12.5} /> YAML
+        </button>
+        <button
+          type="button"
+          onClick={handleShare}
+          aria-label="Copy share link"
+          title="Copy share link"
+          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-medium bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 cursor-pointer"
+        >
+          {linkCopied ? <Check size={12.5} /> : <Link2 size={12.5} />}
         </button>
         {onDelete && (
           <button

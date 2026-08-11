@@ -1,0 +1,43 @@
+import { Workflow } from 'lucide-react'
+import type { ChannelId } from '../schema/flow'
+import type { NormalizedMessage } from '../engine/types'
+import { MessageShell } from '../components/phone/MessageShell'
+import { useSimulatorStore } from '../store/simulatorStore'
+
+interface WhatsappFlowMessageProps {
+  message: NormalizedMessage
+  channel: ChannelId
+  interactive: boolean
+  timestampLabel?: string
+}
+
+export function WhatsappFlowMessage({ message, channel, interactive, timestampLabel }: WhatsappFlowMessageProps) {
+  const simulateCardAction = useSimulatorStore((s) => s.simulateCardAction)
+  if (message.message.type !== 'whatsapp_flow') return null
+  const { title, description, cta, next, set } = message.message
+
+  return (
+    <MessageShell sender="business" channel={channel} chrome="card" timestampLabel={timestampLabel}>
+      <div className="p-3.5 flex items-start gap-3">
+        <span className="h-9 w-9 rounded-lg bg-[#00a884]/10 text-[#00a884] flex items-center justify-center shrink-0">
+          <Workflow size={18} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[13.5px] font-semibold text-slate-900 m-0">{title}</p>
+          {description && <p className="text-[12px] text-slate-500 mt-0.5 mb-0">{description}</p>}
+          <p className="text-[10.5px] text-slate-400 mt-1 mb-0">WhatsApp Flow (simulated form)</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        disabled={!interactive}
+        onClick={() => interactive && simulateCardAction('Flow completed (simulated)', next, set)}
+        className={`w-full py-2.5 text-[13.5px] font-semibold border-t border-slate-100 transition-colors ${
+          interactive ? 'text-[#00a884] hover:bg-[#00a884]/5 cursor-pointer' : 'text-slate-400 cursor-not-allowed'
+        }`}
+      >
+        {cta ?? 'Start'}
+      </button>
+    </MessageShell>
+  )
+}

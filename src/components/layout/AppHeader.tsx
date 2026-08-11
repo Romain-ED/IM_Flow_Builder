@@ -1,6 +1,7 @@
 import { PanelLeft, PanelRight, Maximize2, Minimize2, MessageSquareText, MonitorSmartphone, FolderCog, BookOpen } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import type { AppPage } from '../../app/pages'
+import { APP_VERSION } from '../../app/version'
 
 interface AppHeaderProps {
   page: AppPage
@@ -38,6 +39,12 @@ export function AppHeader({ page, onNavigate, onToggleMobileSidebar, onToggleMob
         <h1 className="text-[14.5px] font-semibold text-slate-900 truncate m-0 hidden sm:block">
           Business Messaging Flow Simulator
         </h1>
+        <span
+          className="shrink-0 text-[10px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-1.5 py-0.5"
+          title="App version"
+        >
+          v{APP_VERSION}
+        </span>
       </div>
 
       <nav className="flex items-center gap-1 bg-slate-100 rounded-lg p-1" aria-label="Pages">

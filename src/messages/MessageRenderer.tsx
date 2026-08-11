@@ -17,6 +17,12 @@ import { ListMessage } from './ListMessage'
 import { InputMessage } from './InputMessage'
 import { FlightCard } from './FlightCard'
 import { BoardingPass } from './BoardingPass'
+import { LocationMessage } from './LocationMessage'
+import { OtpMessage } from './OtpMessage'
+import { PaymentRequestMessage } from './PaymentRequestMessage'
+import { CalendarEventMessage } from './CalendarEventMessage'
+import { ProductCatalogMessage } from './ProductCatalogMessage'
+import { WhatsappFlowMessage } from './WhatsappFlowMessage'
 import { AlertTriangle } from 'lucide-react'
 
 interface MessageRendererProps {
@@ -83,6 +89,18 @@ function renderContent(
       return <FlightCard message={message} channel={channel} timestampLabel={timestampLabel} />
     case 'boarding_pass':
       return <BoardingPass message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
+    case 'location':
+      return <LocationMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
+    case 'otp':
+      return <OtpMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
+    case 'payment_request':
+      return <PaymentRequestMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
+    case 'calendar_event':
+      return <CalendarEventMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
+    case 'product_catalog':
+      return <ProductCatalogMessage message={message} channel={channel} interactive={interactive} />
+    case 'whatsapp_flow':
+      return <WhatsappFlowMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
     default:
       return null
   }

@@ -1,8 +1,9 @@
 import { useSimulatorStore } from '../../store/simulatorStore'
+import { useActiveChannel } from '../../app/ChannelContext'
 import { ChoiceChips } from './ChoiceChips'
 
 export function ActionBar() {
-  const channel = useSimulatorStore((s) => s.channel)
+  const channel = useActiveChannel()
   const pendingOutcome = useSimulatorStore((s) => s.pendingOutcome)
   const handleChoice = useSimulatorStore((s) => s.handleChoice)
 

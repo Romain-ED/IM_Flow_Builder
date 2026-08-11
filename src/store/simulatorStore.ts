@@ -18,6 +18,7 @@ import { sleep } from '../utils/sleep'
 import { createId } from '../utils/id'
 import { downloadBoardingPassImage } from '../utils/boardingPassFile'
 import { findActiveInput } from '../utils/selectors'
+import { readShareHash } from '../utils/shareLink'
 import { BUILT_IN_SCENARIOS, DEFAULT_SCENARIO } from '../scenarios'
 import {
   loadCustomScenarios,
@@ -59,6 +60,7 @@ export interface SimulatorState {
   presenterMode: boolean
   debugPanelOpen: boolean
   debugWarningsEnabled: boolean
+  compareMode: boolean
 
   configuredVariables: VariableMap
   variables: VariableMap
@@ -79,7 +81,7 @@ export interface SimulatorState {
   activeListSheet: NormalizedMessage | null
   boardingPassPreview: NormalizedMessage | null
 
-  initialize: () => void
+  initialize: () => Promise<void>
   loadFlow: (
     flow: FlowDefinition,
     sourceText: string,
@@ -112,6 +114,9 @@ export interface SimulatorState {
   handleAction: (action: Action) => void
   handleInputSubmit: (value: string) => void
   handleBoardingPassAction: (action: BoardingPassAction, message: NormalizedMessage) => void
+  handleOtpSubmit: (message: NormalizedMessage, code: string) => void
+  /** Shared handler for "Pay now" / "Add to calendar" / "Start" style card buttons: shows a toast, then optionally transitions. */
+  simulateCardAction: (toastMessage: string, next?: string, set?: VariableMap) => void
 
   openListSheet: (message: NormalizedMessage) => void
   closeListSheet: () => void
@@ -126,6 +131,7 @@ export interface SimulatorState {
   togglePresenterMode: () => void
   toggleDebugPanel: () => void
   toggleDebugWarnings: () => void
+  toggleCompareMode: () => void
   setChannel: (channel: ChannelId) => void
   setStartNodeOverride: (nodeId: string | null) => void
   updateConfiguredVariable: (key: string, value: string | number | boolean) => void
@@ -224,6 +230,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     fastMode: false,
     presenterMode: false,
     debugPanelOpen: false,
+    compareMode: false,
     debugWarningsEnabled: true,
 
     configuredVariables: {},
@@ -245,7 +252,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     activeListSheet: null,
     boardingPassPreview: null,
 
-    initialize: () => {
+    initialize: async () => {
       const prefs = loadPreferences()
       if (prefs) {
         set((s) => ({
@@ -254,6 +261,16 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
           presenterMode: prefs.presenterMode ?? s.presenterMode,
           debugWarningsEnabled: prefs.debugWarningsEnabled ?? s.debugWarningsEnabled,
         }))
+      }
+
+      try {
+        const sharedSource = await readShareHash()
+        if (sharedSource && get().loadScenarioSource(sharedSource)) {
+          get().showToast('Loaded scenario from shared link')
+          return
+        }
+      } catch {
+        get().showToast('Could not load the shared link — showing the default scenario instead')
       }
 
       const stored = loadLastScenario()
@@ -557,6 +574,26 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       )
     },
 
+    handleOtpSubmit: (message, code) => {
+      const s = get()
+      if (!s.flow || !s.currentNodeId) return
+      if (message.message.type !== 'otp') return
+      pushSnapshot()
+      applyInteractionResult(
+        resolveInputSubmission(s.currentNodeId, message.message.variable, message.message.next, code),
+      )
+    },
+
+    simulateCardAction: (toastMessage, next, set) => {
+      const s = get()
+      if (!s.flow || !s.currentNodeId) return
+      get().showToast(toastMessage)
+      if (next || set) {
+        pushSnapshot()
+        applyInteractionResult({ setVariables: set, nextNodeId: next })
+      }
+    },
+
     handleBoardingPassAction: (action, message) => {
       const s = get()
       if (!s.flow || !s.currentNodeId) return
@@ -619,6 +656,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         return next
       }),
     toggleDebugPanel: () => set((s) => ({ debugPanelOpen: !s.debugPanelOpen })),
+    toggleCompareMode: () => set((s) => ({ compareMode: !s.compareMode })),
     toggleDebugWarnings: () =>
       set((s) => {
         const next = { debugWarningsEnabled: !s.debugWarningsEnabled }

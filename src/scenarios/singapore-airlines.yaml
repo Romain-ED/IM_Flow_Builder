@@ -56,6 +56,7 @@ variables:
   supportPhone: "+65 6223 8888"
   checkedIn: false
   enteredReference: ""
+  enteredOtp: ""
 
 start: welcome
 
@@ -121,6 +122,10 @@ nodes:
                 title: Enter booking reference
                 description: Look up a different booking
                 next: lookup_reference
+              - id: terminal
+                title: Terminal & check-in location
+                description: Find your check-in counter
+                next: terminal_location
           - title: Support
             rows:
               - id: call
@@ -158,6 +163,15 @@ nodes:
         next: manage_booking_menu
       - label: Check in
         next: check_in_router
+
+  - id: terminal_location
+    messages:
+      - type: location
+        label: "{{airline}} Check-in, {{terminal}}"
+        address: "Singapore Changi Airport, {{terminal}}"
+    actions:
+      - label: Back to menu
+        next: manage_booking_menu
 
   - id: lookup_reference
     messages:
@@ -255,9 +269,18 @@ nodes:
         text: "Confirming passenger {{passengerName}} for {{flightNumber}}. Is this correct?"
     actions:
       - label: "Yes, that's me"
-        next: seat_selection
+        next: verify_identity
       - label: Cancel
         next: not_now
+
+  - id: verify_identity
+    messages:
+      - type: text
+        text: "For your security, we've sent a one-time code to your registered number."
+      - type: otp
+        prompt: "Enter the 6-digit verification code"
+        variable: enteredOtp
+        next: seat_selection
 
   - id: seat_selection
     messages:

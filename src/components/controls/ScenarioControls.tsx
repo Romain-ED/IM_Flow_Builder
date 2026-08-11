@@ -1,7 +1,9 @@
-import { FilePenLine, Download } from 'lucide-react'
+import { useState } from 'react'
+import { FilePenLine, Download, Link2, Check } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { BUILT_IN_SCENARIOS } from '../../scenarios'
 import { toYamlString } from '../../utils/flowSource'
+import { buildShareUrl, copyToClipboard } from '../../utils/shareLink'
 import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
 
@@ -9,6 +11,8 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
   const flow = useSimulatorStore((s) => s.flow)
   const loadBuiltInScenario = useSimulatorStore((s) => s.loadBuiltInScenario)
   const flowSource = useSimulatorStore((s) => s.flowSource)
+  const showToast = useSimulatorStore((s) => s.showToast)
+  const [linkCopied, setLinkCopied] = useState(false)
   // Built-in scenario registry ids are independent of each YAML's own
   // metadata.id, so match the dropdown selection by source content instead.
   const selectedScenarioId = BUILT_IN_SCENARIOS.find((sc) => sc.source === flowSource)?.id ?? ''
@@ -24,6 +28,18 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  async function shareLink() {
+    if (!flowSource) return
+    const url = await buildShareUrl(flowSource)
+    const ok = await copyToClipboard(url)
+    if (ok) {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 1800)
+    } else {
+      showToast('Could not copy — clipboard access unavailable')
+    }
   }
 
   const accent = sectionAccents.scenario
@@ -62,6 +78,15 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
           className="flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-40 cursor-pointer"
         >
           <Download size={13} /> Export
+        </button>
+        <button
+          type="button"
+          onClick={shareLink}
+          disabled={!flow}
+          className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 disabled:opacity-40 cursor-pointer"
+        >
+          {linkCopied ? <Check size={13} /> : <Link2 size={13} />}
+          {linkCopied ? 'Link copied' : 'Copy share link'}
         </button>
       </div>
     </div>

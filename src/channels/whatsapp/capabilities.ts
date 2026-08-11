@@ -14,6 +14,11 @@ export const whatsappCapabilities: ChannelCapabilities = {
     'input',
     'flight_card',
     'boarding_pass',
+    'location',
+    'otp',
+    'payment_request',
+    'product_catalog',
+    'whatsapp_flow',
   ],
   maxSuggestedReplies: 3,
   maxSuggestedActions: 2,
@@ -22,5 +27,6 @@ export const whatsappCapabilities: ChannelCapabilities = {
   fallbackNotes: {
     rich_card: 'WhatsApp has no standalone rich-card message; rendered using a generic image/text card.',
     carousel: 'WhatsApp has no native swipeable carousel in this simulator; rendered using a generic scrollable card row.',
+    calendar_event: 'WhatsApp has no native calendar-invite card; rendered as a generic card.',
   },
 }

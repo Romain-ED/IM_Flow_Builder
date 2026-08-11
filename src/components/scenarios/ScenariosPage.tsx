@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { BUILT_IN_SCENARIOS } from '../../scenarios'
 import { parseFlowSource, toJsonString, toYamlString } from '../../utils/flowSource'
+import { buildShareUrl, copyToClipboard } from '../../utils/shareLink'
 import { ScenarioCard } from './ScenarioCard'
 import { CustomScenarioEditorModal } from './CustomScenarioEditorModal'
 
@@ -16,6 +17,11 @@ function downloadText(filename: string, content: string, mime: string) {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+async function shareScenario(source: string): Promise<boolean> {
+  const url = await buildShareUrl(source)
+  return copyToClipboard(url)
 }
 
 function exportScenario(name: string, source: string, kind: 'json' | 'yaml') {
@@ -82,6 +88,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                 }
                 onExportJson={() => exportScenario(scenario.name, scenario.source, 'json')}
                 onExportYaml={() => exportScenario(scenario.name, scenario.source, 'yaml')}
+                onShareLink={() => shareScenario(scenario.source)}
               />
             ))}
           </div>
@@ -109,6 +116,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                   onDuplicate={() => duplicateAsCustomScenario(scenario.source, scenario.format, scenario.name)}
                   onExportJson={() => exportScenario(scenario.name, scenario.source, 'json')}
                   onExportYaml={() => exportScenario(scenario.name, scenario.source, 'yaml')}
+                  onShareLink={() => shareScenario(scenario.source)}
                   onDelete={() => setConfirmDeleteId(scenario.id)}
                 />
               ))}

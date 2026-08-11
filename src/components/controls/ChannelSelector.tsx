@@ -1,3 +1,4 @@
+import { Columns3 } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { CHANNEL_OPTIONS } from '../../channels/registry'
 import { channelThemes } from '../../channels/theme'
@@ -7,11 +8,17 @@ import { SectionHeading } from '../common/SectionHeading'
 export function ChannelSelector() {
   const channel = useSimulatorStore((s) => s.channel)
   const setChannel = useSimulatorStore((s) => s.setChannel)
+  const compareMode = useSimulatorStore((s) => s.compareMode)
+  const toggleCompareMode = useSimulatorStore((s) => s.toggleCompareMode)
 
   return (
     <div className="flex flex-col gap-1.5">
       <SectionHeading accent={sectionAccents.channel}>Channel</SectionHeading>
-      <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Channel">
+      <div
+        className={`grid grid-cols-3 gap-1.5 transition-opacity ${compareMode ? 'opacity-40 pointer-events-none' : ''}`}
+        role="radiogroup"
+        aria-label="Channel"
+      >
         {CHANNEL_OPTIONS.map((opt) => {
           const isActive = channel === opt.id
           const accentColor = channelThemes[opt.id].accent
@@ -32,6 +39,19 @@ export function ChannelSelector() {
           )
         })}
       </div>
+      <button
+        type="button"
+        onClick={toggleCompareMode}
+        aria-pressed={compareMode}
+        className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] font-medium border cursor-pointer transition-colors ${
+          compareMode
+            ? 'bg-violet-600 text-white border-violet-600'
+            : 'bg-white text-violet-700 border-violet-200 hover:bg-violet-50'
+        }`}
+      >
+        <Columns3 size={13} />
+        {compareMode ? 'Comparing all channels' : 'Compare all channels'}
+      </button>
     </div>
   )
 }

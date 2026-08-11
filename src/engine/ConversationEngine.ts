@@ -26,8 +26,13 @@ export function nodeHasInteractiveContent(node: FlowNode): boolean {
       case 'list':
       case 'input':
       case 'suggested_actions':
-        return true
       case 'boarding_pass':
+      case 'location':
+      case 'otp':
+      case 'payment_request':
+      case 'calendar_event':
+      case 'product_catalog':
+      case 'whatsapp_flow':
         return true
       case 'rich_card':
         return Boolean(message.actions?.length)

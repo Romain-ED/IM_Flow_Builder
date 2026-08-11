@@ -272,6 +272,72 @@ export const DEFAULT_BOARDING_PASS_ACTIONS: BoardingPassAction[] = [
   { type: 'view', label: 'View boarding pass' },
 ]
 
+export const locationMessageSchema = z.object({
+  type: z.literal('location'),
+  ...messageBase,
+  label: z.string(),
+  address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+})
+
+export const otpMessageSchema = z.object({
+  type: z.literal('otp'),
+  ...messageBase,
+  prompt: z.string().optional(),
+  codeLength: z.number().int().min(4).max(8).optional(),
+  variable: z.string(),
+  next: z.string().optional(),
+})
+
+export const paymentRequestMessageSchema = z.object({
+  type: z.literal('payment_request'),
+  ...messageBase,
+  title: z.string(),
+  description: z.string().optional(),
+  amount: z.string(),
+  next: z.string().optional(),
+  set: variableMapSchema.optional(),
+})
+
+export const calendarEventMessageSchema = z.object({
+  type: z.literal('calendar_event'),
+  ...messageBase,
+  title: z.string(),
+  description: z.string().optional(),
+  startTime: z.string(),
+  endTime: z.string().optional(),
+  location: z.string().optional(),
+  next: z.string().optional(),
+  set: variableMapSchema.optional(),
+})
+
+export const catalogProductSchema = z.object({
+  id: z.string(),
+  image: z.string().optional(),
+  title: z.string(),
+  price: z.string(),
+  description: z.string().optional(),
+})
+export type CatalogProduct = z.infer<typeof catalogProductSchema>
+
+export const productCatalogMessageSchema = z.object({
+  type: z.literal('product_catalog'),
+  ...messageBase,
+  title: z.string().optional(),
+  products: z.array(catalogProductSchema).min(1),
+})
+
+export const whatsappFlowMessageSchema = z.object({
+  type: z.literal('whatsapp_flow'),
+  ...messageBase,
+  title: z.string(),
+  description: z.string().optional(),
+  cta: z.string().optional(),
+  next: z.string().optional(),
+  set: variableMapSchema.optional(),
+})
+
 /** Pseudo-message: pauses the sequence without rendering anything. */
 export const delayMessageSchema = z.object({
   type: z.literal('delay'),
@@ -292,6 +358,12 @@ export const messageSchema = z.discriminatedUnion('type', [
   inputMessageSchema,
   flightCardMessageSchema,
   boardingPassMessageSchema,
+  locationMessageSchema,
+  otpMessageSchema,
+  paymentRequestMessageSchema,
+  calendarEventMessageSchema,
+  productCatalogMessageSchema,
+  whatsappFlowMessageSchema,
   delayMessageSchema,
 ])
 export type Message = z.infer<typeof messageSchema>
