@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.1',
+    date: '2026-08-11',
+    changes: [
+      'Infra: deployed to GitHub Pages via a GitHub Actions workflow that builds and publishes on every push to main.',
+      'Fix: scenario-authored asset paths (brand avatars/logos, message images) now resolve correctly under a sub-path deployment, not just at a domain root.',
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-08-11',
     changes: [

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ImageOff } from 'lucide-react'
+import { assetUrl } from '../../utils/assetUrl'
 
 interface ImageWithFallbackProps {
   src?: string
@@ -27,7 +28,7 @@ export function ImageWithFallback({ src, alt, className = '', style }: ImageWith
 
   return (
     <img
-      src={src}
+      src={assetUrl(src)}
       alt={alt}
       className={className}
       style={style}

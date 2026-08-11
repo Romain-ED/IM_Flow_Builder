@@ -30,6 +30,18 @@ npm run test:watch # run tests in watch mode
 
 Everything runs entirely in the browser — there is no backend. User preferences (channel, fast mode, presenter mode, debug-warning visibility) and the last-loaded scenario (including any edited variables) are persisted to `localStorage`, so a reload picks up where you left off.
 
+## Deployment (GitHub Pages)
+
+Every push to `main` builds and deploys the app to GitHub Pages via `.github/workflows/deploy-pages.yml`, publishing it at:
+
+```
+https://romain-ed.github.io/Vonage_test/
+```
+
+One-time setup (repo admin only, done once): in **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**. After that, deploys are fully automatic — no manual step is needed per release.
+
+Because GitHub Pages serves this as a project site under a sub-path rather than a domain root, production builds set Vite's `base` to `/Vonage_test/` (see `vite.config.ts`); the dev server keeps `base: '/'` so local development is unaffected. Scenario-authored asset paths (`"/assets/logo.svg"` etc.) are resolved against that base at runtime by `src/utils/assetUrl.ts`, used by the two components that ever render an `<img>` (`Avatar`, `ImageWithFallback`) — so custom scenarios you author or import keep working under either a root or a sub-path deployment without any changes.
+
 ## Architecture
 
 ```

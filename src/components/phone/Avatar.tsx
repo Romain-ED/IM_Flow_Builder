@@ -1,5 +1,6 @@
 import { Building2 } from 'lucide-react'
 import { useState } from 'react'
+import { assetUrl } from '../../utils/assetUrl'
 
 interface AvatarProps {
   src?: string
@@ -14,7 +15,7 @@ export function Avatar({ src, name, size = 36 }: AvatarProps) {
   if (src && !errored) {
     return (
       <img
-        src={src}
+        src={assetUrl(src)}
         alt=""
         width={size}
         height={size}
