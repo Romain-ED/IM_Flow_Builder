@@ -11,6 +11,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.3',
+    date: '2026-08-11',
+    changes: [
+      'Fix: GitHub Pages deploys were failing silently on pushes to main because the repo\'s Pages environment only allows deployments from its actual default branch. The workflow now triggers from the correct branch, so pushes deploy automatically again instead of leaving a stale (blank-page) build live.',
+    ],
+  },
+  {
     version: '0.4.2',
     date: '2026-08-11',
     changes: [

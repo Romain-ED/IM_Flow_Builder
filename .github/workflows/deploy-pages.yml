@@ -2,7 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # The repo's GitHub Pages environment only allows deployments from the
+    # repository's actual default branch — not "main" (this repo's default
+    # branch is still the original feature branch it was created on). Both
+    # branches are always kept in sync (main is fast-forwarded to match
+    # after every push), so triggering here is equivalent.
+    branches: [claude/messaging-flow-simulator-wboec4]
   workflow_dispatch:
 
 permissions:
