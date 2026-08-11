@@ -85,10 +85,20 @@ export function computeNodePlan(
       continue
     }
 
+    if (entry.type === 'typing') {
+      const interpolated = deepInterpolate(entry, effectiveVariables)
+      const duration = interpolated.duration ?? typingDefault
+      if (duration > 0) steps.push({ kind: 'typing', durationMs: duration })
+      continue
+    }
+
     const interpolated = deepInterpolate(entry, effectiveVariables)
     const sender = interpolated.sender ?? 'business'
 
-    if (sender === 'business' && interpolated.showTyping !== false) {
+    // A `system_action` is a local simulator notice, not a business chat
+    // message, so it never gets the automatic "business is typing" beat —
+    // authors can still place an explicit `typing` message before it.
+    if (interpolated.type !== 'system_action' && sender === 'business' && interpolated.showTyping !== false) {
       const typingMs = interpolated.typingMs ?? typingDefault
       if (typingMs > 0) steps.push({ kind: 'typing', durationMs: typingMs })
     }

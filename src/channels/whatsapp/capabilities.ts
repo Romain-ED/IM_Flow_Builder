@@ -19,6 +19,7 @@ export const whatsappCapabilities: ChannelCapabilities = {
     'payment_request',
     'product_catalog',
     'whatsapp_flow',
+    'system_action',
   ],
   maxSuggestedReplies: 3,
   maxSuggestedActions: 2,

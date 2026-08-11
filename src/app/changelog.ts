@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.3.0',
+    date: '2026-08-11',
+    changes: [
+      'New: `system_action` message type — a compact, centered simulator notice (e.g. "Boarding pass downloaded", "Added to wallet") that is visually distinct from business/user chat bubbles.',
+      'New: `typing` message type — an explicit, standalone typing-indicator beat authors can place anywhere in a flow (e.g. before a system_action), reduced in Fast demo mode like every other pause.',
+      'Updated: the Singapore Airlines demo scenario now uses both new message types for its boarding-pass download and add-to-wallet confirmations.',
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-08-11',
     changes: [

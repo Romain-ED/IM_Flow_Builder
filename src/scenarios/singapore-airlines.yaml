@@ -6,13 +6,13 @@
 version: "1.0"
 
 metadata:
-  id: singapore-airlines-checkin
-  name: "Airline check-in & digital boarding pass"
+  id: singapore-airlines-boarding-pass
+  name: "Singapore Airlines — Check-in & Boarding Pass"
   description: >-
-    Proactive check-in reminder through seat selection to a digital boarding
-    pass, inspired by an airline's RCS/WhatsApp business messaging journey.
+    Interactive airline check-in journey demonstrating RCS/WhatsApp rich
+    messaging, seat selection and boarding-pass delivery.
   channel: rcs
-  tags: [airline, travel, boarding-pass, demo]
+  tags: [airline, travel, check-in, boarding-pass, demo]
 
 brand:
   name: "Singapore Airlines (Demo)"
@@ -24,7 +24,7 @@ brand:
   supportPhone: "+65 6223 8888"
 
 defaults:
-  messageDelayMs: 500
+  messageDelayMs: 600
   typingDurationMs: 900
   locale: en-SG
   timezone: Asia/Singapore
@@ -32,353 +32,439 @@ defaults:
 
 variables:
   customerName: Romain
-  passengerName: Romain Martin
+  lastName: Martin
+  bookingReference: ABC123
   flightNumber: SQ634
-  airline: Singapore Airlines
-  aircraftType: Airbus A350-900
+  aircraft: Airbus A350-900
+
   originCode: SIN
   originCity: Singapore
+  originAirport: Singapore Changi Airport
+
   destinationCode: HND
-  destinationCity: Tokyo Haneda
+  destinationCity: Tokyo
+  destinationAirport: Tokyo Haneda Airport
+
+  departureDate: 13 August 2026
   departureTime: "09:20"
   arrivalTime: "17:05"
-  flightDate: 13 Aug 2026
-  terminal: Terminal 3
+  terminal: "3"
   gate: B7
+
   boardingTime: "08:35"
-  bookingReference: ABC123
-  seat: ""
-  seatType: ""
-  cabinClass: Economy
-  boardingGroup: "3"
-  loyaltyStatus: KrisFlyer Gold
-  frequentFlyerNumber: KF778812
-  supportPhone: "+65 6223 8888"
+  seat: null
+  cabin: Economy
+
+  krisFlyerStatus: Gold
+  krisFlyerNumber: KF12345678
+
   checkedIn: false
-  enteredReference: ""
-  enteredOtp: ""
 
 start: welcome
 
 nodes:
+  # --------------------------------------------------
+  # WELCOME
+  # --------------------------------------------------
   - id: welcome
     messages:
       - type: text
-        text: "Good morning {{customerName}}.\n\nYour flight {{flightNumber}} to {{destinationCity}} departs in 2 days.\n\nOnline check-in is now available."
-    actions:
-      - label: Check in
-        next: check_in_router
-      - label: View booking
-        next: view_booking
-      - label: Manage booking
-        next: manage_booking_menu
-      - label: Not now
-        next: not_now
+        sender: business
+        text: |
+          Good morning {{customerName}} 👋
 
-  - id: view_booking
-    messages:
-      - type: flight_card
-        airline: "{{airline}}"
-        flightNumber: "{{flightNumber}}"
-        origin: { code: "{{originCode}}", city: "{{originCity}}" }
-        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
-        departureTime: "{{departureTime}}"
-        arrivalTime: "{{arrivalTime}}"
-        date: "{{flightDate}}"
-        terminal: "{{terminal}}"
-        gate: "{{gate}}"
-        bookingReference: "{{bookingReference}}"
-        status: On time
-      - type: document
-        filename: "Itinerary-{{flightNumber}}.pdf"
-        title: Your e-ticket
-        description: "{{originCity}} → {{destinationCity}}"
-        fileType: PDF
-      - type: text
-        text: "Would you like to check in now?"
-    actions:
-      - label: Check in
-        next: check_in_router
-      - label: Not now
-        next: not_now
+          Your flight {{flightNumber}} to {{destinationCity}} departs in 2 days.
 
-  - id: manage_booking_menu
-    messages:
-      - type: list
-        title: Manage your booking
-        buttonLabel: View options
-        sections:
-          - title: Flight
-            rows:
-              - id: seat
-                title: Choose seat
-                description: View available seats
-                next: seat_selection
-              - id: aircraft
-                title: About the aircraft
-                description: "{{aircraftType}}"
-                next: aircraft_info
-              - id: reference
-                title: Enter booking reference
-                description: Look up a different booking
-                next: lookup_reference
-              - id: terminal
-                title: Terminal & check-in location
-                description: Find your check-in counter
-                next: terminal_location
-          - title: Support
-            rows:
-              - id: call
-                title: Contact support
-                description: Speak to our customer care team
-                next: call_support
+          Online check-in is now available.
       - type: suggested_replies
+        sender: business
         options:
           - label: Check in
-            next: check_in_router
-          - label: Back to start
-            next: welcome
+            value: check_in
+            next: check_in_intro
+          - label: View booking
+            value: view_booking
+            next: booking_details
+          - label: Not now
+            value: not_now
+            next: not_now
 
-  - id: aircraft_info
-    messages:
-      - type: image
-        url: "/assets/aircraft-a350.svg"
-        alt: "Airbus A350-900"
-        caption: "Your aircraft today: {{aircraftType}}"
-      - type: video
-        thumbnailUrl: "/assets/video-thumb-cabin.svg"
-        caption: Cabin tour
-        durationLabel: "0:45"
-      - type: rich_card
-        image: "/assets/tokyo.svg"
-        title: "Flying to {{destinationCity}}"
-        description: "Discover Tokyo with {{airline}}."
-        mediaHeight: medium
-        actions:
-          - type: open_url
-            label: Explore Tokyo guide
-            url: "https://www.singaporeair.com"
-    actions:
-      - label: Back to menu
-        next: manage_booking_menu
-      - label: Check in
-        next: check_in_router
-
-  - id: terminal_location
-    messages:
-      - type: location
-        label: "{{airline}} Check-in, {{terminal}}"
-        address: "Singapore Changi Airport, {{terminal}}"
-    actions:
-      - label: Back to menu
-        next: manage_booking_menu
-
-  - id: lookup_reference
-    messages:
-      - type: input
-        inputType: text
-        placeholder: Enter booking reference
-        submitLabel: Submit
-        variable: enteredReference
-        next: reference_result
-
-  - id: reference_result
-    messages:
-      - type: text
-        text: "Thanks. Reference {{enteredReference}} matches booking {{bookingReference}} for {{passengerName}}."
-    actions:
-      - label: Back to menu
-        next: manage_booking_menu
-
-  - id: call_support
-    messages:
-      - type: text
-        text: "You can reach {{airline}} customer care any time."
-      - type: suggested_actions
-        actions:
-          - type: call
-            label: Call support
-            phoneNumber: "{{supportPhone}}"
-          - type: open_url
-            label: Visit help center
-            url: "https://www.singaporeair.com/help"
-    actions:
-      - label: Back to menu
-        next: manage_booking_menu
-
+  # --------------------------------------------------
+  # NOT NOW
+  # --------------------------------------------------
   - id: not_now
     messages:
       - type: text
-        text: "No problem, {{customerName}}. We'll remind you before your flight. ✈️"
-      - type: delay
-        duration: 900
-      - type: text
-        sender: user
-        text: "Thanks!"
-      - type: delay
-        duration: 500
-      - type: text
-        text: "You're welcome. Safe travels! 🛫"
-    end: true
+        sender: business
+        text: |
+          No problem.
 
-  - id: check_in_router
-    condition:
-      variable: checkedIn
-      operator: equals
-      value: true
-    then: already_checked_in
-    else: check_in_intro
+          You can check in anytime before online check-in closes.
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Check in now
+            next: check_in_intro
+          - label: Flight details
+            next: booking_details
 
-  - id: already_checked_in
-    messages:
-      - type: text
-        text: "You're already checked in, {{customerName}}! Your seat is {{seat}}."
-    actions:
-      - label: View boarding pass
-        next: check_in_success
-      - label: Back to start
-        next: welcome
-
-  - id: check_in_intro
+  # --------------------------------------------------
+  # BOOKING DETAILS
+  # --------------------------------------------------
+  - id: booking_details
     messages:
       - type: flight_card
-        airline: "{{airline}}"
+        sender: business
+        airline: Singapore Airlines
         flightNumber: "{{flightNumber}}"
         origin: { code: "{{originCode}}", city: "{{originCity}}" }
         destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
+        date: "{{departureDate}}"
         departureTime: "{{departureTime}}"
         arrivalTime: "{{arrivalTime}}"
-        date: "{{flightDate}}"
         terminal: "{{terminal}}"
         gate: "{{gate}}"
         bookingReference: "{{bookingReference}}"
-        status: On time
-      - type: text
-        text: "Ready to check in for {{flightNumber}}?"
-    actions:
-      - label: Continue
-        next: confirm_passenger
-      - label: Choose seat
-        next: seat_selection
-      - label: Cancel
-        next: not_now
+        status: Check-in available
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Check in
+            next: check_in_intro
+          - label: Choose seat
+            next: seat_selection
+          - label: Back
+            next: welcome
 
-  - id: confirm_passenger
+  # --------------------------------------------------
+  # CHECK-IN INTRO
+  # --------------------------------------------------
+  - id: check_in_intro
+    messages:
+      - type: typing
+        duration: 700
+      - type: text
+        sender: business
+        text: |
+          Let's get you checked in for {{flightNumber}}.
+      - type: flight_card
+        sender: business
+        airline: Singapore Airlines
+        flightNumber: "{{flightNumber}}"
+        origin: { code: "{{originCode}}", city: "{{originCity}}" }
+        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
+        date: "{{departureDate}}"
+        departureTime: "{{departureTime}}"
+        arrivalTime: "{{arrivalTime}}"
+        terminal: "{{terminal}}"
+      - type: text
+        sender: business
+        text: |
+          Passenger
+
+          {{customerName}} {{lastName}}
+
+          KrisFlyer {{krisFlyerStatus}}
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Continue
+            next: check_in_options
+          - label: Cancel
+            next: welcome
+
+  # --------------------------------------------------
+  # CHECK-IN OPTIONS
+  # --------------------------------------------------
+  - id: check_in_options
     messages:
       - type: text
-        text: "Confirming passenger {{passengerName}} for {{flightNumber}}. Is this correct?"
-    actions:
-      - label: "Yes, that's me"
-        next: verify_identity
-      - label: Cancel
-        next: not_now
+        sender: business
+        text: |
+          Before completing check-in, would you like to select your seat?
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Choose seat
+            next: seat_selection
+          - label: Keep assigned seat
+            set: { seat: 24C }
+            next: check_in_processing
 
-  - id: verify_identity
-    messages:
-      - type: text
-        text: "For your security, we've sent a one-time code to your registered number."
-      - type: otp
-        prompt: "Enter the 6-digit verification code"
-        variable: enteredOtp
-        next: seat_selection
-
+  # --------------------------------------------------
+  # SEAT SELECTION
+  # --------------------------------------------------
   - id: seat_selection
     messages:
       - type: text
-        text: "Choose your seat:"
+        sender: business
+        text: |
+          Here are some available seats for {{flightNumber}}.
       - type: carousel
+        sender: business
         cards:
           - id: seat-21a
-            image: "/assets/seat-window.svg"
             title: 21A
-            subtitle: Window
-            description: Available
-            badges: [Window]
+            subtitle: Window seat
+            description: |
+              Economy Class
+
+              Window
+              Standard seat
+            badges: [Available, Window]
             actions:
               - type: reply
                 label: Select 21A
-                next: seat_confirmed
-                set: { seat: 21A, seatType: "Window seat" }
+                set: { seat: 21A }
+                next: seat_selected
           - id: seat-21c
-            image: "/assets/seat-aisle.svg"
             title: 21C
-            subtitle: Aisle
-            description: Available
-            badges: [Aisle]
+            subtitle: Aisle seat
+            description: |
+              Economy Class
+
+              Aisle
+              Standard seat
+            badges: [Available, Aisle]
             actions:
               - type: reply
                 label: Select 21C
-                next: seat_confirmed
-                set: { seat: 21C, seatType: "Aisle seat" }
+                set: { seat: 21C }
+                next: seat_selected
           - id: seat-32a
-            image: "/assets/seat-legroom.svg"
             title: 32A
-            subtitle: Window
-            description: Extra legroom
-            price: "+SGD 35"
+            subtitle: Extra legroom
+            description: |
+              Economy Class
+
+              Window
+              Extra legroom
+
+              SGD 65
             badges: [Window, Extra legroom]
             actions:
               - type: reply
                 label: Select 32A
-                next: seat_confirmed
-                set: { seat: 32A, seatType: "Window seat, extra legroom" }
-    actions:
-      - label: Cancel
-        next: not_now
+                set: { seat: 32A, seatUpgradePrice: 65 }
+                next: extra_legroom_confirmation
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Keep current seat
+            set: { seat: 24C }
+            next: check_in_processing
 
-  - id: seat_confirmed
+  # --------------------------------------------------
+  # EXTRA LEGROOM
+  # --------------------------------------------------
+  - id: extra_legroom_confirmation
     messages:
       - type: text
-        text: "{{seat}} selected.\n\n{{seatType}}\n{{cabinClass}} Class"
+        sender: business
+        text: |
+          Seat 32A is an extra-legroom window seat.
+
+          Additional charge: SGD {{seatUpgradePrice}}
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Confirm 32A
+            next: seat_selected
+          - label: Choose another
+            next: seat_selection
+
+  # --------------------------------------------------
+  # SEAT CONFIRMATION
+  # --------------------------------------------------
+  - id: seat_selected
+    messages:
+      - type: text
+        sender: business
+        text: |
+          {{seat}} selected ✓
+
+          Your seat will be confirmed when check-in is completed.
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Complete check-in
+            next: check_in_processing
+          - label: Change seat
+            next: seat_selection
+
+  # --------------------------------------------------
+  # PROCESS CHECK-IN
+  # --------------------------------------------------
+  - id: check_in_processing
+    messages:
+      - type: typing
+        duration: 1200
+      - type: text
+        sender: business
+        text: |
+          Checking you in…
+      - type: delay
+        duration: 1200
     next: check_in_success
 
+  # --------------------------------------------------
+  # CHECK-IN SUCCESS
+  # --------------------------------------------------
   - id: check_in_success
     set:
       checkedIn: true
     messages:
       - type: text
-        text: "You're checked in, {{customerName}}.\n\nYour boarding pass is ready."
+        sender: business
+        text: |
+          You're checked in, {{customerName}} ✓
+
+          Your boarding pass for {{flightNumber}} is ready.
       - type: delay
         duration: 700
       - type: boarding_pass
-        passengerName: "{{passengerName}}"
-        airline: "{{airline}}"
+        sender: business
+        passengerName: "{{customerName}} {{lastName}}"
+        frequentFlyerNumber: "{{krisFlyerNumber}}"
+        frequentFlyerStatus: "{{krisFlyerStatus}}"
+        airline: Singapore Airlines
+        airlineLogo: "/assets/brand-logo.svg"
         flightNumber: "{{flightNumber}}"
-        date: "{{flightDate}}"
+        date: "{{departureDate}}"
         origin: { code: "{{originCode}}", city: "{{originCity}}" }
         destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
         departureTime: "{{departureTime}}"
         boardingTime: "{{boardingTime}}"
-        gate: "{{gate}}"
         terminal: "{{terminal}}"
+        gate: "{{gate}}"
         seat: "{{seat}}"
-        boardingGroup: "{{boardingGroup}}"
+        boardingGroup: "Group 3"
+        cabinClass: "{{cabin}}"
         bookingReference: "{{bookingReference}}"
-        cabinClass: "{{cabinClass}}"
-        frequentFlyerNumber: "{{frequentFlyerNumber}}"
-        frequentFlyerStatus: "{{loyaltyStatus}}"
         actions:
           - type: download
             label: Download boarding pass
-            next: post_download
+            next: boarding_pass_downloaded
           - type: add_to_wallet
             label: Add to wallet
-          - type: view
-            label: View boarding pass
+            next: wallet_added
+          - type: reply
+            label: Flight details
+            next: checked_in_flight_details
 
-  - id: post_download
+  # --------------------------------------------------
+  # DOWNLOAD
+  # --------------------------------------------------
+  - id: boarding_pass_downloaded
+    messages:
+      - type: system_action
+        action: download
+        title: Boarding pass downloaded
+        description: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
+      - type: text
+        sender: business
+        text: |
+          Your boarding pass has been saved to your device.
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Flight details
+            next: checked_in_flight_details
+          - label: Add to wallet
+            next: wallet_added
+          - label: Done
+            next: final_message
+
+  # --------------------------------------------------
+  # WALLET
+  # --------------------------------------------------
+  - id: wallet_added
+    messages:
+      - type: system_action
+        action: wallet
+        title: Added to wallet
+        description: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
+      - type: text
+        sender: business
+        text: |
+          Your boarding pass has been added to your wallet.
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Flight details
+            next: checked_in_flight_details
+          - label: Done
+            next: final_message
+
+  # --------------------------------------------------
+  # CHECKED-IN FLIGHT DETAILS
+  # --------------------------------------------------
+  - id: checked_in_flight_details
+    messages:
+      - type: flight_card
+        sender: business
+        airline: Singapore Airlines
+        flightNumber: "{{flightNumber}}"
+        origin: { code: "{{originCode}}", city: "{{originCity}}" }
+        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
+        date: "{{departureDate}}"
+        departureTime: "{{departureTime}}"
+        arrivalTime: "{{arrivalTime}}"
+        terminal: "{{terminal}}"
+        gate: "{{gate}}"
+        status: Checked in
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Boarding pass
+            next: show_boarding_pass_again
+          - label: Done
+            next: final_message
+
+  # --------------------------------------------------
+  # BOARDING PASS AGAIN
+  # --------------------------------------------------
+  - id: show_boarding_pass_again
+    messages:
+      - type: boarding_pass
+        sender: business
+        passengerName: "{{customerName}} {{lastName}}"
+        frequentFlyerNumber: "{{krisFlyerNumber}}"
+        frequentFlyerStatus: "{{krisFlyerStatus}}"
+        airline: Singapore Airlines
+        airlineLogo: "/assets/brand-logo.svg"
+        flightNumber: "{{flightNumber}}"
+        date: "{{departureDate}}"
+        origin: { code: "{{originCode}}", city: "{{originCity}}" }
+        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
+        departureTime: "{{departureTime}}"
+        boardingTime: "{{boardingTime}}"
+        terminal: "{{terminal}}"
+        gate: "{{gate}}"
+        seat: "{{seat}}"
+        boardingGroup: "Group 3"
+        cabinClass: "{{cabin}}"
+        bookingReference: "{{bookingReference}}"
+        actions:
+          - type: download
+            label: Download
+          - type: add_to_wallet
+            label: Add to wallet
+          - type: reply
+            label: Done
+            next: final_message
+
+  # --------------------------------------------------
+  # END
+  # --------------------------------------------------
+  - id: final_message
     messages:
       - type: text
-        text: "Boarding pass saved.\n\nWe'll send you another message if your gate or flight status changes.\n\nHave a pleasant flight."
+        sender: business
+        text: |
+          You're all set, {{customerName}}.
+
+          We'll let you know here if there are any changes to your flight or gate.
+
+          Have a pleasant flight to {{destinationCity}} ✈️
     end: true
-
-  - id: gate_change_reminder
-    label: "(Demo) Proactive gate change notification"
-    messages:
-      - type: text
-        text: "Update on {{flightNumber}}: your gate has changed to {{gate}}. Please proceed to the new gate at least 30 minutes before boarding."
-    actions:
-      - label: View boarding pass
-        next: check_in_success
-      - label: Back to start
-        next: welcome

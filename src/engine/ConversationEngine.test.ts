@@ -108,6 +108,56 @@ describe('computeNodePlan', () => {
     expect(plan.outcome.kind).toBe('error')
   })
 
+  it('turns a "typing" pseudo-message into a typing step, not a message step', () => {
+    const flow = flowWith([
+      { id: 'a', messages: [{ type: 'typing', duration: 700 }, { type: 'text', text: 'Hi' }], end: true },
+    ])
+    const plan = computeNodePlan(flow, 'a', {})
+    expect(plan.steps.filter((s) => s.kind === 'message')).toHaveLength(1)
+    const typingSteps = plan.steps.filter((s) => s.kind === 'typing')
+    expect(typingSteps[0]).toEqual({ kind: 'typing', durationMs: 700 })
+  })
+
+  it('falls back to the typing default duration when "typing" omits one', () => {
+    const flow = flowWith([{ id: 'a', messages: [{ type: 'typing' }], end: true }])
+    const plan = computeNodePlan(flow, 'a', {})
+    expect(plan.steps[0]).toEqual({ kind: 'typing', durationMs: 10 })
+  })
+
+  it('does not show the automatic typing indicator before a system_action', () => {
+    const flow = flowWith([
+      { id: 'a', messages: [{ type: 'system_action', action: 'download', title: 'Saved' }], end: true },
+    ])
+    const plan = computeNodePlan(flow, 'a', {})
+    expect(plan.steps.some((s) => s.kind === 'typing')).toBe(false)
+    const messageStep = plan.steps.find((s) => s.kind === 'message')
+    expect(messageStep && messageStep.kind === 'message' && messageStep.message.message).toMatchObject({
+      type: 'system_action',
+      action: 'download',
+      title: 'Saved',
+    })
+  })
+
+  it('interpolates variables inside a system_action title/description', () => {
+    const flow = flowWith(
+      [
+        {
+          id: 'a',
+          messages: [
+            { type: 'system_action', action: 'wallet', title: 'Added to wallet', description: '{{flightNumber}}' },
+          ],
+          end: true,
+        },
+      ],
+      { flightNumber: 'SQ634' },
+    )
+    const plan = computeNodePlan(flow, 'a', flow.variables ?? {})
+    const messageStep = plan.steps.find((s) => s.kind === 'message')
+    expect(messageStep && messageStep.kind === 'message' && messageStep.message.message).toMatchObject({
+      description: 'SQ634',
+    })
+  })
+
   it('applies node-level "set" to variables used for interpolation', () => {
     const flow = flowWith([
       { id: 'a', set: { seat: '21A' }, messages: [{ type: 'text', text: 'Seat {{seat}}' }], end: true },

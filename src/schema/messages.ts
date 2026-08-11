@@ -345,6 +345,44 @@ export const delayMessageSchema = z.object({
   duration: z.number().nonnegative(),
 })
 
+/**
+ * Pseudo-message: shows the channel-appropriate typing indicator for
+ * `duration` ms, then disappears. Unlike the automatic per-message typing
+ * indicator (`typingMs`/`showTyping` on `messageBase`), this is an explicit,
+ * standalone beat an author can place anywhere in `messages` — e.g. before a
+ * `system_action`, which suppresses the automatic indicator since it isn't a
+ * business chat message. Never stored in conversation history.
+ */
+export const typingMessageSchema = z.object({
+  type: z.literal('typing'),
+  id: z.string().optional(),
+  duration: z.number().nonnegative().optional(),
+})
+
+export const systemActionKindSchema = z.enum([
+  'download',
+  'wallet',
+  'open_url',
+  'copy',
+  'calendar',
+  'generic',
+])
+export type SystemActionKind = z.infer<typeof systemActionKindSchema>
+
+/**
+ * A compact, simulator-side confirmation notice (e.g. "Boarding pass
+ * downloaded") rendered as a centered system event rather than a business or
+ * user chat bubble — it represents something the local simulator did, not an
+ * actual RCS/WhatsApp message.
+ */
+export const systemActionMessageSchema = z.object({
+  type: z.literal('system_action'),
+  ...messageBase,
+  action: systemActionKindSchema,
+  title: z.string(),
+  description: z.string().optional(),
+})
+
 export const messageSchema = z.discriminatedUnion('type', [
   textMessageSchema,
   imageMessageSchema,
@@ -364,13 +402,15 @@ export const messageSchema = z.discriminatedUnion('type', [
   calendarEventMessageSchema,
   productCatalogMessageSchema,
   whatsappFlowMessageSchema,
+  systemActionMessageSchema,
   delayMessageSchema,
+  typingMessageSchema,
 ])
 export type Message = z.infer<typeof messageSchema>
 export type MessageType = Message['type']
 
-/** Messages that actually render a bubble (i.e. everything except `delay`). */
-export type RenderableMessage = Exclude<Message, { type: 'delay' }>
+/** Messages that actually render a bubble (i.e. everything except the `delay`/`typing` pseudo-messages). */
+export type RenderableMessage = Exclude<Message, { type: 'delay' } | { type: 'typing' }>
 
 /** Message types that pause the flow awaiting a user interaction. */
 export const INLINE_INTERACTIVE_TYPES = [

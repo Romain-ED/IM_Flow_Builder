@@ -23,6 +23,7 @@ import { PaymentRequestMessage } from './PaymentRequestMessage'
 import { CalendarEventMessage } from './CalendarEventMessage'
 import { ProductCatalogMessage } from './ProductCatalogMessage'
 import { WhatsappFlowMessage } from './WhatsappFlowMessage'
+import { SystemActionMessage } from './SystemActionMessage'
 import { AlertTriangle } from 'lucide-react'
 
 interface MessageRendererProps {
@@ -101,6 +102,8 @@ function renderContent(
       return <ProductCatalogMessage message={message} channel={channel} interactive={interactive} />
     case 'whatsapp_flow':
       return <WhatsappFlowMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
+    case 'system_action':
+      return <SystemActionMessage message={message} />
     default:
       return null
   }

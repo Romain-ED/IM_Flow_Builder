@@ -201,7 +201,9 @@ A **node** can: play one or more messages in sequence (with per-message `delayMs
 | `calendar_event` | rich calendar-invite card with "Add to calendar" |
 | `product_catalog` | horizontally scrollable products, each with "Add to cart" (simulated) |
 | `whatsapp_flow` | placeholder card for an embedded WhatsApp Flow, with a configurable CTA |
+| `system_action` | compact, centered simulator notice (e.g. "Boarding pass downloaded") — not a business/user chat bubble |
 | `delay` | pseudo-message: pause without rendering anything |
+| `typing` | pseudo-message: shows the typing indicator for `duration` ms, then disappears — never stored in history |
 
 Messages can be authored with `"sender": "user"` for scripted autoplay lines, in addition to the normal `"sender": "business"` (the default).
 

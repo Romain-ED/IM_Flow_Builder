@@ -119,6 +119,8 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
               ['calendar_event', 'A rich calendar-invite card (title, time, location) with "Add to calendar".'],
               ['product_catalog', 'A horizontally scrollable row of products, each with its own "Add to cart" (simulated, no real cart state).'],
               ['whatsapp_flow', 'A placeholder card representing an embedded WhatsApp Flow, with a configurable CTA that simulates completion.'],
+              ['system_action', 'A compact, centered simulator notice (e.g. "Boarding pass downloaded") — not a business or user chat bubble. Suppresses the automatic typing indicator.'],
+              ['typing', 'Pseudo-message: shows the typing indicator for duration ms, then disappears — never stored in history. Useful before a system_action.'],
               ['delay', 'Pseudo-message: pause without rendering anything.'],
             ]}
           />

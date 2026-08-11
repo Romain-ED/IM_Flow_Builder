@@ -19,6 +19,7 @@ export const rcsCapabilities: ChannelCapabilities = {
     'location',
     'otp',
     'calendar_event',
+    'system_action',
   ],
   maxSuggestedReplies: 11,
   maxSuggestedActions: 4,

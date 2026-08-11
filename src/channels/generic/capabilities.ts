@@ -23,6 +23,7 @@ export const genericCapabilities: ChannelCapabilities = {
     'calendar_event',
     'product_catalog',
     'whatsapp_flow',
+    'system_action',
   ],
   maxSuggestedReplies: 8,
   maxSuggestedActions: 6,
