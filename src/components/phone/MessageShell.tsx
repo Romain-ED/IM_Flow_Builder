@@ -29,16 +29,23 @@ export function MessageShell({
 
   const bubbleClasses =
     chrome === 'bubble'
-      ? `${theme.bubbleRadius} px-3.5 py-2.5 ${isUser ? theme.userBubble : theme.businessBubble} max-w-[82%]`
+      ? `${theme.bubbleRadius} px-3.5 py-2.5 ${isUser ? theme.userBubble : theme.businessBubble}`
       : chrome === 'card'
-        ? `${theme.cardRadius} overflow-hidden bg-white border border-slate-200 shadow-sm max-w-[86%]`
+        ? `${theme.cardRadius} overflow-hidden bg-white border border-slate-200 shadow-sm`
         : ''
+
+  // The width cap lives on this flex item (not on the bubble div inside it):
+  // percentages on a flex item's max-width resolve against the row's own
+  // definite width, whereas a percentage on a plain block child resolves
+  // against its parent's — here indeterminate — width and silently fails to
+  // constrain anything, letting long messages overflow the phone frame.
+  const wrapperMaxWidth = chrome === 'bubble' ? 'max-w-[82%]' : chrome === 'card' ? 'max-w-[86%]' : 'max-w-full'
 
   return (
     <div
       className={`flex w-full animate-message-in ${isUser ? 'justify-end' : 'justify-start'} ${!interactive ? 'opacity-60' : ''} ${className}`}
     >
-      <div className="flex flex-col gap-1" style={{ maxWidth: chrome === 'none' ? '100%' : undefined }}>
+      <div className={`flex flex-col gap-1 shrink-0 ${wrapperMaxWidth}`}>
         <div className={bubbleClasses}>{children}</div>
         {timestampLabel && (
           <div
