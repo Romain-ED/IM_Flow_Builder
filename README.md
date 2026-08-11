@@ -246,6 +246,20 @@ The conversation engine needs no changes — `computeNodePlan` interpolates and 
 
 Each channel declares which message types it natively supports in `capabilities.ts` (kept out of React entirely). When a scenario uses a type a channel doesn't support, the simulator still renders a reasonable generic approximation and — outside Presenter Mode, when "Show capability warnings" is on — shows a small inline note explaining the fallback.
 
+The same file also declares each channel's real structural limits, sourced from Meta's WhatsApp Cloud API docs and Google's RCS Business Messaging spec, and `getCapabilityWarning` checks authored content against them at render time (same inline-note mechanism):
+
+| Limit | WhatsApp | RCS |
+|---|---|---|
+| Suggested-reply chips per message | 3 | 11 |
+| Suggested-action buttons per message | 3 | 4 per rich card |
+| Button/chip label length | 20 chars | 25 chars |
+| List rows (total, across all sections) | 10 | — *(RCS has no native list; see below)* |
+| List row title length | 24 chars | — |
+| Carousel cards | up to 10 | 2–10 (a single card sends as a standalone rich card) |
+| Rich card title / description length | — *(no native rich card)* | 200 / 2000 chars |
+
+RCS's real content model is text, an uploaded file, or a rich card (standalone or in a carousel) — there's no native list/menu picker like WhatsApp's, so `list` intentionally falls back to a stacked-option rich card on that channel rather than being marked as supported.
+
 ## Known limitations
 
 - This is a front-end prototype: there is no real messaging delivery, no backend, and no persistence beyond `localStorage`.

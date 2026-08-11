@@ -1,7 +1,7 @@
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { channelCapabilities } from '../channels/registry'
-import { getFallbackNote, isMessageTypeSupported } from '../channels/capabilities'
+import { getFallbackNote, getCapabilityWarning, isMessageTypeSupported } from '../channels/capabilities'
 import { isMessageInteractive } from '../utils/selectors'
 import { useSimulatorStore } from '../store/simulatorStore'
 import { formatTime } from '../utils/time'
@@ -42,6 +42,12 @@ export function MessageRenderer({ message, channel }: MessageRendererProps) {
   const capabilities = channelCapabilities[channel]
   const supported = isMessageTypeSupported(capabilities, message.message.type)
   const showFallbackNote = !supported && debugWarningsEnabled && !presenterMode
+  // Only worth checking real structural limits (button counts, label
+  // lengths, carousel size...) when the channel natively renders this type —
+  // a message already falling back to a generic component isn't subject to
+  // the native platform's constraints in the first place.
+  const capabilityWarning = supported ? getCapabilityWarning(capabilities, message.message) : null
+  const showCapabilityWarning = Boolean(capabilityWarning) && debugWarningsEnabled && !presenterMode
   const timestampLabel = showTimestamps ? formatTime(message.timestamp, locale) : undefined
   const deliveryState = message.message.sender === 'user' ? 'read' : undefined
 
@@ -51,6 +57,12 @@ export function MessageRenderer({ message, channel }: MessageRendererProps) {
         <div className="flex items-start gap-1.5 pl-1 text-[11px] text-amber-700 max-w-[86%]">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />
           <span>{getFallbackNote(capabilities, message.message.type)}</span>
+        </div>
+      )}
+      {showCapabilityWarning && (
+        <div className="flex items-start gap-1.5 pl-1 text-[11px] text-amber-700 max-w-[86%]">
+          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+          <span>{capabilityWarning}</span>
         </div>
       )}
       {renderContent(message, channel, interactive, timestampLabel, deliveryState)}

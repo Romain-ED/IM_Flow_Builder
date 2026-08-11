@@ -129,6 +129,19 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
             variables, recursively applied to every string field in a message. There is no expression language and
             nothing is ever evaluated as code.
           </P>
+
+          <h3 className="text-[13.5px] font-semibold text-slate-800 mt-4 mb-1">Real platform limits</h3>
+          <P>
+            Beyond which types render natively, each channel's structural limits are modeled against the real
+            platform spec — Meta's WhatsApp Cloud API docs and Google's RCS Business Messaging API — and checked live
+            against authored content (same inline-note mechanism as the fallback warnings above).
+          </P>
+          <PlatformLimitsTable />
+          <P>
+            RCS's real content model is text, an uploaded file, or a rich card (standalone or in a carousel) — there
+            is no native list/menu picker the way WhatsApp has one, so <code>list</code> intentionally falls back to
+            a stacked-option rich card on RCS rather than being treated as natively supported.
+          </P>
         </Section>
 
         <Section id="architecture" title="Technical architecture" accent="teal">
@@ -241,6 +254,41 @@ function ParamTable({ rows }: { rows: [string, string][] }) {
           <span className="text-[12.5px] text-slate-600 leading-relaxed">{desc}</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+const PLATFORM_LIMITS: [string, string, string][] = [
+  ['Suggested-reply chips per message', '3', '11'],
+  ['Suggested-action buttons per message', '3', '4 per rich card'],
+  ['Button/chip label length', '20 chars', '25 chars'],
+  ['List rows (total, all sections)', '10', '— (no native list)'],
+  ['List row title length', '24 chars', '—'],
+  ['Carousel cards', 'up to 10', '2–10'],
+  ['Rich card title / description', '— (no native rich card)', '200 / 2000 chars'],
+]
+
+function PlatformLimitsTable() {
+  return (
+    <div className="rounded-lg border border-slate-200 overflow-hidden overflow-x-auto thin-scrollbar">
+      <table className="w-full text-[12px] border-collapse min-w-[420px]">
+        <thead>
+          <tr className="bg-slate-50 border-b border-slate-200">
+            <th className="text-left font-semibold text-slate-500 px-3 py-2">Limit</th>
+            <th className="text-left font-semibold text-slate-500 px-3 py-2">WhatsApp</th>
+            <th className="text-left font-semibold text-slate-500 px-3 py-2">RCS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {PLATFORM_LIMITS.map(([limit, wa, rcs], i) => (
+            <tr key={limit} className={`${i > 0 ? 'border-t border-slate-100' : ''} ${i % 2 === 1 ? 'bg-slate-50/60' : 'bg-white'}`}>
+              <td className="px-3 py-2 text-slate-700">{limit}</td>
+              <td className="px-3 py-2 text-slate-600">{wa}</td>
+              <td className="px-3 py-2 text-slate-600">{rcs}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

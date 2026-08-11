@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.0',
+    date: '2026-08-11',
+    changes: [
+      'Fix: RCS no longer claims native support for `list` messages — Google\'s RCS spec models content as text, files, or rich cards only (no list/menu picker), so `list` now correctly falls back to a stacked-option rich card on RCS with an explanatory note, matching WhatsApp\'s (which does have a native list) already-correct behavior.',
+      'New: real structural limits from Meta\'s WhatsApp Cloud API and Google\'s RCS Business Messaging spec (button/chip counts, label lengths, carousel size, list row limits) are now checked live against authored content, with an inline warning when a channel\'s actual limits are exceeded — previously these numbers were declared but never enforced.',
+      'New: "Real platform limits" reference table added to the Manual, documenting exactly what was verified against the official specs.',
+    ],
+  },
+  {
     version: '0.4.3',
     date: '2026-08-11',
     changes: [
