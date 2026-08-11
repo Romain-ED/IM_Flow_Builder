@@ -11,6 +11,7 @@ It is **not connected to any real messaging API**. It's built for demos, custome
 - Renders the live conversation through a **channel renderer** (RCS / WhatsApp / Generic) inside a polished phone mockup.
 - Lets a presenter tweak variables (customer name, booking reference, seat, …), restart, step back, jump to any node, switch channels live, and demo cleanly in **Presenter Mode**.
 - Ships with three complete example scenarios — an airline check-in/boarding-pass journey (the default), an e-commerce delivery tracker, and a restaurant reservation flow.
+- Has three pages, reachable from the top nav: **Simulator** (the demo tool itself), **Scenarios** (load/duplicate/edit/import/export/delete flow definitions — custom ones are saved to `localStorage`), and **Manual** (an in-app guide covering usage, every parameter, and the technical architecture).
 
 ## Installation & development
 

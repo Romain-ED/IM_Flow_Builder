@@ -20,11 +20,16 @@ import { downloadBoardingPassImage } from '../utils/boardingPassFile'
 import { findActiveInput } from '../utils/selectors'
 import { BUILT_IN_SCENARIOS, DEFAULT_SCENARIO } from '../scenarios'
 import {
+  loadCustomScenarios,
   loadLastScenario,
   loadPreferences,
+  saveCustomScenarios,
   saveLastScenario,
   savePreferences,
+  type CustomScenario,
 } from './persistence'
+
+export type { CustomScenario }
 
 interface Snapshot {
   variables: VariableMap
@@ -47,6 +52,7 @@ export interface SimulatorState {
   flowSource: string
   flowSourceFormat: FlowSourceFormat
   validation: FlowValidationResult | null
+  customScenarios: CustomScenario[]
 
   channel: ChannelId
   fastMode: boolean
@@ -82,6 +88,19 @@ export interface SimulatorState {
   ) => void
   loadScenarioSource: (source: string, format?: FlowSourceFormat) => boolean
   loadBuiltInScenario: (id: string) => void
+
+  importCustomScenario: (
+    source: string,
+    formatHint?: FlowSourceFormat,
+    nameOverride?: string,
+  ) => { success: boolean; error?: string; id?: string }
+  saveCustomScenario: (
+    id: string,
+    patch: Partial<Pick<CustomScenario, 'name' | 'description' | 'source' | 'format'>>,
+  ) => { success: boolean; error?: string }
+  deleteCustomScenario: (id: string) => void
+  duplicateAsCustomScenario: (source: string, format: FlowSourceFormat, baseName: string) => string
+  loadCustomScenario: (id: string) => void
 
   goToNode: (nodeId: string, hops?: number) => Promise<void>
   restart: () => void
@@ -199,6 +218,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     flowSource: '',
     flowSourceFormat: 'yaml',
     validation: null,
+    customScenarios: loadCustomScenarios(),
 
     channel: 'rcs',
     fastMode: false,
@@ -289,6 +309,80 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     loadBuiltInScenario: (id) => {
       const match = BUILT_IN_SCENARIOS.find((sc) => sc.id === id)
       if (match) get().loadScenarioSource(match.source, 'yaml')
+    },
+
+    importCustomScenario: (source, formatHint, nameOverride) => {
+      const parsed = parseFlowSource(source, formatHint)
+      if (!parsed.success) return { success: false, error: parsed.message }
+      const validation = validateFlow(parsed.data)
+      if (!validation.success) {
+        return { success: false, error: validation.errors[0]?.message ?? 'Invalid flow.' }
+      }
+      const now = Date.now()
+      const entry: CustomScenario = {
+        id: createId('scenario'),
+        name: nameOverride?.trim() || validation.flow.metadata.name || 'Untitled scenario',
+        description: validation.flow.metadata.description,
+        source,
+        format: parsed.format,
+        createdAt: now,
+        updatedAt: now,
+      }
+      const customScenarios = [...get().customScenarios, entry]
+      set({ customScenarios })
+      saveCustomScenarios(customScenarios)
+      return { success: true, id: entry.id }
+    },
+
+    saveCustomScenario: (id, patch) => {
+      const s = get()
+      const existing = s.customScenarios.find((sc) => sc.id === id)
+      if (!existing) return { success: false, error: 'Scenario not found.' }
+
+      const nextSource = patch.source ?? existing.source
+      const nextFormat = patch.format ?? existing.format
+      if (patch.source !== undefined) {
+        const parsed = parseFlowSource(nextSource, nextFormat)
+        if (!parsed.success) return { success: false, error: parsed.message }
+        const validation = validateFlow(parsed.data)
+        if (!validation.success) {
+          return { success: false, error: validation.errors[0]?.message ?? 'Invalid flow.' }
+        }
+      }
+
+      const customScenarios = s.customScenarios.map((sc) =>
+        sc.id === id ? { ...sc, ...patch, source: nextSource, format: nextFormat, updatedAt: Date.now() } : sc,
+      )
+      set({ customScenarios })
+      saveCustomScenarios(customScenarios)
+      return { success: true }
+    },
+
+    deleteCustomScenario: (id) => {
+      const customScenarios = get().customScenarios.filter((sc) => sc.id !== id)
+      set({ customScenarios })
+      saveCustomScenarios(customScenarios)
+    },
+
+    duplicateAsCustomScenario: (source, format, baseName) => {
+      const now = Date.now()
+      const entry: CustomScenario = {
+        id: createId('scenario'),
+        name: `Copy of ${baseName}`,
+        source,
+        format,
+        createdAt: now,
+        updatedAt: now,
+      }
+      const customScenarios = [...get().customScenarios, entry]
+      set({ customScenarios })
+      saveCustomScenarios(customScenarios)
+      return entry.id
+    },
+
+    loadCustomScenario: (id) => {
+      const match = get().customScenarios.find((sc) => sc.id === id)
+      if (match) get().loadScenarioSource(match.source, match.format)
     },
 
     goToNode: async (nodeId, hops = 0) => {

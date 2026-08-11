@@ -1,4 +1,5 @@
 import { load as loadYaml, dump as dumpYaml } from 'js-yaml'
+import { validateFlow } from '../engine/flowValidator'
 
 export type FlowSourceFormat = 'json' | 'yaml'
 
@@ -39,6 +40,20 @@ export function parseFlowSource(source: string, formatHint?: FlowSourceFormat): 
       message: error instanceof Error ? error.message : 'Failed to parse flow source.',
     }
   }
+}
+
+export type FlowSourcePreview =
+  | { success: true; nodeCount: number }
+  | { success: false; message: string }
+
+/** Lightweight parse+validate for live "is this OK so far?" feedback in editors. */
+export function validateFlowSourceForPreview(source: string): FlowSourcePreview {
+  if (!source.trim()) return { success: false, message: 'Nothing to validate yet.' }
+  const parsed = parseFlowSource(source)
+  if (!parsed.success) return { success: false, message: parsed.message }
+  const result = validateFlow(parsed.data)
+  if (!result.success) return { success: false, message: result.errors[0]?.message ?? 'Invalid flow.' }
+  return { success: true, nodeCount: result.flow.nodes.length }
 }
 
 export function toJsonString(data: unknown): string {

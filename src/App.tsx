@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useSimulatorStore } from './store/simulatorStore'
+import type { AppPage } from './app/pages'
 import { AppHeader } from './components/layout/AppHeader'
 import { Sidebar } from './components/layout/Sidebar'
 import { PresenterFloatingControls } from './components/layout/PresenterFloatingControls'
@@ -8,12 +9,15 @@ import { PhoneFrame } from './components/phone/PhoneFrame'
 import { PhoneScreen } from './components/phone/PhoneScreen'
 import { DebugDrawer } from './components/debug/DebugDrawer'
 import { ScenarioEditorModal } from './components/editor/ScenarioEditorModal'
+import { ScenariosPage } from './components/scenarios/ScenariosPage'
+import { ManualPage } from './components/manual/ManualPage'
 
 function App() {
   const initialize = useSimulatorStore((s) => s.initialize)
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
   const debugPanelOpen = useSimulatorStore((s) => s.debugPanelOpen)
 
+  const [page, setPage] = useState<AppPage>('simulator')
   const [editorOpen, setEditorOpen] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [mobileDebugOpen, setMobileDebugOpen] = useState(false)
@@ -38,29 +42,36 @@ function App() {
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-50 overflow-hidden">
       <AppHeader
+        page={page}
+        onNavigate={setPage}
         onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
         onToggleMobileDebug={() => setMobileDebugOpen(true)}
       />
 
-      <div className="flex-1 min-h-0 flex">
-        <div className="hidden lg:block w-[300px] shrink-0 border-r border-slate-200 bg-white">
-          <Sidebar onOpenEditor={() => setEditorOpen(true)} />
+      {page === 'scenarios' && <ScenariosPage onNavigateToSimulator={() => setPage('simulator')} />}
+      {page === 'manual' && <ManualPage />}
+
+      {page === 'simulator' && (
+        <div className="flex-1 min-h-0 flex">
+          <div className="hidden lg:block w-[300px] shrink-0 border-r border-slate-200 bg-white">
+            <Sidebar onOpenEditor={() => setEditorOpen(true)} />
+          </div>
+
+          <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
+            <div className="h-full w-full max-w-[420px]">
+              <PhoneFrame>
+                <PhoneScreen />
+              </PhoneFrame>
+            </div>
+          </main>
+
+          {debugPanelOpen && (
+            <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">
+              <DebugDrawer />
+            </div>
+          )}
         </div>
-
-        <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
-          <div className="h-full w-full max-w-[420px]">
-            <PhoneFrame>
-              <PhoneScreen />
-            </PhoneFrame>
-          </div>
-        </main>
-
-        {debugPanelOpen && (
-          <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">
-            <DebugDrawer />
-          </div>
-        )}
-      </div>
+      )}
 
       {mobileSidebarOpen && (
         <MobileOverlay title="Scenario controls" onClose={() => setMobileSidebarOpen(false)}>

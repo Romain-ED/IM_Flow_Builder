@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { X, Upload, Copy, Download, RefreshCcw, Check } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { detectFormat, parseFlowSource, toJsonString, toYamlString } from '../../utils/flowSource'
+import { EXAMPLE_FLOW_TEMPLATE } from '../../utils/exampleFlowTemplate'
+import { ToolbarButton } from './ToolbarButton'
 
 export function ScenarioEditorModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const flow = useSimulatorStore((s) => s.flow)
@@ -25,7 +27,7 @@ export function ScenarioEditorModal({ open, onClose }: { open: boolean; onClose:
   }
 
   function loadExampleTemplate() {
-    setDraft(EXAMPLE_TEMPLATE)
+    setDraft(EXAMPLE_FLOW_TEMPLATE)
   }
 
   async function copyFlow() {
@@ -83,16 +85,16 @@ export function ScenarioEditorModal({ open, onClose }: { open: boolean; onClose:
               aria-label="Flow definition source"
             />
             <div className="flex flex-wrap gap-1.5">
-              <ToolbarButton icon={Check} label="Apply flow" onClick={apply} primary />
-              <ToolbarButton icon={Upload} label="Import file" onClick={() => fileInputRef.current?.click()} />
-              <ToolbarButton icon={copied ? Check : Copy} label={copied ? 'Copied' : 'Copy'} onClick={copyFlow} />
-              <ToolbarButton icon={Download} label="Download JSON" onClick={() => download('json')} />
-              <ToolbarButton icon={Download} label="Download YAML" onClick={() => download('yaml')} />
-              <ToolbarButton icon={RefreshCcw} label="Reset" onClick={() => setDraft(flowSource)} />
+              <ToolbarButton icon={Check} label="Apply flow" onClick={apply} variant="emerald" />
+              <ToolbarButton icon={Upload} label="Import file" onClick={() => fileInputRef.current?.click()} variant="indigo" />
+              <ToolbarButton icon={copied ? Check : Copy} label={copied ? 'Copied' : 'Copy'} onClick={copyFlow} variant="neutral" />
+              <ToolbarButton icon={Download} label="Download JSON" onClick={() => download('json')} variant="teal" />
+              <ToolbarButton icon={Download} label="Download YAML" onClick={() => download('yaml')} variant="teal" />
+              <ToolbarButton icon={RefreshCcw} label="Reset" onClick={() => setDraft(flowSource)} variant="rose" />
               <button
                 type="button"
                 onClick={loadExampleTemplate}
-                className="text-[11.5px] text-slate-400 hover:text-slate-600 underline underline-offset-2 ml-auto cursor-pointer"
+                className="text-[11.5px] text-indigo-500 hover:text-indigo-700 underline underline-offset-2 ml-auto cursor-pointer"
               >
                 Insert documented example
               </button>
@@ -141,54 +143,3 @@ export function ScenarioEditorModal({ open, onClose }: { open: boolean; onClose:
   )
 }
 
-function ToolbarButton({
-  icon: Icon,
-  label,
-  onClick,
-  primary,
-}: {
-  icon: typeof Upload
-  label: string
-  onClick: () => void
-  primary?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-colors cursor-pointer ${
-        primary ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-      }`}
-    >
-      <Icon size={12.5} />
-      {label}
-    </button>
-  )
-}
-
-const EXAMPLE_TEMPLATE = `# Minimal documented example — see README for the full schema reference.
-version: "1.0"
-metadata:
-  id: minimal-example
-  name: "Minimal example"
-  channel: generic
-brand:
-  name: "Example Business"
-  verified: true
-variables:
-  customerName: Alex
-start: welcome
-nodes:
-  - id: welcome
-    messages:
-      - type: text
-        text: "Hi {{customerName}}, how can we help?"
-    actions:
-      - label: "Say hello"
-        next: hello
-  - id: hello
-    messages:
-      - type: text
-        text: "Hello there!"
-    end: true
-`

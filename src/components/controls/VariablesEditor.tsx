@@ -1,5 +1,7 @@
 import { RotateCcw } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
+import { sectionAccents } from '../../utils/accents'
+import { SectionHeading } from '../common/SectionHeading'
 
 function labelFor(key: string): string {
   const spaced = key.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -12,15 +14,16 @@ export function VariablesEditor() {
   const resetConfiguredVariables = useSimulatorStore((s) => s.resetConfiguredVariables)
 
   const entries = Object.entries(configuredVariables)
+  const accent = sectionAccents.variables
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Variables</span>
+        <SectionHeading accent={accent}>Variables</SectionHeading>
         <button
           type="button"
           onClick={resetConfiguredVariables}
-          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 cursor-pointer"
+          className={`flex items-center gap-1 text-[11px] ${accent.text} hover:underline cursor-pointer`}
         >
           <RotateCcw size={11} /> Reset
         </button>
@@ -34,7 +37,7 @@ export function VariablesEditor() {
               <select
                 value={String(value)}
                 onChange={(e) => updateConfiguredVariable(key, e.target.value === 'true')}
-                className="rounded-md border border-slate-200 px-2 py-1.5 text-[12.5px] bg-white"
+                className={`rounded-md border ${accent.border} px-2 py-1.5 text-[12.5px] bg-white focus:outline-none focus:ring-2 focus:ring-emerald-200`}
               >
                 <option value="true">true</option>
                 <option value="false">false</option>
@@ -44,14 +47,14 @@ export function VariablesEditor() {
                 type="number"
                 value={value}
                 onChange={(e) => updateConfiguredVariable(key, Number(e.target.value))}
-                className="rounded-md border border-slate-200 px-2 py-1.5 text-[12.5px]"
+                className={`rounded-md border ${accent.border} px-2 py-1.5 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-emerald-200`}
               />
             ) : (
               <input
                 type="text"
                 value={value == null ? '' : String(value)}
                 onChange={(e) => updateConfiguredVariable(key, e.target.value)}
-                className="rounded-md border border-slate-200 px-2 py-1.5 text-[12.5px]"
+                className={`rounded-md border ${accent.border} px-2 py-1.5 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-emerald-200`}
               />
             )}
           </label>
