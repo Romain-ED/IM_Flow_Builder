@@ -91,13 +91,19 @@ nodes:
 
   - id: priority_upgrade
     messages:
-      - type: payment_request
-        title: Priority delivery upgrade
-        description: "Get {{itemName}} delivered today instead of {{eta}}"
-        amount: "$6.99"
-        next: slot_selected
-        set:
-          deliverySlot: "today, priority"
+      - type: rich_card
+        title: Priority delivery upgrade — $6.99
+        description: "Get {{itemName}} delivered today instead of {{eta}}."
+        actions:
+          - type: open_url
+            label: Pay now
+            url: "https://example.com/checkout/priority"
+      - type: suggested_replies
+        options:
+          - label: Payment confirmed
+            next: slot_selected
+            set:
+              deliverySlot: "today, priority"
 
   - id: slot_selected
     set:

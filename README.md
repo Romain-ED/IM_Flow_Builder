@@ -193,31 +193,41 @@ A **node** can: play one or more messages in sequence (with per-message `delayMs
 
 ## Supported message components
 
-| type | notes |
-|---|---|
-| `text` | multiline, basic URL auto-linking, `**bold**` / `_italic_` |
-| `image` | graceful broken-image fallback |
-| `video` | preview card with play affordance (no real playback) |
-| `document` | tap to simulate a download + toast |
-| `rich_card` | image + title/description + action buttons |
-| `carousel` | horizontally scrollable cards, each with its own buttons |
-| `suggested_replies` | inline reply chips |
-| `suggested_actions` | `open_url` / `call` / `location` / `calendar` / `custom` (each shows a simulated modal) |
-| `list` | opens a bottom-sheet menu of sections/rows |
-| `input` | `text`/`email`/`phone`/`numeric`/`date`; drives the composer, stores the value in a variable |
-| `flight_card` | airline route summary card |
-| `boarding_pass` | polished boarding pass with Download / Add to wallet / View buttons built in for free |
-| `location` | map-preview card with an "Open in Maps" simulated action |
-| `otp` | segmented verification-code entry with its own Verify button |
-| `payment_request` | "Pay now" card that simulates a charge and can transition on completion |
-| `calendar_event` | rich calendar-invite card with "Add to calendar" |
-| `product_catalog` | horizontally scrollable products, each with "Add to cart" (simulated) |
-| `whatsapp_flow` | placeholder card for an embedded WhatsApp Flow, with a configurable CTA |
-| `system_action` | compact, centered simulator notice (e.g. "Boarding pass downloaded") — not a business/user chat bubble |
-| `delay` | pseudo-message: pause without rendering anything |
-| `typing` | pseudo-message: shows the typing indicator for `duration` ms, then disappears — never stored in history |
+Every type below renders on every channel (Generic supports all of them as the neutral fallback renderer), but "official" means the type has a real, documented equivalent on that platform — see [Official vs. simulator-only types](#official-vs-simulator-only-types) below for what that distinction means and why it matters.
+
+| type | notes | official on |
+|---|---|---|
+| `text` | multiline, basic URL auto-linking, `**bold**` / `_italic_` | WhatsApp, RCS |
+| `image` / `video` / `document` | graceful broken-asset fallback; document taps simulate a download | WhatsApp, RCS |
+| `rich_card` | header image + title/description + up to a few buttons | WhatsApp (interactive message: header/body/footer/buttons), RCS (rich card) |
+| `carousel` | horizontally scrollable cards, each with its own buttons | WhatsApp (Carousel Template, Meta-approved, 10 cards / 2 buttons each), RCS (2–10 cards / 4 buttons each) |
+| `suggested_replies` | inline reply chips | WhatsApp (reply buttons, max 3), RCS (suggestion chips, max 11) |
+| `suggested_actions` | `open_url` / `call` / `location` / `calendar` / `custom` (each shows a simulated modal) | `reply`/`open_url` only — the others have no real WhatsApp button equivalent |
+| `list` | opens a bottom-sheet menu of sections/rows | WhatsApp (native list picker) |
+| `location` | map-preview card with an "Open in Maps" simulated action | WhatsApp, RCS |
+| `product_catalog` | horizontally scrollable products, each with "Add to cart" (simulated) | WhatsApp (multi-product/catalog message) |
+| `whatsapp_flow` | placeholder card for an embedded WhatsApp Flow, with a configurable CTA | WhatsApp (Flows) |
+| `input` | `text`/`email`/`phone`/`numeric`/`date`; drives the composer, stores the value in a variable | *simulator convenience — real composers are always plain text* |
+| `flight_card` | airline route summary card | *no official equivalent; unused by the built-in scenarios* |
+| `boarding_pass` | polished boarding pass with Download / Add to wallet / View buttons built in for free | *no official equivalent; unused by the built-in scenarios* |
+| `otp` | segmented verification-code entry with its own Verify button | *no official equivalent — WhatsApp's real Authentication Template sends plain text + a "Copy code" button; unused by the built-in scenarios* |
+| `payment_request` | "Pay now" card that simulates a charge and can transition on completion | *no official equivalent; unused by the built-in scenarios* |
+| `calendar_event` | rich calendar-invite card with "Add to calendar" | *no official equivalent; unused by the built-in scenarios* |
+| `system_action` | compact, centered simulator notice (e.g. "Boarding pass downloaded") — not a business/user chat bubble | *not a message at all — represents a local device/app action* |
+| `delay` / `typing` | pseudo-messages: pause, or show the typing indicator for `duration` ms — neither is ever stored in history | *not messages* |
 
 Messages can be authored with `"sender": "user"` for scripted autoplay lines, in addition to the normal `"sender": "business"` (the default).
+
+### Official vs. simulator-only types
+
+The three built-in scenarios (`src/scenarios/*.yaml`) only use types with a real, documented equivalent on the channel they demonstrate — verified against [Meta's WhatsApp interactive-message guide](https://developers.facebook.com/docs/whatsapp/guides/interactive-messages/), [WhatsApp's interactive message templates reference](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/interactive-message-templates/), [WhatsApp's commerce/product-sharing guide](https://developers.facebook.com/docs/whatsapp/guides/commerce-guides/share-products-with-customers/), and [Google's RCS Business Messaging spec](https://developers.google.com/business-communications/rcs-business-messaging). `flight_card`, `boarding_pass`, `otp`, `payment_request`, and `calendar_event` remain in the schema — a custom scenario can still use them, and they render honestly with a fallback note explaining they're simulator conveniences — but a real integration would express those same moments with official primitives, e.g.:
+
+- A **boarding pass** → `document` (PDF) + `text` summary + `suggested_replies` ("Add to wallet" / "Flight details"), not a dedicated card type.
+- A **one-time code** → plain `text` with a "Copy code" reply, matching WhatsApp's real Authentication Template — the code is never typed back into the chat on a real integration.
+- A **payment prompt** → a `rich_card` with an `open_url` button that opens a payment link, not a dedicated "pay" card.
+- A **calendar invite** → plain `text` with a `suggested_replies` "Add to calendar" option, not a dedicated calendar card.
+
+See the Manual's Changelog for the exact before/after of each built-in scenario.
 
 ## Adding a scenario
 
@@ -250,13 +260,13 @@ The same file also declares each channel's real structural limits, sourced from 
 
 | Limit | WhatsApp | RCS |
 |---|---|---|
-| Suggested-reply chips per message | 3 | 11 |
-| Suggested-action buttons per message | 3 | 4 per rich card |
+| Suggested-reply / interactive buttons per message | 3 | 11 chips (4 per rich card) |
+| Carousel cards | up to 10 (Carousel Template, Meta-approved) | 2–10 (a single card sends as a standalone rich card) |
+| Buttons per carousel card | 2 | 4 |
 | Button/chip label length | 20 chars | 25 chars |
 | List rows (total, across all sections) | 10 | — *(RCS has no native list; see below)* |
 | List row title length | 24 chars | — |
-| Carousel cards | up to 10 | 2–10 (a single card sends as a standalone rich card) |
-| Rich card title / description length | — *(no native rich card)* | 200 / 2000 chars |
+| Rich card title / description length | not separately capped | 200 / 2000 chars |
 
 RCS's real content model is text, an uploaded file, or a rich card (standalone or in a carousel) — there's no native list/menu picker like WhatsApp's, so `list` intentionally falls back to a stacked-option rich card on that channel rather than being marked as supported.
 

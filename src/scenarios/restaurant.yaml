@@ -97,11 +97,31 @@ nodes:
         image: "/assets/restaurant-table.svg"
         title: "Table confirmed"
         description: "{{tableArea}} · {{partySize}} guests · {{reservationTime}}"
-      - type: calendar_event
-        title: "Dinner at Riverside Bistro"
-        startTime: "{{reservationDate}}, {{reservationTime}}"
-        location: "Riverside Bistro, {{tableArea}}"
-        description: "Reservation for {{partySize}} guests"
+      - type: text
+        text: |
+          Dinner at Riverside Bistro
+
+          {{reservationDate}}, {{reservationTime}}
+          {{tableArea}} · {{partySize}} guests
+      - type: suggested_replies
+        options:
+          - label: Add to calendar
+            next: calendar_added
+          - label: Skip
+            next: preorder_prompt
+
+  - id: calendar_added
+    messages:
+      - type: typing
+        duration: 500
+      - type: system_action
+        action: calendar
+        title: Added to calendar
+        description: "{{reservationDate}} · {{reservationTime}}"
+    next: preorder_prompt
+
+  - id: preorder_prompt
+    messages:
       - type: text
         text: "Would you like to pre-order anything from our tasting menu?"
     actions:

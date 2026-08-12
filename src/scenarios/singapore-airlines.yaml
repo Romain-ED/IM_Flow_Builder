@@ -113,19 +113,15 @@ nodes:
   # --------------------------------------------------
   - id: booking_details
     messages:
-      - type: flight_card
+      - type: rich_card
         sender: business
-        airline: Singapore Airlines
-        flightNumber: "{{flightNumber}}"
-        origin: { code: "{{originCode}}", city: "{{originCity}}" }
-        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
-        date: "{{departureDate}}"
-        departureTime: "{{departureTime}}"
-        arrivalTime: "{{arrivalTime}}"
-        terminal: "{{terminal}}"
-        gate: "{{gate}}"
-        bookingReference: "{{bookingReference}}"
-        status: Check-in available
+        title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
+        description: |
+          {{departureDate}} · Departs {{departureTime}}, arrives {{arrivalTime}}
+
+          Terminal {{terminal}} · Gate {{gate}}
+
+          Booking ref {{bookingReference}} · Check-in available
       - type: suggested_replies
         sender: business
         options:
@@ -147,16 +143,13 @@ nodes:
         sender: business
         text: |
           Let's get you checked in for {{flightNumber}}.
-      - type: flight_card
+      - type: rich_card
         sender: business
-        airline: Singapore Airlines
-        flightNumber: "{{flightNumber}}"
-        origin: { code: "{{originCode}}", city: "{{originCity}}" }
-        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
-        date: "{{departureDate}}"
-        departureTime: "{{departureTime}}"
-        arrivalTime: "{{arrivalTime}}"
-        terminal: "{{terminal}}"
+        title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
+        description: |
+          {{departureDate}} · Departs {{departureTime}}, arrives {{arrivalTime}}
+
+          Terminal {{terminal}}
       - type: text
         sender: business
         text: |
@@ -322,34 +315,28 @@ nodes:
           Your boarding pass for {{flightNumber}} is ready.
       - type: delay
         duration: 700
-      - type: boarding_pass
+      - type: document
         sender: business
-        passengerName: "{{customerName}} {{lastName}}"
-        frequentFlyerNumber: "{{krisFlyerNumber}}"
-        frequentFlyerStatus: "{{krisFlyerStatus}}"
-        airline: Singapore Airlines
-        airlineLogo: "/assets/brand-logo.svg"
-        flightNumber: "{{flightNumber}}"
-        date: "{{departureDate}}"
-        origin: { code: "{{originCode}}", city: "{{originCity}}" }
-        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
-        departureTime: "{{departureTime}}"
-        boardingTime: "{{boardingTime}}"
-        terminal: "{{terminal}}"
-        gate: "{{gate}}"
-        seat: "{{seat}}"
-        boardingGroup: "Group 3"
-        cabinClass: "{{cabin}}"
-        bookingReference: "{{bookingReference}}"
-        actions:
-          - type: download
-            label: Download boarding pass
+        filename: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
+        title: Your boarding pass
+        description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
+        fileType: PDF
+      - type: text
+        sender: business
+        text: |
+          Seat {{seat}} · {{cabin}} Class · Group 3
+
+          Gate {{gate}} · Boarding {{boardingTime}}
+
+          Booking ref {{bookingReference}}
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Download boarding pass
             next: boarding_pass_downloaded
-          - type: add_to_wallet
-            label: Add to wallet
+          - label: Add to wallet
             next: wallet_added
-          - type: reply
-            label: Flight details
+          - label: Flight details
             next: checked_in_flight_details
 
   # --------------------------------------------------
@@ -401,18 +388,13 @@ nodes:
   # --------------------------------------------------
   - id: checked_in_flight_details
     messages:
-      - type: flight_card
+      - type: rich_card
         sender: business
-        airline: Singapore Airlines
-        flightNumber: "{{flightNumber}}"
-        origin: { code: "{{originCode}}", city: "{{originCity}}" }
-        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
-        date: "{{departureDate}}"
-        departureTime: "{{departureTime}}"
-        arrivalTime: "{{arrivalTime}}"
-        terminal: "{{terminal}}"
-        gate: "{{gate}}"
-        status: Checked in
+        title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
+        description: |
+          {{departureDate}} · Departs {{departureTime}}, arrives {{arrivalTime}}
+
+          Terminal {{terminal}} · Gate {{gate}} · Checked in
       - type: suggested_replies
         sender: business
         options:
@@ -426,32 +408,26 @@ nodes:
   # --------------------------------------------------
   - id: show_boarding_pass_again
     messages:
-      - type: boarding_pass
+      - type: document
         sender: business
-        passengerName: "{{customerName}} {{lastName}}"
-        frequentFlyerNumber: "{{krisFlyerNumber}}"
-        frequentFlyerStatus: "{{krisFlyerStatus}}"
-        airline: Singapore Airlines
-        airlineLogo: "/assets/brand-logo.svg"
-        flightNumber: "{{flightNumber}}"
-        date: "{{departureDate}}"
-        origin: { code: "{{originCode}}", city: "{{originCity}}" }
-        destination: { code: "{{destinationCode}}", city: "{{destinationCity}}" }
-        departureTime: "{{departureTime}}"
-        boardingTime: "{{boardingTime}}"
-        terminal: "{{terminal}}"
-        gate: "{{gate}}"
-        seat: "{{seat}}"
-        boardingGroup: "Group 3"
-        cabinClass: "{{cabin}}"
-        bookingReference: "{{bookingReference}}"
-        actions:
-          - type: download
-            label: Download
-          - type: add_to_wallet
-            label: Add to wallet
-          - type: reply
-            label: Done
+        filename: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
+        title: Your boarding pass
+        description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
+        fileType: PDF
+      - type: text
+        sender: business
+        text: |
+          Seat {{seat}} · {{cabin}} Class · Group 3
+
+          Gate {{gate}} · Boarding {{boardingTime}}
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: Download
+            next: boarding_pass_downloaded
+          - label: Add to wallet
+            next: wallet_added
+          - label: Done
             next: final_message
 
   # --------------------------------------------------

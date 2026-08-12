@@ -11,6 +11,16 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.0',
+    date: '2026-08-11',
+    changes: [
+      'Fix: `rich_card` and `carousel` were incorrectly marked as unsupported on WhatsApp. Both are real — rich_card matches a WhatsApp interactive message (header/body/footer/buttons) and carousel matches WhatsApp\'s official Carousel Template (2 buttons/card, vs. RCS\'s 4) — corrected the capability declarations and fallback notes.',
+      'Rewrote all three built-in scenarios to stop using flight_card, boarding_pass, otp, and payment_request/calendar_event — none have a real WhatsApp or RCS equivalent. Replaced with the official primitives a real integration would actually send: document+text+suggested_replies for boarding passes, plain text for one-time codes (matching WhatsApp\'s real Authentication Template pattern), rich_card+open_url for payment prompts, and text+suggested_replies for calendar invites. The message types themselves stay in the schema for custom scenarios, now with accurate fallback notes explaining the real-world equivalent.',
+      'New: per-carousel-card button limits (WhatsApp: 2, RCS: 4) added to the capability-warning checks.',
+      'Docs: Manual and README message-type tables now flag which types are verified-official vs. simulator-only conventions, and added CLAUDE.md with internal architecture/decision notes for future sessions.',
+    ],
+  },
+  {
     version: '0.5.1',
     date: '2026-08-11',
     changes: [

@@ -106,24 +106,33 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
           <h3 className="text-[13.5px] font-semibold text-slate-800 mt-4 mb-1">Message types</h3>
           <ParamTable
             rows={[
-              ['text', 'Multiline text, basic URL auto-linking, **bold**/_italic_.'],
-              ['image / video / document', 'Media with graceful broken-asset fallback; document taps simulate a download.'],
-              ['rich_card / carousel', 'Standalone card, or a horizontally scrollable row of cards, each with its own action buttons.'],
-              ['suggested_replies / suggested_actions', 'Inline reply chips, or richer actions (open_url, call, location, calendar, custom) shown as a simulated modal/toast.'],
-              ['list', 'Opens a bottom-sheet menu of grouped rows.'],
-              ['input', 'Free-text/email/phone/numeric/date entry that drives the composer and stores the value in a variable.'],
-              ['flight_card / boarding_pass', 'Purpose-built travel components; boarding passes get Download / Add to wallet / View buttons for free.'],
-              ['location', 'A map-preview card with a label/address and an "Open in Maps" simulated action.'],
-              ['otp', 'A segmented verification-code entry with its own Verify button; stores the code in a variable like input.'],
-              ['payment_request', 'A "Pay now" card (title, description, amount) that simulates a charge and can transition on completion.'],
-              ['calendar_event', 'A rich calendar-invite card (title, time, location) with "Add to calendar".'],
-              ['product_catalog', 'A horizontally scrollable row of products, each with its own "Add to cart" (simulated, no real cart state).'],
-              ['whatsapp_flow', 'A placeholder card representing an embedded WhatsApp Flow, with a configurable CTA that simulates completion.'],
-              ['system_action', 'A compact, centered simulator notice (e.g. "Boarding pass downloaded") — not a business or user chat bubble. Suppresses the automatic typing indicator.'],
-              ['typing', 'Pseudo-message: shows the typing indicator for duration ms, then disappears — never stored in history. Useful before a system_action.'],
-              ['delay', 'Pseudo-message: pause without rendering anything.'],
+              ['text', 'Multiline text, basic URL auto-linking, **bold**/_italic_. Official on every channel.'],
+              ['image / video / document', 'Media with graceful broken-asset fallback; document taps simulate a download. Official on every channel.'],
+              ['rich_card', 'A header (image) + title + description + up to a few buttons. Official: matches a real WhatsApp interactive message (header/body/footer/buttons) and a real RCS rich card.'],
+              ['carousel', 'A horizontally scrollable row of cards, each with its own buttons. Official: matches WhatsApp\'s Carousel Template (Meta-approved, up to 10 cards / 2 buttons each) and a real RCS carousel (2–10 cards / 4 buttons each).'],
+              ['suggested_replies', 'Inline reply chips. Official — matches WhatsApp interactive reply buttons (max 3) and RCS suggestion chips (max 11).'],
+              ['suggested_actions', 'Richer buttons (open_url, call, location, calendar, custom). The reply/open_url subtypes are official; the others are simulator conveniences shown as a modal/toast rather than a real WhatsApp button type.'],
+              ['list', 'Opens a bottom-sheet menu of grouped rows. Official on WhatsApp (native list picker). RCS has no equivalent — see below.'],
+              ['input', 'Free-text/email/phone/numeric/date entry that drives the composer and stores the value in a variable. Simulator convenience: real WhatsApp/RCS composers are always plain text; there\'s no structured input-type UI.'],
+              ['location', 'A map-preview card with a label/address and an "Open in Maps" simulated action. Official on both — matches WhatsApp\'s location message and RCS\'s location suggested action.'],
+              ['product_catalog', 'A horizontally scrollable row of products. Official on WhatsApp (multi-product/catalog message); RCS has no equivalent, shown as a generic fallback.'],
+              ['whatsapp_flow', 'A placeholder card representing an embedded WhatsApp Flow. Official — WhatsApp Flows are a real interactive subtype; WhatsApp-only by definition.'],
+              ['system_action', 'A compact, centered simulator notice (e.g. "Boarding pass downloaded") — not a business or user chat bubble, so it isn\'t a "message type" claim at all; it represents a local device/app action.'],
+              ['typing', 'Pseudo-message: shows the typing indicator for duration ms, then disappears — never stored in history. Not a message.'],
+              ['delay', 'Pseudo-message: pause without rendering anything. Not a message.'],
             ]}
           />
+          <P>
+            <strong>No official equivalent on any platform</strong> — <code>flight_card</code>, <code>boarding_pass</code>,{' '}
+            <code>otp</code>, <code>payment_request</code>, and <code>calendar_event</code> are still defined in the
+            schema (so a custom scenario can still use them, and they render with an honest fallback note), but none
+            of the built-in demo scenarios use them anymore. A real integration would express the same moments with
+            official primitives instead — e.g. a boarding pass is a <code>document</code> (PDF) + <code>text</code> summary
+            + <code>suggested_replies</code>; a one-time code is plain <code>text</code> (WhatsApp's real Authentication
+            Template sends fixed text with a "Copy code" button — the code is never typed back into the chat); a
+            payment prompt is a <code>rich_card</code> with an <code>open_url</code> button. See the Changelog for the
+            full before/after.
+          </P>
           <P>
             Templating uses <code>{'{{variableName}}'}</code> — plain regex substitution against the current
             variables, recursively applied to every string field in a message. There is no expression language and
@@ -259,13 +268,13 @@ function ParamTable({ rows }: { rows: [string, string][] }) {
 }
 
 const PLATFORM_LIMITS: [string, string, string][] = [
-  ['Suggested-reply chips per message', '3', '11'],
-  ['Suggested-action buttons per message', '3', '4 per rich card'],
+  ['Suggested-reply / interactive buttons per message', '3', '11 chips (4 per rich card)'],
+  ['Carousel cards', 'up to 10 (Carousel Template, Meta-approved)', '2–10'],
+  ['Buttons per carousel card', '2', '4'],
   ['Button/chip label length', '20 chars', '25 chars'],
-  ['List rows (total, all sections)', '10', '— (no native list)'],
+  ['List rows (total, all sections)', '10', '— (no native list picker)'],
   ['List row title length', '24 chars', '—'],
-  ['Carousel cards', 'up to 10', '2–10'],
-  ['Rich card title / description', '— (no native rich card)', '200 / 2000 chars'],
+  ['Rich card title / description length', 'not separately capped', '200 / 2000 chars'],
 ]
 
 function PlatformLimitsTable() {

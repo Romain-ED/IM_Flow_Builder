@@ -10,8 +10,10 @@ export interface ChannelCapabilities {
   maxSuggestedReplies: number
   /** Max buttons on a standalone suggested_actions message (RCS: 4 suggestions per rich card/message). */
   maxSuggestedActions: number
-  /** Max cards in a carousel (RCS: 10; WhatsApp/Generic use this as a soft cap since they have no native carousel either). */
+  /** Max cards in a carousel (RCS: 10; WhatsApp: 10 via a Carousel Template). */
   maxCarouselCards: number
+  /** Max buttons per carousel card (RCS: 4, same as a rich card; WhatsApp Carousel Templates: 2). */
+  maxCarouselCardButtons?: number
   /** Max list rows, summed across all sections (WhatsApp: 10 total rows across up to 10 sections). */
   maxListRows: number
   /** Max characters on a button/chip label, if the real platform truncates or rejects longer text (WhatsApp reply buttons: 20; RCS suggestion chips: 25). */
@@ -85,18 +87,23 @@ export function getCapabilityWarning(
       if (capabilities.channel === 'rcs' && message.cards.length < 2) {
         return 'RCS carousels require at least 2 cards — Google\'s spec sends a single card as a standalone rich card instead.'
       }
-      if (capabilities.maxCardTitleLength || capabilities.maxCardDescriptionLength) {
-        for (const card of message.cards) {
-          if (capabilities.maxCardTitleLength && card.title.length > capabilities.maxCardTitleLength) {
-            return `Card title "${card.title}" is ${card.title.length} characters — ${capabilities.label} caps titles at ${capabilities.maxCardTitleLength}.`
-          }
-          if (
-            card.description &&
-            capabilities.maxCardDescriptionLength &&
-            card.description.length > capabilities.maxCardDescriptionLength
-          ) {
-            return `A card description is ${card.description.length} characters — ${capabilities.label} caps descriptions at ${capabilities.maxCardDescriptionLength}.`
-          }
+      for (const card of message.cards) {
+        if (capabilities.maxCardTitleLength && card.title.length > capabilities.maxCardTitleLength) {
+          return `Card title "${card.title}" is ${card.title.length} characters — ${capabilities.label} caps titles at ${capabilities.maxCardTitleLength}.`
+        }
+        if (
+          card.description &&
+          capabilities.maxCardDescriptionLength &&
+          card.description.length > capabilities.maxCardDescriptionLength
+        ) {
+          return `A card description is ${card.description.length} characters — ${capabilities.label} caps descriptions at ${capabilities.maxCardDescriptionLength}.`
+        }
+        if (
+          capabilities.maxCarouselCardButtons &&
+          card.actions &&
+          card.actions.length > capabilities.maxCarouselCardButtons
+        ) {
+          return `Card "${card.title}" has ${card.actions.length} buttons — ${capabilities.label} caps carousel card buttons at ${capabilities.maxCarouselCardButtons}.`
         }
       }
       return null
@@ -111,6 +118,9 @@ export function getCapabilityWarning(
         message.description.length > capabilities.maxCardDescriptionLength
       ) {
         return `This description is ${message.description.length} characters — ${capabilities.label} caps descriptions at ${capabilities.maxCardDescriptionLength}.`
+      }
+      if (message.actions && message.actions.length > capabilities.maxSuggestedActions) {
+        return `${capabilities.label} supports at most ${capabilities.maxSuggestedActions} buttons on a card (this one has ${message.actions.length}).`
       }
       return null
     }
