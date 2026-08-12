@@ -272,6 +272,48 @@ per-render wiring (building `TrailingActionItem[]` from a `Choice[]` or
 `ConversationView.tsx`, and the footer rendering lives in
 `MessageShell.tsx` (`trailingActions`).
 
+## AI-assisted scenario authoring (0.9.0) — the app's one exception to "nothing is sent to a server"
+
+`docs/SCENARIO_AUTHORING_GUIDE.md` is the canonical, hand-written spec for
+what a scenario can contain (schema reference, every message type's exact
+shape, real WhatsApp/RCS limits, the attachment rule). **Keep it in sync
+by hand** if `schema/*.ts` or `channels/*/capabilities.ts` change — there's
+no generator, it's maintained the same way this file is. It's imported
+into the app verbatim via Vite's `?raw` suffix
+(`src/utils/scenarioAuthoringGuide.ts`) — the same pattern
+`scenarios/index.ts` already used for the built-in YAML files — so the
+in-app system prompt and the "copy this into any AI tool" text can never
+drift apart; there is exactly one copy of this spec.
+
+**Why BYO-API-key, client-side, no backend**: this app is explicitly
+static-hosted (GitHub Pages) with zero server-side code, and that's not
+changing for this feature — a real backend proxy would be a materially
+different, bigger project (hosting, cost, abuse-prevention). Anthropic's
+API supports direct browser calls via the
+`anthropic-dangerous-direct-browser-access` header specifically for
+tools like this one. `src/utils/aiScenarioGenerator.ts` calls it with a
+key the user pastes in and `store/persistence.ts` stores client-side
+(`loadAiApiKey`/`saveAiApiKey`/`clearAiApiKey`, same pattern as
+`loadPreferences`) — sent only to Anthropic, never to any server of
+ours. This is confirmed with the user (see the AskUserQuestion exchange
+in session history) as an accepted trade-off, not a silent assumption:
+a visitor without their own key can't use in-app generation, but always
+has the "Copy prompt instead" path in the same modal.
+
+**Bounded self-correction, not an agent loop**: `generateScenarioWithAI`
+runs the model's output through the app's own
+`validateFlowWithChannelCompliance` (the same validator scenario loading
+uses) and, if invalid, retries **exactly once** with the validation
+errors fed back, then returns whatever it gets regardless of whether
+that's now valid. Don't make this loop open-ended — the editor's existing
+live validation preview (`CustomScenarioEditorModal.tsx`) already shows
+remaining errors on whatever lands in the draft, so an imperfect result
+is still visible and fixable, not a dead end that needs infinite retries
+to be useful. `fetch` is an injectable parameter specifically so
+`aiScenarioGenerator.test.ts` can test the retry/give-up logic without
+ever hitting the real network (no test in this repo hits a real network
+— keep it that way).
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number

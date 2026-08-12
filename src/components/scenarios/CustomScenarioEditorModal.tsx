@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, Upload, Check, RefreshCcw, Code2, Waypoints } from 'lucide-react'
+import { X, Upload, Check, RefreshCcw, Code2, Waypoints, Sparkles } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { detectFormat, parseFlowSource, validateFlowSourceForPreview } from '../../utils/flowSource'
 import { validateFlowWithChannelCompliance as validateFlow } from '../../channels/validateChannelCompliance'
@@ -7,6 +7,7 @@ import { computeFlowGraphLayout } from '../../engine/flowGraph'
 import { EXAMPLE_FLOW_TEMPLATE } from '../../utils/exampleFlowTemplate'
 import { ToolbarButton } from '../editor/ToolbarButton'
 import { FlowGraphView, FlowGraphLegend } from '../debug/FlowGraphView'
+import { AiGenerateModal } from './AiGenerateModal'
 
 interface CustomScenarioEditorModalProps {
   open: boolean
@@ -35,6 +36,7 @@ export function CustomScenarioEditorModal({
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'source' | 'graph'>('source')
+  const [aiModalOpen, setAiModalOpen] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -169,6 +171,7 @@ export function CustomScenarioEditorModal({
 
           <div className="flex flex-wrap gap-1.5">
             <ToolbarButton icon={Check} label={existing ? 'Save changes' : 'Save scenario'} onClick={handleSave} variant="emerald" />
+            <ToolbarButton icon={Sparkles} label="Generate with AI" onClick={() => setAiModalOpen(true)} variant="indigo" />
             <ToolbarButton icon={Upload} label="Import file" onClick={() => fileInputRef.current?.click()} variant="indigo" />
             {existing && (
               <ToolbarButton icon={RefreshCcw} label="Reset" onClick={() => setDraft(existing.source)} variant="rose" />
@@ -187,6 +190,10 @@ export function CustomScenarioEditorModal({
           />
         </div>
       </div>
+
+      {aiModalOpen && (
+        <AiGenerateModal onClose={() => setAiModalOpen(false)} onGenerated={(source) => setDraft(source)} />
+      )}
     </div>
   )
 }

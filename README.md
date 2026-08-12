@@ -232,7 +232,17 @@ See the Manual's Changelog for the exact before/after of each built-in scenario.
 1. Add a new `.yaml` (or `.json`) file under `src/scenarios/`.
 2. Register it in `src/scenarios/index.ts`'s `BUILT_IN_SCENARIOS` array.
 
-No React code needs to change — the sidebar's "Load example" dropdown and the engine pick it up automatically. You can also just paste/import a flow via the in-app **Edit flow** panel without touching the repo at all.
+No React code needs to change — the sidebar's "Load example" dropdown and the engine pick it up automatically. You can also just paste/import a flow via the in-app **Edit flow** panel without touching the repo at all, or generate one — see below.
+
+### Generating scenarios with AI
+
+[`docs/SCENARIO_AUTHORING_GUIDE.md`](docs/SCENARIO_AUTHORING_GUIDE.md) is the canonical spec for what a scenario can contain: every node field, every message type's exact shape, the real WhatsApp/RCS structural limits, and the attachment rule that trips up hand-authored scenarios most often (a `suggested_replies`/`suggested_actions` message needs a real body message before it). It's kept in sync with `schema/*.ts` and `channels/*/capabilities.ts` by hand — if you change either, update this file too.
+
+The in-app editor's **"Generate with AI"** button (New/Edit scenario → toolbar) offers two paths built from this same document, so they can never drift apart:
+- **Generate** — describe the conversation, paste in your own Anthropic API key, and the app calls Anthropic's API directly from your browser (there's no backend, so this is the only way an in-app assistant works without routing your key through a server of ours). The key is stored only in `localStorage` and sent only to Anthropic. If the result fails the app's own validator, it retries once with the errors fed back for a self-correction pass, then hands back whatever it gets.
+- **Copy prompt instead** — no key needed; copies the spec plus your description to the clipboard to paste into Claude, ChatGPT, or any AI tool you already use, then paste the YAML result back into the editor.
+
+Either way, whatever comes back goes through the same live validator as hand-authored content before you can save it.
 
 ## Adding a message type
 

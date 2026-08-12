@@ -25,7 +25,7 @@ export default defineConfig(({ command }) => {
           name: 'Business Messaging Flow Simulator',
           short_name: 'Msg Simulator',
           description:
-            'Interactive, browser-only prototyping tool for conversational business messaging journeys (RCS, WhatsApp Business, Generic).',
+            'Interactive, browser-only prototyping tool for conversational business messaging journeys (RCS, WhatsApp Business).',
           theme_color: '#0f172a',
           background_color: '#f8fafc',
           display: 'standalone',

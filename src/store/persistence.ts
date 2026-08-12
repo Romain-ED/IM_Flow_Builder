@@ -5,6 +5,7 @@ import type { FlowSourceFormat } from '../utils/flowSource'
 const PREFERENCES_KEY = 'bmfs.preferences.v1'
 const SCENARIO_KEY = 'bmfs.lastScenario.v1'
 const CUSTOM_SCENARIOS_KEY = 'bmfs.customScenarios.v1'
+const AI_API_KEY_KEY = 'bmfs.aiApiKey.v1'
 
 export interface StoredPreferences {
   channel: ChannelId
@@ -86,6 +87,39 @@ export function saveCustomScenarios(scenarios: CustomScenario[]): void {
   if (!isBrowser()) return
   try {
     window.localStorage.setItem(CUSTOM_SCENARIOS_KEY, JSON.stringify(scenarios))
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * The user's own Anthropic API key, for the in-app "Generate with AI"
+ * feature — stored only in this browser, read only to send directly to
+ * Anthropic's API when the user explicitly clicks Generate. Never sent
+ * anywhere else, never bundled into exported/shared scenarios.
+ */
+export function loadAiApiKey(): string | null {
+  if (!isBrowser()) return null
+  try {
+    return window.localStorage.getItem(AI_API_KEY_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function saveAiApiKey(key: string): void {
+  if (!isBrowser()) return
+  try {
+    window.localStorage.setItem(AI_API_KEY_KEY, key)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearAiApiKey(): void {
+  if (!isBrowser()) return
+  try {
+    window.localStorage.removeItem(AI_API_KEY_KEY)
   } catch {
     /* ignore */
   }

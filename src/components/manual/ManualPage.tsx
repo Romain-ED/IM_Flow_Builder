@@ -7,6 +7,7 @@ const TOC = [
   { id: 'overview', label: 'Overview' },
   { id: 'interface', label: 'Interface guide' },
   { id: 'flow-format', label: 'Flow definition reference' },
+  { id: 'ai-authoring', label: 'Generating scenarios with AI' },
   { id: 'architecture', label: 'Technical architecture' },
   { id: 'changelog', label: 'Changelog' },
   { id: 'limitations', label: 'Limitations & roadmap' },
@@ -59,7 +60,10 @@ export function ManualPage() {
           </P>
           <P>
             Everything — the flow you're editing, your channel/variable preferences, and any custom scenarios you
-            save — lives in this browser's local storage. Nothing is sent to a server.
+            save — lives in this browser's local storage. Nothing is sent to a server, with one opt-in exception:
+            clicking "Generate with AI" in the scenario editor sends your description and an Anthropic API key you
+            provide directly to Anthropic's API from this browser — never through any server of ours. See "Generating
+            scenarios with AI" below.
           </P>
         </Section>
 
@@ -156,6 +160,31 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
             way a broken node reference does, since that content genuinely couldn't be sent to a real WhatsApp/RCS
             number. Label/title length limits stay a live warning rather than a hard error, since a variable can
             change a length per run.
+          </P>
+        </Section>
+
+        <Section id="ai-authoring" title="Generating scenarios with AI" accent="violet">
+          <P>
+            "Generate with AI" in the scenario editor (New/Edit scenario → toolbar) offers two paths, both built from
+            the same spec document (<code>docs/SCENARIO_AUTHORING_GUIDE.md</code> in the repo) so they can't drift
+            apart:
+          </P>
+          <ParamTable
+            rows={[
+              [
+                'Generate',
+                'Describe the conversation you want and paste in your own Anthropic API key. The app calls Anthropic\'s API directly from your browser — there is no backend, so this is the only way an in-app assistant can work without sending your key through a server of ours. The key is stored only in this browser\'s local storage and sent only to Anthropic. If the first result fails the app\'s own validator, it automatically retries once with the validation errors fed back for a self-correction pass, then hands back whatever it gets — reviewed and editable in the Source view either way.',
+              ],
+              [
+                'Copy prompt instead',
+                'No API key needed. Copies the full spec plus your description to the clipboard — paste it into Claude, ChatGPT, or any AI tool you already use, then paste the resulting YAML back into the editor.',
+              ],
+            ]}
+          />
+          <P>
+            The spec document is also useful on its own: browse it directly in the repo, or copy it manually, for a
+            complete reference of every message type, field, and the real WhatsApp/RCS structural limits — the same
+            source of truth this Manual's message-type table and platform-limits table above are written from.
           </P>
         </Section>
 

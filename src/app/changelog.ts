@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.9.0',
+    date: '2026-08-12',
+    changes: [
+      'New: "Generate with AI" in the scenario editor. Describe a conversation and paste in your own Anthropic API key to generate a scenario directly in the browser — no backend, the key is stored only in this browser and sent only to Anthropic. The result is automatically checked against the app\'s own validator, with one self-correcting retry if it fails.',
+      'New: a "Copy prompt instead" option in the same modal — no API key needed, copies a complete authoring spec plus your description to paste into any AI tool you already use.',
+      'New: `docs/SCENARIO_AUTHORING_GUIDE.md`, a hand-maintained canonical spec (schema reference, every message type\'s shape, real WhatsApp/RCS limits, the button-attachment rule) that powers both of the above and is also browsable on its own.',
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-08-12',
     changes: [
