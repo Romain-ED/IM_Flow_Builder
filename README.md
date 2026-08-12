@@ -150,7 +150,9 @@ metadata:
   tags: [demo]
 brand:
   name: "Acme Airlines"
+  shortName: "Acme"                    # optional, shown in the header instead of name
   avatar: "/assets/brand-avatar.svg"
+  description: "Customer support"      # optional header subtitle; defaults to a channel label
   verified: true
 defaults:
   messageDelayMs: 500      # pause before each message appears
@@ -168,6 +170,10 @@ nodes:
       - label: "Get started"
         next: next_node
 ```
+
+### Brand
+
+The `brand` block (name, short name, avatar picture, description subtitle, verified tick) is also editable live from the sidebar's **Brand** section — no YAML editing needed, applies immediately with no restart, and persists per-browser like the Variables section. "Reset" reverts to whatever the loaded flow's own `brand` block specifies. Useful for quickly re-skinning a demo (a different company name/logo) without touching the scenario file.
 
 A **node** can: play one or more messages in sequence (with per-message `delayMs`/`typingMs` overrides and a `delay` pseudo-message for extra pauses), set variables unconditionally (`set:`), branch on a `condition` (`then`/`else`), auto-continue to another node (`next`), present an `actions` button row — a lighter way to author the same thing a `suggested_replies` message does, rendered identically and attached to the last message rather than floating above the composer, matching how WhatsApp/RCS actually attach interactive buttons to one message — or simply end (`end: true`).
 

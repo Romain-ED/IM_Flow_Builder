@@ -314,6 +314,40 @@ to be useful. `fetch` is an injectable parameter specifically so
 ever hitting the real network (no test in this repo hits a real network
 — keep it that way).
 
+## Live brand editing (0.10.0) — `configuredBrand`, mirrors `configuredVariables`
+
+The sidebar's **Brand** section (`components/controls/BrandEditor.tsx`) lets
+a user override name/shortName/avatar/description/verified per session,
+without touching the scenario's YAML. This is a separate store field,
+`configuredBrand: BrandDefinition`, seeded from `flow.brand` on load
+(`loadFlow`'s new `brandOverride` param) and persisted per-scenario in
+`localStorage` (`StoredScenario.configuredBrand`) — same shape as the
+pre-existing `configuredVariables`/`updateConfiguredVariable`/
+`resetConfiguredVariables` pattern, follow that one if extending this.
+
+**One deliberate difference from Variables**: brand edits apply
+*immediately*, not "on next Restart". Variables are baked into message
+text at plan-computation time (`computeNodePlan`), so an edit can't
+retroactively change already-rendered history without a replay — hence
+Variables' "Hit Restart to apply" caveat. The brand block only drives the
+header chrome (`PhoneScreen.tsx` passes `configuredBrand`, not
+`flow.brand`, into the channel renderer), which re-renders live from
+store state on every change like any other prop — there's nothing to
+replay. Don't add a "Hit Restart" caveat to `BrandEditor.tsx`; it would be
+inaccurate.
+
+`brand.description` is a new schema field (the header subtitle, e.g.
+"Business Account" on WhatsApp / "Business messaging" on RCS) — both
+header components fall back to their historical hardcoded string via
+`brand.description || '<default>'` when it's unset, so this is fully
+backward-compatible with every existing scenario.
+
+Picture upload reads a local file into a `data:` URL
+(`BrandEditor.tsx`'s `readFileAsDataUrl`) rather than uploading anywhere —
+consistent with this app having no backend. `assetUrl.ts` already passes
+non-`/`-prefixed strings through unchanged, so a `data:` URL just works as
+`brand.avatar` with no special-casing needed.
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number

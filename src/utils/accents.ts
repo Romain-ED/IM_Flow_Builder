@@ -94,6 +94,7 @@ export const accents: Record<AccentColor, Accent> = {
 export const sectionAccents = {
   scenario: accents.indigo,
   channel: accents.violet,
+  brand: accents.slate,
   variables: accents.emerald,
   debug: accents.amber,
   playback: accents.rose,

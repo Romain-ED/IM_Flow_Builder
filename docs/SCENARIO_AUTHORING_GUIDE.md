@@ -33,8 +33,9 @@ metadata:
   tags: [demo]
 brand:
   name: "Acme Airlines"      # required
-  shortName: "Acme"
+  shortName: "Acme"           # optional, shown in the header instead of name
   avatar: "/assets/brand-avatar.svg"   # optional; omit rather than invent a real URL
+  description: "Customer support"       # optional header subtitle; defaults to a channel label
   verified: true
 defaults:
   messageDelayMs: 500        # pause before each message appears

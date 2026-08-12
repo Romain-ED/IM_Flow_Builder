@@ -19,6 +19,8 @@ export const brandDefinitionSchema = z.object({
   avatar: z.string().optional(),
   logo: z.string().optional(),
   verified: z.boolean().optional(),
+  /** Subtitle shown under the name in the chat header (e.g. "Customer support"). Defaults to a channel-appropriate label when omitted. */
+  description: z.string().optional(),
   website: z.string().optional(),
   supportPhone: z.string().optional(),
 })

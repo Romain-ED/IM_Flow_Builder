@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.10.0',
+    date: '2026-08-12',
+    changes: [
+      'New: a "Brand" section in the sidebar lets you edit the business profile shown in the chat header — name, short name, profile picture (upload a file or paste a URL), description subtitle, and the verified checkmark — without touching the scenario\'s YAML. Applies immediately, no restart needed, and persists per scenario like the Variables section already does.',
+      'New: `brand.description` scenario field — the subtitle shown under the name in the header (previously hardcoded to "Business Account" / "Business messaging"). Existing scenarios are unaffected; it only changes behavior when set.',
+    ],
+  },
+  {
     version: '0.9.0',
     date: '2026-08-12',
     changes: [

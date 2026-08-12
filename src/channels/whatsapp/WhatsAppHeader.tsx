@@ -13,7 +13,7 @@ export function WhatsAppHeader({ brand }: { brand: BrandDefinition }) {
             <span className="text-[14.5px] font-medium truncate">{brand.shortName ?? brand.name}</span>
             {brand.verified && <BadgeCheck size={13} className="shrink-0" aria-label="Verified business" />}
           </div>
-          <span className="block truncate text-[11.5px] text-white/70">Business Account</span>
+          <span className="block truncate text-[11.5px] text-white/70">{brand.description || 'Business Account'}</span>
         </div>
         <div className="flex items-center gap-3.5 shrink-0">
           <Video size={18} aria-hidden="true" />

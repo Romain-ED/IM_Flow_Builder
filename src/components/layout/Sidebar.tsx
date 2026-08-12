@@ -1,5 +1,6 @@
 import { ScenarioControls } from '../controls/ScenarioControls'
 import { ChannelSelector } from '../controls/ChannelSelector'
+import { BrandEditor } from '../controls/BrandEditor'
 import { VariablesEditor } from '../controls/VariablesEditor'
 import { DebugOptions } from '../controls/DebugOptions'
 import { PlaybackControls } from '../controls/PlaybackControls'
@@ -10,6 +11,8 @@ export function Sidebar({ onOpenEditor }: { onOpenEditor: () => void }) {
       <ScenarioControls onOpenEditor={onOpenEditor} />
       <Divider />
       <ChannelSelector />
+      <Divider />
+      <BrandEditor />
       <Divider />
       <VariablesEditor />
       <Divider />

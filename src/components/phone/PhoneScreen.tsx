@@ -17,6 +17,7 @@ interface PhoneScreenProps {
 export function PhoneScreen({ channelOverride }: PhoneScreenProps = {}) {
   const flow = useSimulatorStore((s) => s.flow)
   const storeChannel = useSimulatorStore((s) => s.channel)
+  const configuredBrand = useSimulatorStore((s) => s.configuredBrand)
   const channel = channelOverride ?? storeChannel
 
   if (!flow) {
@@ -31,7 +32,7 @@ export function PhoneScreen({ channelOverride }: PhoneScreenProps = {}) {
 
   return (
     <ChannelProvider channel={channel}>
-      <ChannelRenderer brand={flow.brand}>
+      <ChannelRenderer brand={configuredBrand}>
         <ConversationView />
         <Composer />
         <ListSheet />

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { channelIdSchema, type ChannelId, type FlowDefinition } from '../schema/flow'
+import { channelIdSchema, type BrandDefinition, type ChannelId, type FlowDefinition } from '../schema/flow'
 import type { Action, BoardingPassAction, Choice, ListRow, VariableMap } from '../schema/messages'
 import {
   computeNodePlan,
@@ -64,6 +64,7 @@ export interface SimulatorState {
   compareMode: boolean
 
   configuredVariables: VariableMap
+  configuredBrand: BrandDefinition
   variables: VariableMap
   currentNodeId: string | null
   startNodeOverride: string | null
@@ -88,6 +89,7 @@ export interface SimulatorState {
     sourceText: string,
     format: FlowSourceFormat,
     variablesOverride?: VariableMap,
+    brandOverride?: BrandDefinition,
   ) => void
   loadScenarioSource: (source: string, format?: FlowSourceFormat) => boolean
   loadBuiltInScenario: (id: string) => void
@@ -137,6 +139,8 @@ export interface SimulatorState {
   setStartNodeOverride: (nodeId: string | null) => void
   updateConfiguredVariable: (key: string, value: string | number | boolean) => void
   resetConfiguredVariables: () => void
+  updateConfiguredBrand: (patch: Partial<BrandDefinition>) => void
+  resetConfiguredBrand: () => void
 }
 
 function persistPrefs(state: SimulatorState) {
@@ -154,6 +158,7 @@ function persistScenario(state: SimulatorState) {
     source: state.flowSource,
     format: state.flowSourceFormat,
     configuredVariables: state.configuredVariables,
+    configuredBrand: state.configuredBrand,
   })
 }
 
@@ -235,6 +240,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     debugWarningsEnabled: true,
 
     configuredVariables: {},
+    configuredBrand: { name: '' },
     variables: {},
     currentNodeId: null,
     startNodeOverride: null,
@@ -285,7 +291,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       if (parsed.success) {
         const validation = validateFlow(parsed.data)
         if (validation.success) {
-          get().loadFlow(validation.flow, source, format, stored?.configuredVariables)
+          get().loadFlow(validation.flow, source, format, stored?.configuredVariables, stored?.configuredBrand)
           return
         }
       }
@@ -298,14 +304,16 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       }
     },
 
-    loadFlow: (flow, sourceText, format, variablesOverride) => {
+    loadFlow: (flow, sourceText, format, variablesOverride, brandOverride) => {
       const configuredVariables = variablesOverride ?? { ...(flow.variables ?? {}) }
+      const configuredBrand = brandOverride ?? { ...flow.brand }
       set((s) => ({
         flow,
         flowSource: sourceText,
         flowSourceFormat: format,
         validation: { success: true, flow, warnings: [] },
         configuredVariables,
+        configuredBrand,
         channel: flow.metadata.channel ?? s.channel,
         startNodeOverride: null,
       }))
@@ -683,6 +691,17 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       const s = get()
       if (!s.flow) return
       set({ configuredVariables: { ...(s.flow.variables ?? {}) } })
+      persistScenario(get())
+    },
+
+    updateConfiguredBrand: (patch) => {
+      set((s) => ({ configuredBrand: { ...s.configuredBrand, ...patch } }))
+      persistScenario(get())
+    },
+    resetConfiguredBrand: () => {
+      const s = get()
+      if (!s.flow) return
+      set({ configuredBrand: { ...s.flow.brand } })
       persistScenario(get())
     },
   }
