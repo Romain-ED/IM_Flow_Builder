@@ -91,8 +91,22 @@ metadata: { id, name, description?, channel?, tags? }
 brand: { name, shortName?, avatar?, logo?, verified?, description?, website?, supportPhone? }
 defaults: { messageDelayMs?, typingDurationMs?, locale?, timezone?, showTimestamps? }
 variables: { ...any key/value pairs used by {{templating}} }
+triggers: [ ...{ keywords, next, set? } ]  // optional global keyword routes
 start: "<id of the first node>"
 nodes: [ ...FlowNode ]`}</CodeBlock>
+
+          <h3 className="text-[13.5px] font-semibold text-slate-800 mt-4 mb-1">Free text &amp; keyword triggers</h3>
+          <P>
+            The composer is always typable, not only while an <code>input</code> message is active — anything the
+            user types sends as an outgoing bubble, whether or not it matches anything. <code>triggers</code> are
+            global keyword routes, independent of the current node: each entry matches when any of its{' '}
+            <code>keywords</code> appears as a whole word in the typed text (case-insensitive by default —{' '}
+            <code>caseSensitive: true</code> to change that; "cat" won't match "category"), and transitions to{' '}
+            <code>next</code> — the first matching trigger wins. A trigger match takes priority even over an
+            active <code>input</code> field, so a keyword like "cancel" or "help" can interrupt whatever the user
+            was doing. If nothing matches and no <code>input</code> is active, the message still sends — it just
+            gets no automatic response, the same as a real bot that doesn't recognize the input.
+          </P>
 
           <h3 className="text-[13.5px] font-semibold text-slate-800 mt-2 mb-1">Node fields</h3>
           <ParamTable

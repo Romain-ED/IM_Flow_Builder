@@ -1,4 +1,4 @@
-import type { FlowDefinition, FlowNode } from '../schema/flow'
+import type { FlowDefinition, FlowNode, Trigger } from '../schema/flow'
 import type { Action, BoardingPassAction, Choice, ListRow, VariableMap } from '../schema/messages'
 import { evaluateCondition } from './conditionEvaluator'
 import { deepInterpolate } from './templateRenderer'
@@ -204,5 +204,22 @@ export function resolveInputSubmission(
     userMessage: userTextMessage(nodeId, value),
     setVariables: { [variableName]: value },
     nextNodeId: next,
+  }
+}
+
+/**
+ * Resolves an untriggered free-text composer send: always records the
+ * typed text as an outgoing user bubble (a real chat lets you type
+ * anything, whether or not the business's bot understands it), and
+ * transitions only when `trigger` is non-null (already matched by
+ * `triggerMatcher.ts` against `flow.triggers`) — otherwise the message
+ * just sits in history with no automatic response, same as a real bot
+ * that doesn't recognize what you sent.
+ */
+export function resolveFreeText(nodeId: string, text: string, trigger: Trigger | null): InteractionResult {
+  return {
+    userMessage: userTextMessage(nodeId, text),
+    setVariables: trigger?.set,
+    nextNodeId: trigger?.next,
   }
 }

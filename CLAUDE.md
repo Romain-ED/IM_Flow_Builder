@@ -348,6 +348,45 @@ consistent with this app having no backend. `assetUrl.ts` already passes
 non-`/`-prefixed strings through unchanged, so a `data:` URL just works as
 `brand.avatar` with no special-casing needed.
 
+## Free text + keyword triggers (0.11.0)
+
+The composer (`components/phone/Composer.tsx`) used to be disabled except
+when a node's `type: input` message was actively awaiting entry
+(placeholder: "Tap a suggestion above"). It's now always typable — real
+WhatsApp/RCS composers never lock like that, and this is what "simulated
+free texting" means. Every submit goes through one new store action,
+`handleFreeText`, instead of calling `handleInputSubmit` directly:
+
+1. Check `flow.triggers` (new, global, top-level — `engine/triggerMatcher.ts`'s
+   `matchTrigger`) first. **This wins even over an active `input` field** —
+   deliberate, so a keyword like "cancel"/"help" works as an anytime escape
+   hatch that can interrupt structured input capture, matching how real
+   bots commonly implement keyword commands. If you're tempted to make
+   active-input capture take priority instead, don't — that would make
+   "type CANCEL anytime" unreliable exactly when it matters most (mid-form).
+2. If no trigger matches, fall back to the pre-existing active-`input`
+   capture (`handleInputSubmit`) unchanged.
+3. If neither applies, `resolveFreeText` (in `ConversationEngine.ts`,
+   alongside the other `resolve*` functions) still records the typed text
+   as an outgoing user bubble via `applyInteractionResult`, just with no
+   `nextNodeId` — `applyInteractionResult` already handles an undefined
+   `nextNodeId` safely (message is added, no navigation), so this is not a
+   special case requiring new plumbing. **Don't add a "sorry, I didn't
+   understand" auto-reply for the no-match case** — a real bot silently not
+   responding to unrecognized input is the realistic behavior being
+   simulated, not a gap to paper over.
+
+Matching (`matchTrigger`) is whole-word (`\b`-bounded regex per keyword,
+case-insensitive unless `caseSensitive: true`), not raw substring — "cat"
+must not fire on "category". This is a pure, timer-free function like
+`conditionEvaluator.ts`, not folded into `ConversationEngine.ts` itself,
+following that file's existing separation of "matching algorithm" from
+"resolve into an InteractionResult".
+
+`flowValidator.ts` checks `trigger.next` for dangling references, same as
+every other `next`-like field — triggers are global (no owning node), so
+that one check doesn't go through the node-scoped `checkRef` helper.
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number

@@ -91,6 +91,21 @@ describe('validateFlow', () => {
     expect(result.success).toBe(false)
   })
 
+  it('flags a dangling reference in a global trigger', () => {
+    const flow = baseFlow({ triggers: [{ keywords: ['help'], next: 'nowhere' }] })
+    const result = validateFlow(flow)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.errors.some((e) => e.message.includes('Trigger') && e.message.includes('nowhere'))).toBe(true)
+    }
+  })
+
+  it('accepts a flow with a valid global trigger', () => {
+    const flow = baseFlow({ triggers: [{ keywords: ['help'], next: 'end' }] })
+    const result = validateFlow(flow)
+    expect(result.success).toBe(true)
+  })
+
   it('flags a condition with no "then" target', () => {
     const flow = baseFlow({
       nodes: [

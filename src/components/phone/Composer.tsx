@@ -18,20 +18,21 @@ export function Composer() {
   const history = useSimulatorStore((s) => s.history)
   const currentNodeId = useSimulatorStore((s) => s.currentNodeId)
   const pendingOutcome = useSimulatorStore((s) => s.pendingOutcome)
-  const handleInputSubmit = useSimulatorStore((s) => s.handleInputSubmit)
   const [value, setValue] = useState('')
 
   const activeInput = findActiveInput(history, currentNodeId)
   const inputMessage = activeInput?.message.type === 'input' ? activeInput.message : null
+  const handleFreeText = useSimulatorStore((s) => s.handleFreeText)
   const theme = channelThemes[channel]
+  const placeholder = inputMessage?.placeholder ?? 'Type a message'
 
   useEffect(() => {
     setValue('')
   }, [inputMessage?.variable, currentNodeId])
 
   function submit() {
-    if (!inputMessage || !value.trim()) return
-    handleInputSubmit(value.trim())
+    if (!value.trim()) return
+    handleFreeText(value.trim())
     setValue('')
   }
 
@@ -57,17 +58,16 @@ export function Composer() {
           <input
             type={inputMessage ? INPUT_TYPE_MAP[inputMessage.inputType] : 'text'}
             value={value}
-            disabled={!inputMessage}
             onChange={(e) => setValue(e.target.value)}
-            placeholder={inputMessage ? (inputMessage.placeholder ?? 'Type a message') : 'Tap a suggestion above'}
-            aria-label={inputMessage ? inputMessage.placeholder ?? 'Message input' : 'Message input (disabled)'}
-            className="flex-1 min-w-0 rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-[13.5px] text-slate-900 placeholder:text-slate-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-1"
+            placeholder={placeholder}
+            aria-label={placeholder}
+            className="flex-1 min-w-0 rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-[13.5px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-1"
             style={{ ['--tw-ring-color' as string]: theme.accent }}
           />
-          {inputMessage && value.trim() ? (
+          {value.trim() ? (
             <button
               type="submit"
-              aria-label={inputMessage.submitLabel ?? 'Send'}
+              aria-label={inputMessage?.submitLabel ?? 'Send'}
               className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-white cursor-pointer"
               style={{ backgroundColor: theme.accent }}
             >

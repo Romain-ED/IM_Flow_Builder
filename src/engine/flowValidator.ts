@@ -123,6 +123,14 @@ export function validateFlow(raw: unknown): FlowValidationResult {
     }
   }
 
+  for (const trigger of flow.triggers ?? []) {
+    if (!nodeIds.has(trigger.next)) {
+      errors.push({
+        message: `Trigger [${trigger.keywords.map((k) => `"${k}"`).join(', ')}]: "next" target node "${trigger.next}" does not exist.`,
+      })
+    }
+  }
+
   if (errors.length > 0) return { success: false, errors }
   return { success: true, flow, warnings }
 }

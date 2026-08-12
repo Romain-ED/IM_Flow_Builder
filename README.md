@@ -160,6 +160,9 @@ defaults:
   showTimestamps: true
 variables:
   customerName: Alex        # available for {{customerName}} templating everywhere
+triggers:                   # optional: global keyword routes, checked on every free-text send
+  - keywords: ["help", "support"]
+    next: help_node
 start: welcome
 nodes:
   - id: welcome
@@ -174,6 +177,12 @@ nodes:
 ### Brand
 
 The `brand` block (name, short name, avatar picture, description subtitle, verified tick) is also editable live from the sidebar's **Brand** section — no YAML editing needed, applies immediately with no restart, and persists per-browser like the Variables section. "Reset" reverts to whatever the loaded flow's own `brand` block specifies. Useful for quickly re-skinning a demo (a different company name/logo) without touching the scenario file.
+
+### Free text & keyword triggers
+
+The composer is always typable — not just when an `input` message is active — so the user side of a demo can be driven by actually typing, not only tapping buttons. Whatever's typed always shows up as an outgoing bubble.
+
+`triggers` at the flow's top level are global keyword routes, independent of whatever node is currently active: `{ keywords: [...], next: "<node id>", set?: {...} }`. A trigger matches when any of its keywords appears as a **whole word** in the typed text (case-insensitive by default; substring-inside-another-word doesn't count, so `cat` won't fire on "category") — the first matching trigger wins. This is meant as an "anytime" escape hatch, e.g. "type CANCEL anytime" or "type HELP anytime", the way real WhatsApp/RCS bots often implement keyword commands, and it takes priority even over a currently-active `input` field. If nothing matches and there's no active `input` field either, the typed message still sends — it just sits there with no automatic response, the same as a real bot that doesn't recognize what you typed.
 
 A **node** can: play one or more messages in sequence (with per-message `delayMs`/`typingMs` overrides and a `delay` pseudo-message for extra pauses), set variables unconditionally (`set:`), branch on a `condition` (`then`/`else`), auto-continue to another node (`next`), present an `actions` button row — a lighter way to author the same thing a `suggested_replies` message does, rendered identically and attached to the last message rather than floating above the composer, matching how WhatsApp/RCS actually attach interactive buttons to one message — or simply end (`end: true`).
 

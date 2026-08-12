@@ -7,9 +7,11 @@ import {
   resolveAction,
   resolveBoardingPassAction,
   resolveChoice,
+  resolveFreeText,
   resolveInputSubmission,
   resolveListRow,
 } from '../engine/ConversationEngine'
+import { matchTrigger } from '../engine/triggerMatcher'
 import type { InteractionResult, NodeOutcome, NormalizedMessage } from '../engine/types'
 import { diffVariableEvents, type ConversationEvent } from '../engine/eventStore'
 import type { FlowValidationResult } from '../engine/flowValidator'
@@ -116,6 +118,8 @@ export interface SimulatorState {
   handleListRowSelect: (row: ListRow) => void
   handleAction: (action: Action) => void
   handleInputSubmit: (value: string) => void
+  /** The composer's general free-text send — checks global keyword triggers first, then falls back to an active `input` field, then just records the message with no automatic response. */
+  handleFreeText: (text: string) => void
   handleBoardingPassAction: (action: BoardingPassAction, message: NormalizedMessage) => void
   handleOtpSubmit: (message: NormalizedMessage, code: string) => void
   /** Shared handler for "Pay now" / "Add to calendar" / "Start" style card buttons: shows a toast, then optionally transitions. */
@@ -585,6 +589,27 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       applyInteractionResult(
         resolveInputSubmission(s.currentNodeId, activeInput.message.variable, activeInput.message.next, value),
       )
+    },
+
+    handleFreeText: (text) => {
+      const s = get()
+      if (!s.flow || !s.currentNodeId || !text.trim()) return
+
+      // A global keyword trigger wins even over an active structured `input`
+      // field — it's meant as an "anytime" escape hatch (e.g. "type CANCEL
+      // anytime"), matching how real bots typically implement keyword
+      // commands that interrupt whatever the user was doing.
+      const trigger = matchTrigger(s.flow.triggers ?? [], text)
+      if (!trigger) {
+        const activeInput = findActiveInput(s.history, s.currentNodeId)
+        if (activeInput && activeInput.message.type === 'input') {
+          get().handleInputSubmit(text)
+          return
+        }
+      }
+
+      pushSnapshot()
+      applyInteractionResult(resolveFreeText(s.currentNodeId, text, trigger))
     },
 
     handleOtpSubmit: (message, code) => {

@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.11.0',
+    date: '2026-08-12',
+    changes: [
+      'New: the composer is now always typable — previously it was disabled ("Tap a suggestion above") unless a node had a structured `input` message active. Whatever the user types now always sends as an outgoing bubble, matching how a real WhatsApp/RCS composer behaves.',
+      'New: global keyword `triggers` — declare `{ keywords: [...], next: "<node>" }` at the top level of a scenario and typing any of those words anywhere in the conversation jumps straight to that node, as an "anytime" escape hatch (e.g. "type HELP anytime"). Takes priority even over an active structured `input` field. Typed text that matches nothing just sends with no automatic response, same as a real bot that doesn\'t understand.',
+      'The ecommerce demo scenario now has a `help`/`support` trigger reusing its existing "help" node, so typing "help" at any point reaches the same content the "Need help?" button already did.',
+    ],
+  },
+  {
     version: '0.10.0',
     date: '2026-08-12',
     changes: [

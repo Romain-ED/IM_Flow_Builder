@@ -43,11 +43,41 @@ defaults:
   showTimestamps: true
 variables:
   customerName: Alex         # any flat key/value pairs, used via {{customerName}}
+triggers:                     # optional: global keyword routes (see "Free text & triggers" below)
+  - keywords: ["help", "support"]
+    next: help_node
 start: welcome                # id of the first node
 nodes:
   - id: welcome
     # ...
 ```
+
+## Free text & triggers
+
+The user's composer is always typable, not just when an `input` message is
+active — whatever they type always sends as an outgoing bubble. `triggers`
+(top-level, sibling of `nodes`) are global keyword routes checked against
+every free-text send, regardless of the current node:
+
+```yaml
+triggers:
+  - keywords: ["cancel", "stop"]
+    next: cancelled_node
+  - keywords: ["help"]
+    next: help_node
+    set: { source: keyword }   # optional, like a Choice
+```
+
+A trigger fires when any of its `keywords` appears as a **whole word** in
+the typed text (case-insensitive by default — set `caseSensitive: true` to
+change that). Matching is on word boundaries, not raw substring: `cat`
+won't match "category". Only use this for genuine "anytime" commands the
+user might type unprompted (help, cancel, menu, restart) — it is NOT a
+general intent-classifier; a real conversation still has to be driven by
+authored nodes and their `actions`/`suggested_replies` choices, triggers
+just add typed shortcuts into that same graph. If nothing matches (and no
+`input` message is currently active either), the message just sends with
+no automatic response — that's expected, not a bug to work around.
 
 ## Node fields
 

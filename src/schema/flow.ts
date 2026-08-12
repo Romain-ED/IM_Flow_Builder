@@ -75,12 +75,30 @@ export const flowNodeSchema = z.object({
 })
 export type FlowNode = z.infer<typeof flowNodeSchema>
 
+/**
+ * A global keyword→node route, checked against whatever the user types
+ * into the composer — not tied to any specific node, so it works as an
+ * "anytime" escape hatch (e.g. "type CANCEL anytime"), the way many real
+ * WhatsApp/RCS bots implement keyword commands. See
+ * `engine/triggerMatcher.ts` for matching semantics.
+ */
+export const triggerSchema = z.object({
+  /** Any one of these appearing as a whole word in the typed text matches (case-insensitive unless caseSensitive is set). */
+  keywords: z.array(z.string()).min(1),
+  next: z.string(),
+  set: variableMapSchema.optional(),
+  caseSensitive: z.boolean().optional(),
+})
+export type Trigger = z.infer<typeof triggerSchema>
+
 export const flowDefinitionSchema = z.object({
   version: z.string(),
   metadata: flowMetadataSchema,
   brand: brandDefinitionSchema,
   defaults: flowDefaultsSchema.optional(),
   variables: variableMapSchema.optional(),
+  /** Global keyword routes, checked on every free-text send regardless of the current node. */
+  triggers: z.array(triggerSchema).optional(),
   start: z.string(),
   nodes: z.array(flowNodeSchema).min(1),
 })

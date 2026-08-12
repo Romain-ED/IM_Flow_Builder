@@ -36,6 +36,13 @@ variables:
 
 start: shipped_notice
 
+# Global keyword triggers — checked against anything typed into the composer,
+# regardless of which node is currently active. Lets a presenter type "help"
+# at any point instead of only reaching it via the "Need help?" button.
+triggers:
+  - keywords: ["help", "support"]
+    next: help
+
 nodes:
   - id: shipped_notice
     messages:
