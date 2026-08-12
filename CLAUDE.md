@@ -150,21 +150,56 @@ with it. This was a real bug fix in two stages:
    `chipStyle`, decide explicitly which behavior it should get; don't
    assume "attach" is universally more correct.
 
-   **Deliberately out of scope for 0.6.1** (a user request asked for a much
-   larger rework — a `WhatsAppNormalizedMessage`/`template` schema
-   discriminator, per-button-type handler semantics for `url` vs.
-   `phone_number` vs. `quick_reply` beyond what `suggested_actions`
-   already models, schema-level rejection of hypothetical floating-button
-   top-level types, and a dedicated regression/visual-regression test
-   suite). Only the attachment/rendering bug was fixed here, reusing the
-   existing unified cross-channel schema — forking the schema per-channel
-   would break the architecture described at the top of this file. If
-   that fuller rework is wanted, treat it as a separate, explicitly-scoped
-   task, not an assumed follow-on.
+3. Third pass (0.7.0): the exact same "floating with a gap" bug existed for
+   standalone `suggested_replies`/`suggested_actions` *messages*, not just
+   node-level `actions`. A real WhatsApp interactive message can't be
+   buttons with no body text at all — so when one of these messages
+   immediately follows a business `text` message in the same node, it now
+   merges into that text message's card instead of rendering as its own
+   `SuggestedReplies`/`SuggestedActions` component. The merge decision was
+   pulled out of the component into a pure, unit-tested function —
+   `computeMessageAttachments` in `engine/messageAttachment.ts` — matching
+   this file's "engine is pure and testable" rule, rather than growing
+   more inline conditionals in `ConversationView.tsx`. `MessageShell`'s
+   `trailingActions` prop was generalized from `{ choices, onSelect }`
+   (`Choice`-only) to `TrailingActionItem[]` (`{ key, label, icon?,
+   onClick }`) so it can represent either a `Choice` (always navigate) or
+   an `Action` (may `open_url`/`call`/etc. via the store's existing
+   `handleAction`, with the same icon `ActionButton` already used — now
+   shared via `utils/actionIcons.ts`).
+
+   This pass also found and fixed two scenario-content bugs it makes
+   newly visible: `ecommerce.yaml`'s `help` and `confirmed` nodes each
+   opened with a bare `suggested_actions`/`suggested_replies` message and
+   nothing else — not just unattached, but genuinely no real WhatsApp/RCS
+   equivalent (buttons always need body text on the wire, not just in our
+   UI). Both nodes now open with a short text message first. If you add a
+   new node whose first message is `suggested_replies`/`suggested_actions`,
+   ask whether that's realistic — it usually needs a preceding `text`.
+
+   **Verified, not changed**: `RichCard`/`Carousel` already correctly keep
+   their `actions` buttons scoped inside their own card (each carousel
+   card owns its buttons) — they don't have this bug and didn't need
+   touching.
+
+   **Still deliberately out of scope**: a `WhatsAppNormalizedMessage`/
+   `template` schema discriminator or dedicated normalization layer
+   (would fork the unified cross-channel schema this architecture
+   depends on — see the top of this file), and schema-level rejection of
+   hypothetical floating-button top-level types (moot: `messageSchema`'s
+   discriminated union already only permits the types listed in
+   `schema/messages.ts` — there's nothing to reject). Per-button-type
+   handler semantics (`url` opens a link with no reply sent, `call`
+   simulates dialing, `reply` sends a reply and navigates) already existed
+   before this pass, in the store's `handleAction` — not something this
+   pass needed to add.
 
 **Don't reintroduce a pinned/fixed action bar.** If you need to touch
-this, the branching logic lives in `ConversationView.tsx`
-(`canAttachToLastMessage`), and the footer rendering lives in
+this: the merge/attach decision lives in `engine/messageAttachment.ts`
+(pure, testable — extend its tests before changing its rules), the
+per-render wiring (building `TrailingActionItem[]` from a `Choice[]` or
+`Action[]`, deciding node-level `actions` fallback) lives in
+`ConversationView.tsx`, and the footer rendering lives in
 `MessageShell.tsx` (`trailingActions`).
 
 ## Versioning — do this on every change

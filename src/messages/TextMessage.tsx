@@ -1,15 +1,14 @@
 import type { ChannelId } from '../schema/flow'
-import type { Choice } from '../schema/messages'
 import type { NormalizedMessage } from '../engine/types'
-import { MessageShell } from '../components/phone/MessageShell'
+import { MessageShell, type TrailingActionItem } from '../components/phone/MessageShell'
 
 interface TextMessageProps {
   message: NormalizedMessage
   channel: ChannelId
   timestampLabel?: string
   deliveryState?: 'sent' | 'delivered' | 'read'
-  /** A node's trailing `actions`, when this is the last message before them — rendered attached, not floating. */
-  trailingActions?: { choices: Choice[]; onSelect: (choice: Choice) => void }
+  /** A node's trailing `actions`, or a merged suggested_replies/suggested_actions message — rendered attached, not floating. */
+  trailingActions?: TrailingActionItem[]
 }
 
 const URL_PATTERN = /(https?:\/\/[^\s]+)/g

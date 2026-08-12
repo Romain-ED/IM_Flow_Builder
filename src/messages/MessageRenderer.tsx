@@ -1,11 +1,11 @@
 import type { ChannelId } from '../schema/flow'
-import type { Choice } from '../schema/messages'
 import type { NormalizedMessage } from '../engine/types'
 import { channelCapabilities } from '../channels/registry'
 import { getFallbackNote, getCapabilityWarning, isMessageTypeSupported } from '../channels/capabilities'
 import { isMessageInteractive } from '../utils/selectors'
 import { useSimulatorStore } from '../store/simulatorStore'
 import { formatTime } from '../utils/time'
+import type { TrailingActionItem } from '../components/phone/MessageShell'
 import { TextMessage } from './TextMessage'
 import { ImageMessage } from './ImageMessage'
 import { VideoMessage } from './VideoMessage'
@@ -37,7 +37,7 @@ interface MessageRendererProps {
    * of the one message object that offered them — never a separate
    * message — so this must render inside the same card, not float below it.
    */
-  trailingActions?: { choices: Choice[]; onSelect: (choice: Choice) => void }
+  trailingActions?: TrailingActionItem[]
 }
 
 export function MessageRenderer({ message, channel, trailingActions }: MessageRendererProps) {
@@ -85,7 +85,7 @@ function renderContent(
   interactive: boolean,
   timestampLabel: string | undefined,
   deliveryState: 'read' | undefined,
-  trailingActions: { choices: Choice[]; onSelect: (choice: Choice) => void } | undefined,
+  trailingActions: TrailingActionItem[] | undefined,
 ) {
   switch (message.message.type) {
     case 'text':

@@ -11,6 +11,16 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.7.0',
+    date: '2026-08-12',
+    changes: [
+      'Fix: standalone `suggested_replies`/`suggested_actions` messages had the same "floating below with a gap" problem 0.6.1 fixed for node.actions — a real WhatsApp interactive message can\'t be buttons with no body text. On WhatsApp, a `suggested_replies`/`suggested_actions` message that immediately follows a business text message in the same node now merges into that message\'s own card (divided footer, `suggested_actions` buttons get their real-world icon per type — phone/external-link/etc. — matching the existing standalone-action-button style). RCS keeps its accurate floating pill row unchanged.',
+      'The merge/attach decision moved out of the component and into a new pure `engine/messageAttachment.ts` function (`computeMessageAttachments`), matching the project\'s engine-is-pure-and-testable convention — covered by 9 new regression tests.',
+      'Content fix: the e-commerce scenario\'s "help" and "confirmed" nodes had a standalone suggested_actions/suggested_replies message with no body text at all (not just unattached — genuinely no real WhatsApp/RCS equivalent since buttons always need body text on the wire). Both now open with a short text message.',
+      'Verified: rich_card and carousel-card buttons were already correctly scoped inside their own card (not floating) — no change needed there.',
+    ],
+  },
+  {
     version: '0.6.1',
     date: '2026-08-12',
     changes: [

@@ -1,17 +1,8 @@
-import { ExternalLink, Phone, MapPin, Calendar, Sparkles, ArrowRight } from 'lucide-react'
 import type { Action } from '../../schema/messages'
 import type { ChannelId } from '../../schema/flow'
 import { channelThemes } from '../../channels/theme'
 import { useSimulatorStore } from '../../store/simulatorStore'
-
-const ICONS: Record<Action['type'], typeof Phone> = {
-  reply: ArrowRight,
-  open_url: ExternalLink,
-  call: Phone,
-  location: MapPin,
-  calendar: Calendar,
-  custom: Sparkles,
-}
+import { ACTION_ICONS } from '../../utils/actionIcons'
 
 interface ActionButtonProps {
   action: Action
@@ -23,7 +14,7 @@ interface ActionButtonProps {
 export function ActionButton({ action, channel, interactive, variant = 'chip' }: ActionButtonProps) {
   const handleAction = useSimulatorStore((s) => s.handleAction)
   const theme = channelThemes[channel]
-  const Icon = ICONS[action.type]
+  const Icon = ACTION_ICONS[action.type]
 
   const baseClasses =
     variant === 'chip'

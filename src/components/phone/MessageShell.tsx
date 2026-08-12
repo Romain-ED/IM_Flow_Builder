@@ -1,11 +1,21 @@
 import type { ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import type { ChannelId } from '../../schema/flow'
-import type { Choice, Sender } from '../../schema/messages'
+import type { Sender } from '../../schema/messages'
 import { channelThemes } from '../../channels/theme'
 
-interface TrailingActions {
-  choices: Choice[]
-  onSelect: (choice: Choice) => void
+/**
+ * One button in a message's attached footer. Deliberately schema-agnostic
+ * (a plain label + click handler, optional icon) so it can represent either
+ * a `Choice` (node-level `actions`, always "navigate") or an `Action`
+ * (a `suggested_actions` button, which may open a URL or dial a number
+ * instead) — the caller resolves which real behavior a click triggers.
+ */
+export interface TrailingActionItem {
+  key: string
+  label: string
+  icon?: LucideIcon
+  onClick: () => void
 }
 
 interface MessageShellProps {
@@ -19,13 +29,14 @@ interface MessageShellProps {
   className?: string
   /**
    * Buttons that belong to *this* message — e.g. a node's trailing
-   * `actions`, folded into whichever message they logically follow —
-   * rendered as a divided footer inside this same card/bubble, never as a
-   * separate floating element. A real WhatsApp interactive message always
-   * carries header/body/footer/buttons as one message object; there's no
-   * "buttons as their own message" concept on the real platform.
+   * `actions`, or a `suggested_replies`/`suggested_actions` message folded
+   * into whichever message they logically follow — rendered as a divided
+   * footer inside this same card/bubble, never as a separate floating
+   * element. A real WhatsApp interactive message always carries
+   * header/body/footer/buttons as one message object; there's no "buttons
+   * as their own message" concept on the real platform.
    */
-  trailingActions?: TrailingActions
+  trailingActions?: TrailingActionItem[]
 }
 
 export function MessageShell({
@@ -41,7 +52,7 @@ export function MessageShell({
 }: MessageShellProps) {
   const theme = channelThemes[channel]
   const isUser = sender === 'user'
-  const hasTrailingActions = Boolean(trailingActions && trailingActions.choices.length > 0)
+  const hasTrailingActions = Boolean(trailingActions && trailingActions.length > 0)
 
   const containerClasses =
     chrome === 'bubble'
@@ -74,17 +85,18 @@ export function MessageShell({
             <div className={contentPadding}>{children}</div>
             {hasTrailingActions && (
               <div className="flex flex-col border-t border-slate-200/80">
-                {trailingActions!.choices.map((choice, i) => (
+                {trailingActions!.map((item, i) => (
                   <button
-                    key={choice.value ?? choice.label ?? i}
+                    key={item.key}
                     type="button"
                     disabled={!interactive}
-                    onClick={() => interactive && trailingActions!.onSelect(choice)}
-                    className={`px-4 py-2.5 text-[13.5px] font-medium text-center transition-colors ${theme.chipText} ${
+                    onClick={() => interactive && item.onClick()}
+                    className={`flex items-center justify-center gap-1.5 px-4 py-2.5 text-[13.5px] font-medium text-center transition-colors ${theme.chipText} ${
                       i > 0 ? 'border-t border-slate-200/80' : ''
                     } ${interactive ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                   >
-                    {choice.label}
+                    {item.icon && <item.icon size={14} />}
+                    <span className="truncate">{item.label}</span>
                   </button>
                 ))}
               </div>

@@ -115,6 +115,8 @@ nodes:
 
   - id: confirmed
     messages:
+      - type: text
+        text: "Is there anything else I can help with?"
       - type: suggested_replies
         options:
           - label: "Browse more"
@@ -150,6 +152,8 @@ nodes:
 
   - id: help
     messages:
+      - type: text
+        text: "Need a hand? You can call us or check our help center."
       - type: suggested_actions
         actions:
           - type: call
