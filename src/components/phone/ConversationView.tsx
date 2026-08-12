@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { useActiveChannel } from '../../app/ChannelContext'
 import { MessageRenderer } from '../../messages/MessageRenderer'
+import { channelThemes } from '../../channels/theme'
 import { TypingIndicator } from './TypingIndicator'
 import { ChoiceChips } from './ChoiceChips'
 
@@ -15,6 +16,21 @@ export function ConversationView() {
 
   const pendingActions = pendingOutcome?.kind === 'await-actions' ? pendingOutcome.actions : null
 
+  // Real WhatsApp interactive buttons are always part of the one message
+  // object that offered them — never a separate message. When the pending
+  // actions follow a plain business text message on a channel whose chips
+  // render "stacked" (WhatsApp), attach them to that message's own card
+  // instead of a separate floating row. RCS suggestion chips genuinely do
+  // float as their own pill row below the card in the real UI, so this only
+  // ever applies where chipStyle is 'stacked'.
+  const lastMessage = history[history.length - 1]
+  const canAttachToLastMessage =
+    channelThemes[channel].chipStyle === 'stacked' &&
+    lastMessage?.message.type === 'text' &&
+    (lastMessage.message.sender ?? 'business') === 'business'
+  const attachedActions = pendingActions && pendingActions.length > 0 && canAttachToLastMessage ? pendingActions : null
+  const floatingActions = pendingActions && pendingActions.length > 0 && !canAttachToLastMessage ? pendingActions : null
+
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
@@ -25,19 +41,26 @@ export function ConversationView() {
       {history.length === 0 && !isTyping && (
         <p className="text-center text-[12px] text-slate-400 mt-6">Starting conversation…</p>
       )}
-      {history.map((message) => (
-        <MessageRenderer key={message.runtimeId} message={message} channel={channel} />
+      {history.map((message, i) => (
+        <MessageRenderer
+          key={message.runtimeId}
+          message={message}
+          channel={channel}
+          trailingActions={
+            attachedActions && i === history.length - 1
+              ? { choices: attachedActions, onSelect: handleChoice }
+              : undefined
+          }
+        />
       ))}
       {isTyping && <TypingIndicator channel={channel} />}
-      {pendingActions && pendingActions.length > 0 && (
-        // Real WhatsApp/RCS interactive buttons are attached to — and scroll
-        // with — the message that offered them, not pinned in a floating bar
-        // above the composer. This mirrors how a `suggested_replies` message
-        // already renders, so a scenario's node-level `actions` (a lighter
-        // way to author the same thing) looks identical to one.
+      {floatingActions && (
+        // Real RCS suggestion chips float as their own pill row below the
+        // card, so this branch stays for channels where chips aren't
+        // "stacked" (see canAttachToLastMessage above).
         <div className="flex w-full justify-start pl-1">
           <ChoiceChips
-            choices={pendingActions}
+            choices={floatingActions}
             channel={channel}
             interactive
             onSelect={handleChoice}

@@ -122,14 +122,50 @@ until this was fixed).
 
 `ActionBar.tsx` was **deleted**. A node's `actions:` (the lightweight way
 to author a button row without writing a full `suggested_replies`
-message) now renders as the last item inside `ConversationView`, attached
-to the last message and scrolling with it — reusing the exact same
-`ChoiceChips` + wrapper that a `suggested_replies` message uses. This was
-a real bug fix: real WhatsApp/RCS always attach interactive buttons to
-the one message that offered them; there's no "persistent bar above the
-keyboard" pattern on either platform. **Don't reintroduce a pinned/fixed
-action bar** — if you need to touch this, edit the trailing block in
-`ConversationView.tsx`.
+message) renders attached to the message it logically follows, scrolling
+with it. This was a real bug fix in two stages:
+
+1. First pass (0.5.1): moved the button row out of a bar pinned above the
+   composer and into `ConversationView`, as the last scrolled item —
+   correct in that it now scrolled with history, but it still rendered as
+   its own DOM sibling below the last message's card, with a visible gap.
+   Real WhatsApp/RCS interactive buttons are part of the *same message
+   object* that offered them, not a second one.
+2. Second pass (0.6.1): closed that gap for WhatsApp specifically. A
+   `trailingActions?: { choices, onSelect }` prop was threaded
+   `ConversationView` → `MessageRenderer` → `TextMessage` →
+   `MessageShell.tsx`, which now renders it as a divided footer *inside*
+   the same bubble/card — flush, `border-t`-divided between content and
+   buttons and between each button, no independent background/shadow/
+   timestamp on the button row. `ConversationView` decides per-render
+   whether to attach: only when the channel's chip style is `'stacked'`
+   (WhatsApp — one full-width row per button) **and** the last history
+   message is `type: 'text'` with `sender: 'business'`. Otherwise it falls
+   back to the pre-existing separate `ChoiceChips` pill row.
+
+   **This RCS/WhatsApp split is deliberate, not a shortcut**: real RCS
+   suggestion chips genuinely do float as their own pill row below the
+   card (confirmed against Google's RCS spec) — unifying the two would
+   have made RCS *less* accurate to fix WhatsApp. If you add a new
+   `chipStyle`, decide explicitly which behavior it should get; don't
+   assume "attach" is universally more correct.
+
+   **Deliberately out of scope for 0.6.1** (a user request asked for a much
+   larger rework — a `WhatsAppNormalizedMessage`/`template` schema
+   discriminator, per-button-type handler semantics for `url` vs.
+   `phone_number` vs. `quick_reply` beyond what `suggested_actions`
+   already models, schema-level rejection of hypothetical floating-button
+   top-level types, and a dedicated regression/visual-regression test
+   suite). Only the attachment/rendering bug was fixed here, reusing the
+   existing unified cross-channel schema — forking the schema per-channel
+   would break the architecture described at the top of this file. If
+   that fuller rework is wanted, treat it as a separate, explicitly-scoped
+   task, not an assumed follow-on.
+
+**Don't reintroduce a pinned/fixed action bar.** If you need to touch
+this, the branching logic lives in `ConversationView.tsx`
+(`canAttachToLastMessage`), and the footer rendering lives in
+`MessageShell.tsx` (`trailingActions`).
 
 ## Versioning — do this on every change
 

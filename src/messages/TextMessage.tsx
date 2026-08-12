@@ -1,4 +1,5 @@
 import type { ChannelId } from '../schema/flow'
+import type { Choice } from '../schema/messages'
 import type { NormalizedMessage } from '../engine/types'
 import { MessageShell } from '../components/phone/MessageShell'
 
@@ -7,6 +8,8 @@ interface TextMessageProps {
   channel: ChannelId
   timestampLabel?: string
   deliveryState?: 'sent' | 'delivered' | 'read'
+  /** A node's trailing `actions`, when this is the last message before them — rendered attached, not floating. */
+  trailingActions?: { choices: Choice[]; onSelect: (choice: Choice) => void }
 }
 
 const URL_PATTERN = /(https?:\/\/[^\s]+)/g
@@ -56,7 +59,7 @@ function renderInlineFormatting(text: string, key: number) {
   )
 }
 
-export function TextMessage({ message, channel, timestampLabel, deliveryState }: TextMessageProps) {
+export function TextMessage({ message, channel, timestampLabel, deliveryState, trailingActions }: TextMessageProps) {
   if (message.message.type !== 'text') return null
   const { sender, text } = message.message
   return (
@@ -66,6 +69,7 @@ export function TextMessage({ message, channel, timestampLabel, deliveryState }:
       chrome="bubble"
       timestampLabel={timestampLabel}
       deliveryState={deliveryState}
+      trailingActions={trailingActions}
     >
       <p className="text-[14.5px] leading-relaxed whitespace-pre-wrap break-words m-0">
         {renderFormattedText(text)}

@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.1',
+    date: '2026-08-12',
+    changes: [
+      'Fix: a node\'s trailing `actions` on WhatsApp still rendered as a visually separate floating block below the message that offered them, with a gap — closer but not matching how a real WhatsApp interactive message actually looks (buttons as part of the same message, flush against it, divided by a thin line). They now render as a divided footer inside the same card as the preceding business text message, with no gap and no independent background/shadow, exactly like the app\'s own `suggested_replies` bubble already did.',
+      'This only applies where WhatsApp\'s chip style is used ("stacked" — one full-width row per button). RCS suggestion chips correctly keep floating as their own separate pill row below the card, since that is how Google\'s real RCS UI actually renders them — the two platforms are not the same here and the fix does not unify them.',
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-08-11',
     changes: [

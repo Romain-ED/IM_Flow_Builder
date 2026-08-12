@@ -1,4 +1,5 @@
 import type { ChannelId } from '../schema/flow'
+import type { Choice } from '../schema/messages'
 import type { NormalizedMessage } from '../engine/types'
 import { channelCapabilities } from '../channels/registry'
 import { getFallbackNote, getCapabilityWarning, isMessageTypeSupported } from '../channels/capabilities'
@@ -29,9 +30,17 @@ import { AlertTriangle } from 'lucide-react'
 interface MessageRendererProps {
   message: NormalizedMessage
   channel: ChannelId
+  /**
+   * A node's trailing `actions`, passed only for the last message in
+   * history when that message can carry them attached (see
+   * `ConversationView`). Real WhatsApp interactive buttons are always part
+   * of the one message object that offered them — never a separate
+   * message — so this must render inside the same card, not float below it.
+   */
+  trailingActions?: { choices: Choice[]; onSelect: (choice: Choice) => void }
 }
 
-export function MessageRenderer({ message, channel }: MessageRendererProps) {
+export function MessageRenderer({ message, channel, trailingActions }: MessageRendererProps) {
   const currentNodeId = useSimulatorStore((s) => s.currentNodeId)
   const debugWarningsEnabled = useSimulatorStore((s) => s.debugWarningsEnabled)
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
@@ -65,7 +74,7 @@ export function MessageRenderer({ message, channel }: MessageRendererProps) {
           <span>{capabilityWarning}</span>
         </div>
       )}
-      {renderContent(message, channel, interactive, timestampLabel, deliveryState)}
+      {renderContent(message, channel, interactive, timestampLabel, deliveryState, trailingActions)}
     </div>
   )
 }
@@ -76,10 +85,19 @@ function renderContent(
   interactive: boolean,
   timestampLabel: string | undefined,
   deliveryState: 'read' | undefined,
+  trailingActions: { choices: Choice[]; onSelect: (choice: Choice) => void } | undefined,
 ) {
   switch (message.message.type) {
     case 'text':
-      return <TextMessage message={message} channel={channel} timestampLabel={timestampLabel} deliveryState={deliveryState} />
+      return (
+        <TextMessage
+          message={message}
+          channel={channel}
+          timestampLabel={timestampLabel}
+          deliveryState={deliveryState}
+          trailingActions={trailingActions}
+        />
+      )
     case 'image':
       return <ImageMessage message={message} channel={channel} timestampLabel={timestampLabel} />
     case 'video':
