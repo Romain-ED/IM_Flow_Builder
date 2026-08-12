@@ -11,6 +11,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.1',
+    date: '2026-08-11',
+    changes: [
+      'Fix: a node\'s `actions` button row was rendered as a bar pinned above the composer, persisting across scrolling — real WhatsApp/RCS always attach interactive buttons to the one message that offered them. `actions` now renders inline, attached to the last message, identically to how a `suggested_replies` message already looked.',
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-08-11',
     changes: [

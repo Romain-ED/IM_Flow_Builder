@@ -73,7 +73,7 @@ src/
     layout/               AppHeader (nav + version badge), Sidebar,
                            PresenterFloatingControls
     phone/                PhoneFrame, PhoneScreen, ComparePhones, ConversationView,
-                           Composer, ActionBar, MessageShell, ChoiceChips,
+                           Composer, MessageShell, ChoiceChips,
                            ActionButton, ListSheet, Toast, ExternalActionModal, …
     controls/              ScenarioControls, ChannelSelector (+ Compare toggle),
                            VariablesEditor, DebugOptions, PlaybackControls
@@ -166,12 +166,12 @@ nodes:
     messages:
       - type: text
         text: "Hi {{customerName}}!"
-    actions:                # persistent suggested-reply / button bar
+    actions:                # buttons attached below this node's last message
       - label: "Get started"
         next: next_node
 ```
 
-A **node** can: play one or more messages in sequence (with per-message `delayMs`/`typingMs` overrides and a `delay` pseudo-message for extra pauses), set variables unconditionally (`set:`), branch on a `condition` (`then`/`else`), auto-continue to another node (`next`), present a persistent `actions` bar, or simply end (`end: true`).
+A **node** can: play one or more messages in sequence (with per-message `delayMs`/`typingMs` overrides and a `delay` pseudo-message for extra pauses), set variables unconditionally (`set:`), branch on a `condition` (`then`/`else`), auto-continue to another node (`next`), present an `actions` button row — a lighter way to author the same thing a `suggested_replies` message does, rendered identically and attached to the last message rather than floating above the composer, matching how WhatsApp/RCS actually attach interactive buttons to one message — or simply end (`end: true`).
 
 **Interactions** reference other nodes with `next`. When one fires, the engine (in order): renders the user's selection as an outgoing bubble (when applicable), applies any `set` variables, and transitions — replaying typing/delay steps and rendering the target node's messages.
 

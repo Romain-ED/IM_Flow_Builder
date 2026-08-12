@@ -3,7 +3,6 @@ import { channelRenderers } from '../../channels/registry'
 import { ChannelProvider } from '../../app/ChannelContext'
 import type { ChannelId } from '../../schema/flow'
 import { ConversationView } from './ConversationView'
-import { ActionBar } from './ActionBar'
 import { Composer } from './Composer'
 import { ListSheet } from './ListSheet'
 import { BoardingPassPreviewModal } from './BoardingPassPreviewModal'
@@ -34,7 +33,6 @@ export function PhoneScreen({ channelOverride }: PhoneScreenProps = {}) {
     <ChannelProvider channel={channel}>
       <ChannelRenderer brand={flow.brand}>
         <ConversationView />
-        <ActionBar />
         <Composer />
         <ListSheet />
         <BoardingPassPreviewModal />

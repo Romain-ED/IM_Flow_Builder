@@ -8,7 +8,7 @@ const ChannelContext = createContext<ChannelId | null>(null)
  * Provides the channel a phone screen should render as. Normally that's
  * just the store's global `channel`, but Compare Mode renders several phone
  * screens at once, each pinned to a different channel — this lets every
- * descendant (conversation view, composer, action bar, message renderer…)
+ * descendant (conversation view, composer, message renderer…)
  * ask "which channel am I?" without prop-drilling it through every layer.
  */
 export function ChannelProvider({ channel, children }: { channel: ChannelId; children: ReactNode }) {

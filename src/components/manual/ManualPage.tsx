@@ -95,10 +95,10 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
             rows={[
               ['id', 'Unique identifier other nodes/actions reference via "next".'],
               ['messages', 'Ordered list of messages/pseudo-messages to play when the node is entered.'],
-              ['actions', 'Persistent suggested-reply / button bar shown once messages finish playing.'],
+              ['actions', 'Buttons shown once messages finish playing, attached to the last message — a lighter way to author what a suggested_replies message does; renders identically.'],
               ['set', 'Variables to assign unconditionally as soon as the node is entered.'],
               ['condition / then / else', 'Declarative branch: variable + operator (equals, not_equals, exists, contains, greater_than, less_than) + value, routing to "then" or "else".'],
-              ['next', 'Automatic transition to another node once messages finish, when there is no condition or actions bar.'],
+              ['next', 'Automatic transition to another node once messages finish, when there is no condition or actions.'],
               ['end', 'Marks a deliberate end of the scenario.'],
             ]}
           />
