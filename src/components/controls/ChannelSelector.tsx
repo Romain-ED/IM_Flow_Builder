@@ -15,7 +15,7 @@ export function ChannelSelector() {
     <div className="flex flex-col gap-1.5">
       <SectionHeading accent={sectionAccents.channel}>Channel</SectionHeading>
       <div
-        className={`grid grid-cols-3 gap-1.5 transition-opacity ${compareMode ? 'opacity-40 pointer-events-none' : ''}`}
+        className={`grid grid-cols-2 gap-1.5 transition-opacity ${compareMode ? 'opacity-40 pointer-events-none' : ''}`}
         role="radiogroup"
         aria-label="Channel"
       >

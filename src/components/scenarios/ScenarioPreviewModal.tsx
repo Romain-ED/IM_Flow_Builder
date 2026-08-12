@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { X, Code2, Waypoints, FileJson, FileText, Copy, Check } from 'lucide-react'
 import { parseFlowSource, detectFormat, toJsonString, toYamlString, type FlowSourceFormat } from '../../utils/flowSource'
-import { validateFlow } from '../../engine/flowValidator'
+import { validateFlowWithChannelCompliance as validateFlow } from '../../channels/validateChannelCompliance'
 import { computeFlowGraphLayout } from '../../engine/flowGraph'
 import { copyToClipboard } from '../../utils/shareLink'
 import { FlowGraphView, FlowGraphLegend } from '../debug/FlowGraphView'

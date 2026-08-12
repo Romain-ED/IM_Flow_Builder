@@ -35,6 +35,21 @@ export function isMessageTypeSupported(
   return capabilities.supportedMessageTypes.includes(type)
 }
 
+/**
+ * The real button/chip cap for whichever of `suggested_replies` (reply-type
+ * chips) or `suggested_actions` (action-type chips/buttons) is being
+ * checked — the two aren't the same limit on RCS (11 vs 4 per Google's
+ * spec), so callers must not use `maxSuggestedActions` as a stand-in for
+ * both. Shared by `getCapabilityWarning` below and the WhatsApp/RCS
+ * `normalize.ts` hard-validators, so the two can't drift.
+ */
+export function maxTrailingButtons(
+  capabilities: ChannelCapabilities,
+  type: 'suggested_replies' | 'suggested_actions',
+): number {
+  return type === 'suggested_replies' ? capabilities.maxSuggestedReplies : capabilities.maxSuggestedActions
+}
+
 export function getFallbackNote(
   capabilities: ChannelCapabilities,
   type: MessageType,

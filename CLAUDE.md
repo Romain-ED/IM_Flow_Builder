@@ -9,10 +9,16 @@ conventions that aren't obvious from reading the code**.
 
 "Business Messaging Flow Simulator" — a client-only React/TS/Vite app that
 plays back JSON/YAML-authored conversation flows as a realistic phone UI,
-rendered per-channel (RCS / WhatsApp / Generic). No backend, no real
-message delivery. Built entirely in Claude Code sessions; see the
-Manual's Changelog tab (`src/app/changelog.ts`) for the full feature
-history — that's more current than anything written here.
+rendered per-channel (RCS / WhatsApp). No backend, no real message
+delivery. Built entirely in Claude Code sessions; see the Manual's
+Changelog tab (`src/app/changelog.ts`) for the full feature history —
+that's more current than anything written here.
+
+A third "Generic" channel existed through 0.7.0 and was removed in 0.8.0
+at the user's explicit request, once the goal shifted to matching the
+real WhatsApp/RCS platforms as closely as possible — a channel-neutral
+fallback renderer worked against that goal. If you're tempted to
+reintroduce a generic/neutral channel, don't, unless the user asks again.
 
 ## Architecture (read this before changing anything)
 
@@ -117,6 +123,70 @@ both channel files, then extend the switch in `getCapabilityWarning` —
 don't just document a number without wiring the check (that was a real
 bug: the original `max*` fields were declared but never enforced anywhere
 until this was fixed).
+
+## Real-payload-shaped hard validation (`normalize.ts`, 0.8.0)
+
+`getCapabilityWarning` above is *advisory* — content still renders with an
+amber note. On top of that, `channels/whatsapp/normalize.ts` and
+`channels/rcs/normalize.ts` each define a `WhatsAppNormalizedMessage` /
+`RcsNormalizedMessage` type mirroring that platform's actual payload shape
+(Meta's Cloud API interactive-message shape; Google's `AgentMessage`
+text/file/rich-card model) and a `normalize*(messages)` function that
+walks one node's raw authored messages and either builds one of these or
+returns a hard error. `channels/validateChannelCompliance.ts` runs both
+normalizers over every node and turns errors into `[WhatsApp]`/`[RCS]`-
+prefixed `ValidationIssue`s, composed with `engine/flowValidator.ts`'s
+structural checks via `validateFlowWithChannelCompliance` — **use this**,
+not `validateFlow` directly, at every call site that gates scenario
+loading (store, the two scenario editor/preview modals, `flowSource.ts`
+already do). A flow that's structurally fine but violates a real
+WhatsApp/RCS limit now fails to load at all, same as a dangling `next`
+reference — this is what "matches the real platforms" means in practice:
+non-compliant content can't even load, not just render with a note.
+
+**Why this isn't in `engine/flowValidator.ts`**: that would make
+`engine/` depend on `channels/` (for `ChannelCapabilities`), backward from
+this file's documented layering (`schema/ → engine/ → store/ → channels/
+→ ...`). `engine/flowValidator.ts` stays pure and channel-agnostic;
+`channels/validateChannelCompliance.ts` is the composing layer, since
+channels/ is allowed to depend on engine/, not the reverse.
+
+**Scope, deliberately**: only count/structural checks (button counts,
+missing body text, carousel size) are hard errors — they don't depend on
+variable values. *Length* limits (label/title/description length) stay
+`getCapabilityWarning`'s live soft check, since a `{{variable}}` can
+change a length per run and this validation happens once at load time,
+pre-interpolation. Also deliberately NOT validated here: using a message
+type a channel has no official basis for at all (`otp`,
+`payment_request`, etc.) — that's an intentional, already-handled soft
+fallback (`supportedMessageTypes` + `getFallbackNote`), not a structural
+violation of a type the channel claims to support. Don't make "unsupported
+type" a hard error — that would break the legitimate simulator-extension
+use case described earlier in this file.
+
+**RCS's ownership rule is broader than WhatsApp's, on purpose**: a
+`suggested_replies`/`suggested_actions` message may attach to *any*
+preceding RCS content message (text, image/video/document, rich_card,
+carousel) — Google's `AgentContentMessage` allows suggestions on any of
+these. WhatsApp requires body **text** specifically. `rcs/normalize.ts`
+defines its own broader ownership predicate rather than reusing
+`engine/messageAttachment.ts`'s `isAttachableOwner` (which is correctly
+WhatsApp-specific, used both for that file's live-render merge and
+`whatsapp/normalize.ts`'s hard validation) — reusing the narrower
+WhatsApp rule for RCS would incorrectly flag valid RCS content (e.g. a
+`rich_card` immediately followed by `suggested_replies`, no text needed)
+as an error. If you touch either ownership rule, keep this asymmetry;
+don't try to unify them.
+
+**This caught real bugs on first run**: wiring this up immediately failed
+4 nodes across `ecommerce.yaml` and `singapore-airlines.yaml` —
+`rich_card`/`carousel` messages immediately followed by a `suggested_replies`
+with no owning text, which is invalid on WhatsApp (fine on RCS, per the
+asymmetry above). Fixed by adding a short connecting text message before
+each — same pattern as the `help`/`confirmed` fixes in the previous
+section. If you add a new node that ends a `rich_card`/`carousel` with a
+follow-up `suggested_replies`/`suggested_actions`, add a one-line text
+message between them for WhatsApp's sake, or expect load to fail.
 
 ## `node.actions` renders inline, not as a floating bar
 
@@ -277,8 +347,9 @@ limits.
   registered in `src/scenarios/index.ts`.
 - Schema: `src/schema/messages.ts` (message types), `src/schema/flow.ts`
   (node/flow structure).
-- Channel capabilities: `src/channels/{rcs,whatsapp,generic}/capabilities.ts`,
-  shared logic in `src/channels/capabilities.ts`.
+- Channel capabilities: `src/channels/{rcs,whatsapp}/capabilities.ts`,
+  shared logic in `src/channels/capabilities.ts`. Hard, real-payload-shape
+  validation: `src/channels/{rcs,whatsapp}/normalize.ts`.
 - Engine core: `src/engine/ConversationEngine.ts` (computeNodePlan — the
   pure "what happens when this node is entered" function).
 - Store: `src/store/simulatorStore.ts` (single Zustand store, large file,

@@ -3,7 +3,7 @@ version: "1.0"
 metadata:
   id: minimal-example
   name: "Minimal example"
-  channel: generic
+  channel: whatsapp
 brand:
   name: "Example Business"
   verified: true

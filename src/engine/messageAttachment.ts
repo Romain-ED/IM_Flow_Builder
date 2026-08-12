@@ -1,4 +1,5 @@
 import type { NormalizedMessage } from './types'
+import type { Message, MessageType, Sender } from '../schema/messages'
 
 /**
  * A real WhatsApp interactive message always carries its buttons as part of
@@ -23,12 +24,44 @@ export interface MessageAttachmentEntry {
   attached?: NormalizedMessage
 }
 
-function isAttachableTrailing(message: NormalizedMessage): boolean {
-  return message.message.type === 'suggested_replies' || message.message.type === 'suggested_actions'
+/**
+ * The pairing rule above, factored out so it can run against either fully
+ * interpolated runtime messages (this file's live-render use, below) or raw
+ * authored messages straight from a parsed `FlowDefinition` (used by
+ * `channels/{whatsapp,rcs}/normalize.ts` for load-time hard validation) —
+ * both shapes carry `type` and (where applicable) `sender`, which is all
+ * the rule needs. Keeping one copy of the rule means the two call sites
+ * can't drift on what counts as "attachable".
+ */
+export interface AttachableMessageLike {
+  type: MessageType
+  sender?: Sender
 }
 
-function isAttachableOwner(message: NormalizedMessage): boolean {
-  return message.message.type === 'text' && (message.message.sender ?? 'business') === 'business'
+export function isAttachableTrailing(message: AttachableMessageLike): boolean {
+  return message.type === 'suggested_replies' || message.type === 'suggested_actions'
+}
+
+export function isAttachableOwner(message: AttachableMessageLike): boolean {
+  return message.type === 'text' && (message.sender ?? 'business') === 'business'
+}
+
+/**
+ * Number of buttons/options a `suggested_replies`/`suggested_actions`
+ * message carries — 0 for anything else. A plain switch rather than a
+ * ternary off `isAttachableTrailing` so TypeScript actually narrows
+ * `message` to the variant with an `options`/`actions` field; a boolean
+ * helper call doesn't narrow the union for callers.
+ */
+export function trailingButtonCount(message: Message): number {
+  switch (message.type) {
+    case 'suggested_replies':
+      return message.options.length
+    case 'suggested_actions':
+      return message.actions.length
+    default:
+      return 0
+  }
 }
 
 /**
@@ -54,10 +87,10 @@ export function computeMessageAttachments(
     const next = history[i + 1]
     const canMerge =
       canAttach &&
-      isAttachableOwner(message) &&
+      isAttachableOwner(message.message) &&
       Boolean(next) &&
       next.nodeId === message.nodeId &&
-      isAttachableTrailing(next)
+      isAttachableTrailing(next.message)
 
     if (canMerge) {
       entries.push({ message, attached: next })

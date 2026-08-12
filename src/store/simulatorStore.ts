@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ChannelId, FlowDefinition } from '../schema/flow'
+import { channelIdSchema, type ChannelId, type FlowDefinition } from '../schema/flow'
 import type { Action, BoardingPassAction, Choice, ListRow, VariableMap } from '../schema/messages'
 import {
   computeNodePlan,
@@ -12,7 +12,8 @@ import {
 } from '../engine/ConversationEngine'
 import type { InteractionResult, NodeOutcome, NormalizedMessage } from '../engine/types'
 import { diffVariableEvents, type ConversationEvent } from '../engine/eventStore'
-import { validateFlow, type FlowValidationResult } from '../engine/flowValidator'
+import type { FlowValidationResult } from '../engine/flowValidator'
+import { validateFlowWithChannelCompliance as validateFlow } from '../channels/validateChannelCompliance'
 import { parseFlowSource, type FlowSourceFormat } from '../utils/flowSource'
 import { sleep } from '../utils/sleep'
 import { createId } from '../utils/id'
@@ -255,8 +256,12 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     initialize: async () => {
       const prefs = loadPreferences()
       if (prefs) {
+        // A returning visitor may have a channel persisted from before the
+        // Generic channel was removed — validate before applying it so a
+        // stale value can't put an invalid ChannelId into state.
+        const persistedChannel = channelIdSchema.safeParse(prefs.channel)
         set((s) => ({
-          channel: prefs.channel ?? s.channel,
+          channel: persistedChannel.success ? persistedChannel.data : s.channel,
           fastMode: prefs.fastMode ?? s.fastMode,
           presenterMode: prefs.presenterMode ?? s.presenterMode,
           debugWarningsEnabled: prefs.debugWarningsEnabled ?? s.debugWarningsEnabled,

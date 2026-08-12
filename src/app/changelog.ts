@@ -11,6 +11,16 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.0',
+    date: '2026-08-12',
+    changes: [
+      'Removed the Generic channel — the simulator now models RCS and WhatsApp only, matching the goal of showing exactly what those two platforms can actually do rather than a channel-neutral approximation.',
+      'New: real-payload-shape validation. `channels/whatsapp/normalize.ts` and `channels/rcs/normalize.ts` build the actual WhatsApp Cloud API / RCS AgentMessage payload shape from a scenario\'s authored messages, and scenario loading now hard-fails — same as a broken node reference — when content structurally can\'t become a valid payload (buttons with no owning body text, too many buttons/rows/cards, an RCS carousel under 2 cards). Previously these were only soft, render-time warnings.',
+      'This immediately caught 4 real violations in the built-in scenarios (a rich_card/carousel directly followed by a buttons-only suggested_replies message, with no body text) that the earlier soft-warning system had missed — fixed by adding a short connecting text message before each.',
+      'RCS and WhatsApp intentionally have different "what can own a suggestion chip" rules in the new validator, matching their real specs: WhatsApp requires body text specifically, RCS allows any content message (text, media, or rich card) to own trailing suggestions.',
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-08-12',
     changes: [

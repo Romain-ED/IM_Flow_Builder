@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { choiceSchema, messageSchema, variableMapSchema } from './messages'
 
-export const channelIdSchema = z.enum(['rcs', 'whatsapp', 'generic'])
+export const channelIdSchema = z.enum(['rcs', 'whatsapp'])
 export type ChannelId = z.infer<typeof channelIdSchema>
 
 export const flowMetadataSchema = z.object({

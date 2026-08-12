@@ -6,7 +6,7 @@ metadata:
   id: restaurant-reservation
   name: "Restaurant table reservation"
   description: "Reservation reminder through table confirmation and pre-order."
-  channel: generic
+  channel: whatsapp
   tags: [restaurant, reservation, demo]
 
 brand:

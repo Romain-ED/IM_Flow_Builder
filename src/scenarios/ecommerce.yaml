@@ -98,6 +98,8 @@ nodes:
           - type: open_url
             label: Pay now
             url: "https://example.com/checkout/priority"
+      - type: text
+        text: "Once you've completed payment, let us know:"
       - type: suggested_replies
         options:
           - label: Payment confirmed

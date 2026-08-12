@@ -47,10 +47,9 @@ export function ManualPage() {
 
         <Section id="overview" title="Overview" accent="indigo">
           <P>
-            This is an interactive, browser-only prototyping tool for conversational business messaging journeys —
-            RCS Business Messaging, WhatsApp Business, and a channel-neutral "generic" mode. You load a flow written
-            in JSON or YAML and immediately walk through it as if you were the customer, inside a realistic
-            phone-shaped chat UI.
+            This is an interactive, browser-only prototyping tool for conversational business messaging journeys on
+            RCS Business Messaging and WhatsApp Business. You load a flow written in JSON or YAML and immediately
+            walk through it as if you were the customer, inside a realistic phone-shaped chat UI.
           </P>
           <P>
             It is <strong>not connected to any real messaging API</strong>. It exists for demos, customer workshops,
@@ -69,7 +68,7 @@ export function ManualPage() {
           <ParamTable
             rows={[
               ['Scenario', 'Shows the loaded flow\'s name, a dropdown of built-in examples, "Edit flow" (opens the quick JSON/YAML editor for the live flow), "Export" (downloads the current flow as YAML), and "Copy share link" (encodes the flow into a URL — opening it loads the same scenario, no file needed).'],
-              ['Channel', 'Switches the rendering between RCS, WhatsApp, and Generic. The same flow definition renders through each channel\'s own visual language and capability set. "Compare all channels" shows all three at once, driven by the same live conversation — tap a button in any one and the others follow.'],
+              ['Channel', 'Switches the rendering between RCS and WhatsApp. The same flow definition renders through each channel\'s own visual language and capability set. "Compare all channels" shows both at once, driven by the same live conversation — tap a button in either and the other follows.'],
               ['Variables', 'Editable list of the flow\'s top-level variables (e.g. customer name, booking reference, seat). Edits apply on the next Restart, not live — this lets a presenter line up several fields before restarting the demo.'],
               ['Debug options', '"Fast demo mode" shrinks all typing/message delays; "Show capability warnings" toggles the inline notes shown when a message type falls back to a generic rendering on a channel that doesn\'t natively support it; "Flow inspector panel" toggles the right-hand debug drawer; "Start node" overrides which node Restart jumps to.'],
               ['Playback', 'Restart (replays from the start node using the current variable values), Back (undoes the last user interaction using a state snapshot), Pause/Resume (freezes automatic playback), Clear (same as Restart).'],
@@ -150,6 +149,13 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
             RCS's real content model is text, an uploaded file, or a rich card (standalone or in a carousel) — there
             is no native list/menu picker the way WhatsApp has one, so <code>list</code> intentionally falls back to
             a stacked-option rich card on RCS rather than being treated as natively supported.
+          </P>
+          <P>
+            Beyond that live check, count/structural violations — buttons with no owning body text, too many
+            buttons/rows/cards, an RCS carousel under 2 cards — now hard-fail loading the scenario entirely, the same
+            way a broken node reference does, since that content genuinely couldn't be sent to a real WhatsApp/RCS
+            number. Label/title length limits stay a live warning rather than a hard error, since a variable can
+            change a length per run.
           </P>
         </Section>
 
@@ -307,7 +313,7 @@ function ArchitectureDiagram() {
     { label: 'JSON / YAML flow definition', accent: 'bg-slate-800' },
     { label: 'Zod schema validation', accent: 'bg-indigo-600' },
     { label: 'Conversation engine (pure, unit-tested)', accent: 'bg-emerald-600' },
-    { label: 'Channel renderer — RCS · WhatsApp · Generic', accent: 'bg-violet-600' },
+    { label: 'Channel renderer — RCS · WhatsApp', accent: 'bg-violet-600' },
     { label: 'Interactive phone simulator', accent: 'bg-teal-600' },
   ]
   return (

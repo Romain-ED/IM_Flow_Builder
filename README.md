@@ -1,6 +1,6 @@
 # Business Messaging Flow Simulator
 
-An interactive, browser-only prototyping tool for conversational business messaging journeys — RCS Business Messaging, WhatsApp Business, and a channel-neutral "generic" mode. Load a flow written in JSON or YAML and immediately walk through it as if you were the customer, inside a realistic phone-shaped chat UI.
+An interactive, browser-only prototyping tool for conversational business messaging journeys on RCS Business Messaging and WhatsApp Business. Load a flow written in JSON or YAML and immediately walk through it as if you were the customer, inside a realistic phone-shaped chat UI.
 
 It is **not connected to any real messaging API**. It's built for demos, customer workshops, sales engineering, solution-architecture walkthroughs, and conversational UX design — a place to iterate on a flow definition and see it rendered and interacted with instantly, in whichever channel's visual language you pick.
 
@@ -8,7 +8,7 @@ It is **not connected to any real messaging API**. It's built for demos, custome
 
 - Loads a **declarative flow definition** (JSON or YAML) describing a state-machine of conversation "nodes".
 - Runs that flow through a channel-agnostic **conversation engine** (deterministic, no `eval`, fully unit-testable).
-- Renders the live conversation through a **channel renderer** (RCS / WhatsApp / Generic) inside a polished phone mockup.
+- Renders the live conversation through a **channel renderer** (RCS / WhatsApp) inside a polished phone mockup.
 - Lets a presenter tweak variables (customer name, booking reference, seat, …), restart, step back, jump to any node, switch channels live, and demo cleanly in **Presenter Mode**.
 - Ships with three complete example scenarios — an airline check-in/boarding-pass journey (the default), an e-commerce delivery tracker, and a restaurant reservation flow.
 - Has three pages, reachable from the top nav: **Simulator** (the demo tool itself), **Scenarios** (load/duplicate/edit/import/export/delete flow definitions — custom ones are saved to `localStorage`), and **Manual** (an in-app guide covering usage, every parameter, the technical architecture, and a changelog).
@@ -55,8 +55,7 @@ JSON / YAML flow definition
           │
           ▼
    Channel renderer   ──┬── RCS       (channels/rcs)
-                        ├── WhatsApp  (channels/whatsapp)
-                        └── Generic   (channels/generic)
+                        └── WhatsApp  (channels/whatsapp)
           │
           ▼
    Interactive phone simulator (components/phone/*)
@@ -92,9 +91,8 @@ src/
     capabilities.ts        shared ChannelCapabilities type + helpers
     theme.ts                per-channel visual tokens (bubble colors, chip style…)
     registry.ts             channel → capabilities / renderer lookup tables
-    rcs/       RcsRenderer.tsx, RcsHeader.tsx, capabilities.ts
-    whatsapp/  WhatsAppRenderer.tsx, WhatsAppHeader.tsx, capabilities.ts
-    generic/   GenericRenderer.tsx, GenericHeader.tsx, capabilities.ts
+    rcs/       RcsRenderer.tsx, RcsHeader.tsx, capabilities.ts, normalize.ts
+    whatsapp/  WhatsAppRenderer.tsx, WhatsAppHeader.tsx, capabilities.ts, normalize.ts
 
   messages/                 One component per message type, all rendered
                              through MessageRenderer.tsx's dispatcher
@@ -148,7 +146,7 @@ version: "1.0"
 metadata:
   id: my-scenario
   name: "My scenario"
-  channel: rcs            # rcs | whatsapp | generic — used as the initial channel
+  channel: rcs            # rcs | whatsapp — used as the initial channel
   tags: [demo]
 brand:
   name: "Acme Airlines"
@@ -193,7 +191,7 @@ A **node** can: play one or more messages in sequence (with per-message `delayMs
 
 ## Supported message components
 
-Every type below renders on every channel (Generic supports all of them as the neutral fallback renderer), but "official" means the type has a real, documented equivalent on that platform — see [Official vs. simulator-only types](#official-vs-simulator-only-types) below for what that distinction means and why it matters.
+Every type below renders on both channels — a type a channel doesn't natively support falls back to a reasonable generic approximation with an explanatory note — but "official" means the type has a real, documented equivalent on that platform — see [Official vs. simulator-only types](#official-vs-simulator-only-types) below for what that distinction means and why it matters.
 
 | type | notes | official on |
 |---|---|---|
@@ -269,6 +267,10 @@ The same file also declares each channel's real structural limits, sourced from 
 | Rich card title / description length | not separately capped | 200 / 2000 chars |
 
 RCS's real content model is text, an uploaded file, or a rich card (standalone or in a carousel) — there's no native list/menu picker like WhatsApp's, so `list` intentionally falls back to a stacked-option rich card on that channel rather than being marked as supported.
+
+## Real-payload-shape validation
+
+Beyond the live, render-time warnings above, `channels/whatsapp/normalize.ts` and `channels/rcs/normalize.ts` build the actual payload shape each platform's API expects (WhatsApp interactive messages, RCS `AgentMessage` content) from a node's authored messages, and **hard-fail scenario loading** — the same place a broken `next` reference already does — when content can't become a valid payload: buttons with no owning body text, too many buttons/rows/cards, an RCS carousel under 2 cards. This is checked once at load time (before variable interpolation), so it's scoped to count/structural violations that don't depend on variable values — label/title *length* limits stay the live soft check above, since a `{{variable}}` can change a length per run.
 
 ## Known limitations
 

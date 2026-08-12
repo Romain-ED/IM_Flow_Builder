@@ -122,6 +122,9 @@ nodes:
           Terminal {{terminal}} · Gate {{gate}}
 
           Booking ref {{bookingReference}} · Check-in available
+      - type: text
+        sender: business
+        text: "What would you like to do?"
       - type: suggested_replies
         sender: business
         options:
@@ -240,6 +243,9 @@ nodes:
                 label: Select 32A
                 set: { seat: 32A, seatUpgradePrice: 65 }
                 next: extra_legroom_confirmation
+      - type: text
+        sender: business
+        text: "Or, if you'd rather not change seats:"
       - type: suggested_replies
         sender: business
         options:
@@ -395,6 +401,9 @@ nodes:
           {{departureDate}} · Departs {{departureTime}}, arrives {{arrivalTime}}
 
           Terminal {{terminal}} · Gate {{gate}} · Checked in
+      - type: text
+        sender: business
+        text: "Anything else?"
       - type: suggested_replies
         sender: business
         options:

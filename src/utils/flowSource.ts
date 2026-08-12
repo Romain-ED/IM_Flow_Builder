@@ -1,5 +1,5 @@
 import { load as loadYaml, dump as dumpYaml } from 'js-yaml'
-import { validateFlow } from '../engine/flowValidator'
+import { validateFlowWithChannelCompliance as validateFlow } from '../channels/validateChannelCompliance'
 
 export type FlowSourceFormat = 'json' | 'yaml'
 
