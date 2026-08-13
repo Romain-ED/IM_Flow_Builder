@@ -52,12 +52,21 @@ a message type" checklist in the README if it does).
 
 ## Official vs. invented message types — the most important open decision
 
-The three built-in scenarios (`src/scenarios/*.yaml`) were audited against
-the real WhatsApp Cloud API (interactive messages guide, interactive
-message templates, commerce/product-sharing guide) and Google's RCS
-Business Messaging spec, and rewritten to use **only types with a real
-platform equivalent**. This was a deliberate, user-directed rewrite — see
-the CHANGELOG entries for the exact commit and rationale.
+The first three built-in scenarios (`singapore-airlines.yaml`,
+`ecommerce.yaml`, `restaurant.yaml`) were audited against the real
+WhatsApp Cloud API (interactive messages guide, interactive message
+templates, commerce/product-sharing guide) and Google's RCS Business
+Messaging spec, and rewritten to use **only types with a real platform
+equivalent**. This was a deliberate, user-directed rewrite — see the
+CHANGELOG entries for the exact commit and rationale.
+
+**`beerlao.yaml` is a deliberate exception to that rule** — added at the
+user's explicit request for the exact simulator-only OTP entry/verify UX
+(segmented code entry, wrong-code error, retry loop) described below. It's
+exactly the "legitimate simulator extension" case this section already
+carves out; it isn't an oversight or a regression in the audit. Don't
+"fix" it by swapping in the real Authentication Template pattern unless
+asked — that would defeat the point of the scenario.
 
 **Verified official** (keep using these; they map to a real payload):
 - `text`, `image`/`video`/`document`, `location` — direct equivalents on
@@ -458,7 +467,7 @@ limits.
 
 ## Where things are (quick index)
 
-- Built-in scenarios: `src/scenarios/{singapore-airlines,ecommerce,restaurant}.yaml`,
+- Built-in scenarios: `src/scenarios/{singapore-airlines,ecommerce,restaurant,beerlao}.yaml`,
   registered in `src/scenarios/index.ts`.
 - Schema: `src/schema/messages.ts` (message types), `src/schema/flow.ts`
   (node/flow structure).

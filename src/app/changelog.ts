@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.12.0',
+    date: '2026-08-13',
+    changes: [
+      'New: fourth built-in scenario, "Beerlao login & event promo" — a user-typed OTP login (wrong code → error → retry loop → correct code) followed by an event promotion card with a campaign image, adapted from a user-supplied flow.',
+      'This is a deliberate exception to the "built-ins only use official types" rule the other three scenarios follow: it uses the simulator-only `otp` segmented-entry UI on purpose, as a legitimate simulator extension for a story that does not map cleanly to WhatsApp\'s real Authentication Template. It still shows the honest capability-warning note.',
+      'Added two small placeholder image assets (brand avatar, campaign banner) demonstrating `brand.avatar` and `rich_card.image` with real pixels instead of leaving them unset.',
+    ],
+  },
+  {
     version: '0.11.0',
     date: '2026-08-12',
     changes: [

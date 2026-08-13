@@ -1,6 +1,7 @@
 import singaporeAirlinesSource from './singapore-airlines.yaml?raw'
 import ecommerceSource from './ecommerce.yaml?raw'
 import restaurantSource from './restaurant.yaml?raw'
+import beerlaoSource from './beerlao.yaml?raw'
 
 export interface BuiltInScenario {
   id: string
@@ -27,6 +28,12 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
     name: 'Restaurant reservation',
     description: 'Reservation reminder → table confirmation → pre-order.',
     source: restaurantSource,
+  },
+  {
+    id: 'beerlao',
+    name: 'Beerlao login & event promo',
+    description: 'OTP login (retry on a wrong code) → event promotion with images.',
+    source: beerlaoSource,
   },
 ]
 
