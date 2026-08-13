@@ -39,11 +39,18 @@ nodes:
         text: "Your Beerlao verification code is {{otpCode}}. Enter it below to log in to your account. It expires in {{otpExpiry}}. If you did not request this code, you can safely ignore this message."
     next: otp_entry
 
+  # `input` (not `otp`) on purpose — WhatsApp has no real message that
+  # renders 4 separate digit boxes with an embedded Verify button, so that
+  # component always shows the "not officially supported" warning. `input`
+  # is a real supported type: it renders as a plain text bubble and the
+  # reply is typed into the ordinary composer, indistinguishable from a
+  # real WhatsApp message — same validate/retry behavior, no warning.
   - id: otp_entry
     messages:
-      - type: otp
-        prompt: "Enter the 4-digit code we sent you."
-        codeLength: 4
+      - type: input
+        inputType: numeric
+        placeholder: "Enter the 4-digit code we sent you."
+        submitLabel: "Verify"
         variable: enteredOtp
         next: otp_check
 

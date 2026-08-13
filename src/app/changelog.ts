@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.12.1',
+    date: '2026-08-13',
+    changes: [
+      'Fix: the Beerlao scenario\'s OTP entry step visibly showed the "not officially supported" capability warning on WhatsApp, since the `otp` segmented-entry component has no real wire-format equivalent — the 0.12.0 entry below framed this as an intentional exception, but the user asked for zero unsupported-type warnings on any built-in scenario, so that framing no longer holds. Swapped `otp` for `input` in `otp_entry`: same typed-code, wrong-code-error, retry-loop behavior (the downstream condition node only reads the `enteredOtp` variable, not which message type set it), but `input` renders as a plain text bubble backed by the ordinary composer — a real, supported WhatsApp pattern — so the warning is gone.',
+      'All four built-in scenarios now use only officially-supported message types with no capability warnings anywhere in their flows, verified end-to-end (wrong code → error → retry → correct code → login → event promo).',
+    ],
+  },
+  {
     version: '0.12.0',
     date: '2026-08-13',
     changes: [
