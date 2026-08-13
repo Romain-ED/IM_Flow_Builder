@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.12.2',
+    date: '2026-08-13',
+    changes: [
+      'New: an automated test (`scenarios.test.ts`) now fails the build if any built-in scenario ever uses a message type with no real WhatsApp or RCS equivalent — the same class of bug that shipped the Beerlao `otp` warning is now caught in CI/local verification, not just by memory.',
+      'Fix: `rcsCapabilities.ts` incorrectly listed `calendar_event` as a native RCS message type — Google\'s RCS spec only has text/file/rich-card content, calendar creation is a suggested-action subtype, not a standalone message. No built-in used it, so this was a latent gap, not a visible bug; a custom scenario using it on RCS now correctly shows the fallback note instead of rendering as if it were real.',
+      'Fix: `docs/SCENARIO_AUTHORING_GUIDE.md` (which is the literal system prompt for the AI scenario generator) still listed `input` as having "no official WhatsApp/RCS payload equivalent" — the exact misconception that caused the Beerlao bug in the first place. Corrected so the AI-authoring path stops steering "add an OTP step" requests toward the invented `otp` type.',
+    ],
+  },
+  {
     version: '0.12.1',
     date: '2026-08-13',
     changes: [

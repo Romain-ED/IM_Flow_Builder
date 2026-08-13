@@ -255,24 +255,47 @@ default.
 
 **`whatsapp_flow`** — official, WhatsApp-only by definition (embedded WhatsApp Flow placeholder).
 
+**`input`** — official on WhatsApp. Doesn't claim any special wire format —
+it renders as a plain text bubble ("prompt with body text, then capture the
+next free-text reply as this value"), which is exactly how a real WhatsApp
+bot already has to handle typed replies. Use this for any "user types a
+value" step, **including one-time-code entry with validation** — it's the
+real-platform-accurate alternative to the simulator-only `otp` type below
+(same typed-code / wrong-value-error / retry-loop behavior via a `condition`
+node reading the captured variable, no fake segmented-digit-box UI).
+```yaml
+- type: input
+  inputType: numeric
+  placeholder: "Enter the 4-digit code we sent you."
+  submitLabel: "Verify"
+  variable: enteredCode
+  next: check_code
+```
+
 **`system_action`** — not a real platform message at all; a local simulator notice (e.g. "Boarding pass downloaded"). `action` is one of `download | wallet | open_url | copy | calendar | generic`.
 
 **`typing`** / **`delay`** — pseudo-messages, never stored in history. `typing` shows the indicator for `duration` ms; `delay` pauses silently.
 
-### Simulator-only types — avoid unless explicitly asked for
+### Simulator-only types — never use these unless explicitly asked for that exact UI
 
-`flight_card`, `boarding_pass`, `otp`, `payment_request`, `calendar_event`,
-and `input` have **no official WhatsApp/RCS payload equivalent** — they're
-simulator conveniences with an honest fallback note in the app, not real
-platform features. Prefer the real primitive instead:
+`flight_card`, `boarding_pass`, `otp`, `payment_request`, and
+`calendar_event` have **no official WhatsApp/RCS payload equivalent at
+all** — they're simulator conveniences with an honest fallback note in the
+app (a visible "not officially supported" warning), not real platform
+features. **Default to the real primitive instead, every time:**
 - Boarding pass → `document` (PDF) + `text` summary + `suggested_replies`.
-- One-time code → plain `text` (WhatsApp's real pattern is an Authentication
-  Template: fixed text + a "Copy code" button, never a code-entry UI).
+- One-time code (typed and validated) → `input` (see above), **not** `otp`.
+  If you only need to *display* a code with no entry step, plain `text` is
+  even closer to WhatsApp's real pattern (an Authentication Template: fixed
+  text + a "Copy code" button, never a code-entry UI).
 - Payment request → `rich_card` with an `open_url` button to a payment link.
 - Calendar invite → `text` + a `suggested_replies` "Add to calendar" option.
 
-Only use these simulator-only types if the user explicitly asks for that
-exact UI (e.g. "I want the segmented OTP entry screen").
+Do not reach for one of these 5 types unless the user explicitly names that
+exact invented UI (e.g. "I want the segmented OTP entry screen with a
+Verify button inside the bubble") — a generic request like "add an OTP
+step" or "verify the user's identity with a code" must use `input`, not
+`otp`.
 
 ## Real platform limits (hard-enforced — violating these fails validation entirely)
 

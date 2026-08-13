@@ -122,6 +122,59 @@ official WhatsApp button actions. Not fixed yet — flagged in
 `capabilities.ts` comments, low priority since it's a nested field, not a
 top-level message type.
 
+## Automated guard against built-ins regressing to invented types (0.12.1)
+
+The Beerlao `otp`→`input` fix (see the CHANGELOG's 0.12.1 entry) happened
+because nothing actually *enforced* the "built-ins only use official types"
+rule above — it was a promise kept by memory alone, and it broke the first
+time a scenario was added without re-deriving it. After the user explicitly
+asked that the tool never again allow/invent unsupported types in a
+built-in, `src/scenarios/scenarios.test.ts` gained a second describe block,
+`built-in scenarios use only officially-supported message types`, that
+walks every node of every `BUILT_IN_SCENARIOS` entry and fails the test
+suite if any message's `type` is absent from **both**
+`whatsappCapabilities.supportedMessageTypes` and
+`rcsCapabilities.supportedMessageTypes` (i.e. one of the 5 "no official
+basis on any platform" types — `otp`, `flight_card`, `boarding_pass`,
+`payment_request`, `calendar_event`). `typing`/`delay` are exempted (pseudo-
+messages, never passed through `isMessageTypeSupported` at render time
+either).
+
+**Deliberately not "supported on both channels"**: the check uses OR across
+the two capability lists, not AND. `list` (WhatsApp-only, real native list
+picker) and `whatsapp_flow` (WhatsApp-only by definition) are genuine
+single-platform official types — they correctly still show an honest
+fallback note when a built-in is cross-viewed on the *other* channel via
+the sidebar's channel toggle, and that's accurate platform-difference
+reporting, not a bug to chase away. An earlier draft of this test required
+both channels and immediately (correctly) failed on `list`/`whatsapp_flow`/
+`input` — don't reintroduce that stricter version; it would force every
+built-in message into the intersection of WhatsApp's and RCS's primitives,
+which is not what "officially supported" means here.
+
+**This also caught a second, pre-existing bug** while being written:
+`rcsCapabilities.supportedMessageTypes` incorrectly listed `calendar_event`
+as RCS-native — checked against Google's RCS docs (`AgentContentMessage` is
+text/file/rich-card only; a calendar event is a *suggested action* subtype,
+`CreateCalendarEventAction`, not a standalone content message), so it was
+removed and given the same honest `fallbackNotes.calendar_event` entry
+WhatsApp already had. No built-in used it, so this was a latent gap, not a
+visible regression — but it means a custom scenario using `calendar_event`
+on RCS is now correctly flagged instead of silently rendering as if it were
+real.
+
+**`docs/SCENARIO_AUTHORING_GUIDE.md` had the same misconception baked into
+the AI system prompt**: it listed `input` under "Simulator-only types — no
+official WhatsApp/RCS payload equivalent," which is what the Beerlao bug
+itself disproved — `input` is real on WhatsApp. Since this file *is* the
+system prompt for `aiScenarioGenerator.ts` and the "copy prompt" fallback,
+leaving it wrong meant the AI-authoring path was being steered toward
+`otp` for exactly the "typed code with validation" case it should reach for
+`input` instead. Moved `input` into the official-types section with a
+worked example, and reworded the simulator-only section to explicitly say
+"a generic request like 'add an OTP step' must use `input`, not `otp`" —
+don't undo this pairing if you touch that file again.
+
 ## `getCapabilityWarning` — the enforcement mechanism
 
 `channels/capabilities.ts` declares real numeric/length limits per channel

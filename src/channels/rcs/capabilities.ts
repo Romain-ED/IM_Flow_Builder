@@ -13,7 +13,6 @@ export const rcsCapabilities: ChannelCapabilities = {
     'suggested_replies',
     'suggested_actions',
     'location',
-    'calendar_event',
     'system_action',
   ],
   // Google's RCS Business Messaging API models message content as exactly
@@ -43,6 +42,7 @@ export const rcsCapabilities: ChannelCapabilities = {
     boarding_pass: 'RCS has no boarding-pass message; a real integration sends the pass as an uploaded file (PDF/image) with a text summary and suggested actions.',
     otp: 'RCS has no code-entry message; a real one-time code is sent as plain text for the user to read and enter elsewhere — RCS has no structured OTP UI.',
     payment_request: 'RCS has no native payment message; a real integration uses a rich card with an open_url suggested action linking to a payment page.',
+    calendar_event: 'RCS has no calendar-invite message; a real integration sends plain text with a "create calendar event" suggested action (a real RCS suggestion subtype), not a standalone card.',
     product_catalog: 'RCS has no native product catalog message; rendered as a generic scrollable card row.',
     whatsapp_flow: 'WhatsApp Flows are WhatsApp-specific; rendered here as a generic placeholder card.',
   },
