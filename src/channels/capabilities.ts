@@ -24,6 +24,10 @@ export interface ChannelCapabilities {
   maxCardTitleLength?: number
   /** Max characters on a rich card / carousel card description (RCS: 2000). */
   maxCardDescriptionLength?: number
+  /** Max characters on a rich_card/list header line (WhatsApp: 60). Undefined where the platform has no such field at all (RCS). */
+  maxHeaderTextLength?: number
+  /** Max characters on a rich_card/list footer line (WhatsApp: 60). Undefined where the platform has no such field at all (RCS). */
+  maxFooterTextLength?: number
   /** Human-readable explanation shown in debug mode when a type falls back. */
   fallbackNotes: Partial<Record<MessageType, string>>
 }
@@ -134,6 +138,20 @@ export function getCapabilityWarning(
       ) {
         return `This description is ${message.description.length} characters — ${capabilities.label} caps descriptions at ${capabilities.maxCardDescriptionLength}.`
       }
+      if (
+        message.header &&
+        capabilities.maxHeaderTextLength &&
+        message.header.length > capabilities.maxHeaderTextLength
+      ) {
+        return `Header "${message.header}" is ${message.header.length} characters — ${capabilities.label} caps header text at ${capabilities.maxHeaderTextLength}.`
+      }
+      if (
+        message.footer &&
+        capabilities.maxFooterTextLength &&
+        message.footer.length > capabilities.maxFooterTextLength
+      ) {
+        return `Footer "${message.footer}" is ${message.footer.length} characters — ${capabilities.label} caps footer text at ${capabilities.maxFooterTextLength}.`
+      }
       if (message.actions && message.actions.length > capabilities.maxSuggestedActions) {
         return `${capabilities.label} supports at most ${capabilities.maxSuggestedActions} buttons on a card (this one has ${message.actions.length}).`
       }
@@ -151,6 +169,20 @@ export function getCapabilityWarning(
             return `Row title "${tooLong.title}" is ${tooLong.title.length} characters — ${capabilities.label} caps row titles at ${capabilities.maxListRowTitleLength}.`
           }
         }
+      }
+      if (
+        message.header &&
+        capabilities.maxHeaderTextLength &&
+        message.header.length > capabilities.maxHeaderTextLength
+      ) {
+        return `Header "${message.header}" is ${message.header.length} characters — ${capabilities.label} caps header text at ${capabilities.maxHeaderTextLength}.`
+      }
+      if (
+        message.footer &&
+        capabilities.maxFooterTextLength &&
+        message.footer.length > capabilities.maxFooterTextLength
+      ) {
+        return `Footer "${message.footer}" is ${message.footer.length} characters — ${capabilities.label} caps footer text at ${capabilities.maxFooterTextLength}.`
       }
       return null
     }

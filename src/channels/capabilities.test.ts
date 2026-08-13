@@ -99,4 +99,47 @@ describe('getCapabilityWarning', () => {
     const message: RenderableMessage = { type: 'text', sender: 'business', text: 'Hi' }
     expect(getCapabilityWarning(whatsappCapabilities, message)).toBeNull()
   })
+
+  it('flags a rich_card header over WhatsApp\'s 60-character cap', () => {
+    const message: RenderableMessage = {
+      type: 'rich_card',
+      sender: 'business',
+      title: 'Sale',
+      header: 'x'.repeat(61),
+    }
+    expect(getCapabilityWarning(whatsappCapabilities, message)).toMatch(/60/)
+  })
+
+  it('flags a rich_card footer over WhatsApp\'s 60-character cap', () => {
+    const message: RenderableMessage = {
+      type: 'rich_card',
+      sender: 'business',
+      title: 'Sale',
+      footer: 'x'.repeat(61),
+    }
+    expect(getCapabilityWarning(whatsappCapabilities, message)).toMatch(/60/)
+  })
+
+  it('does not flag rich_card header/footer on RCS, which has no length cap declared for them', () => {
+    const message: RenderableMessage = {
+      type: 'rich_card',
+      sender: 'business',
+      title: 'Sale',
+      header: 'x'.repeat(61),
+      footer: 'x'.repeat(61),
+    }
+    expect(getCapabilityWarning(rcsCapabilities, message)).toBeNull()
+  })
+
+  it('flags a list header/footer over WhatsApp\'s 60-character cap', () => {
+    const base: RenderableMessage = {
+      type: 'list',
+      sender: 'business',
+      title: 'Menu',
+      buttonLabel: 'View',
+      sections: [{ rows: [{ id: 'r1', title: 'Row 1' }] }],
+    }
+    expect(getCapabilityWarning(whatsappCapabilities, { ...base, header: 'x'.repeat(61) })).toMatch(/60/)
+    expect(getCapabilityWarning(whatsappCapabilities, { ...base, footer: 'x'.repeat(61) })).toMatch(/60/)
+  })
 })

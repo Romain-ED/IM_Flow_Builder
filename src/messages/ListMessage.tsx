@@ -16,7 +16,11 @@ export function ListMessage({ message, channel, interactive, timestampLabel }: L
   const openListSheet = useSimulatorStore((s) => s.openListSheet)
   const theme = channelThemes[channel]
   if (message.message.type !== 'list') return null
-  const { sender, title, description, buttonLabel } = message.message
+  const { sender, header, title, description, footer, buttonLabel } = message.message
+  // list is WhatsApp-only to begin with (RCS has no list type at all), but
+  // header/footer are still gated the same way as RichCard for consistency
+  // and in case this component is ever reused for a fallback render.
+  const showWhatsAppFields = channel === 'whatsapp'
 
   return (
     <MessageShell sender={sender ?? 'business'} channel={channel} chrome="card" timestampLabel={timestampLabel}>
@@ -25,8 +29,14 @@ export function ListMessage({ message, channel, interactive, timestampLabel }: L
           <ListIcon size={18} />
         </span>
         <div className="min-w-0">
+          {showWhatsAppFields && header && (
+            <p className="text-[11.5px] font-semibold text-slate-500 m-0 mb-1">{header}</p>
+          )}
           <h4 className="text-[14px] font-semibold text-slate-900 m-0">{title}</h4>
           {description && <p className="text-[12.5px] text-slate-500 mt-0.5 mb-0">{description}</p>}
+          {showWhatsAppFields && footer && (
+            <p className="text-[11.5px] text-slate-400 mt-1 mb-0">{footer}</p>
+          )}
         </div>
       </div>
       <button

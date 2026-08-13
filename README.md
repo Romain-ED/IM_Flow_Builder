@@ -212,11 +212,11 @@ Every type below renders on both channels — a type a channel doesn't natively 
 |---|---|---|
 | `text` | multiline, basic URL auto-linking, `**bold**` / `_italic_` | WhatsApp, RCS |
 | `image` / `video` / `document` | graceful broken-asset fallback; document taps simulate a download | WhatsApp, RCS |
-| `rich_card` | header image + title/description + up to a few buttons | WhatsApp (interactive message: header/body/footer/buttons), RCS (rich card) |
+| `rich_card` | optional text `header` (or media `image`, not both) + title/description + optional `footer` + up to a few buttons | WhatsApp (interactive message: header/body/footer/buttons), RCS (rich card — no header/footer fields, so those only render on WhatsApp) |
 | `carousel` | horizontally scrollable cards, each with its own buttons | WhatsApp (Carousel Template, Meta-approved, 10 cards / 2 buttons each), RCS (2–10 cards / 4 buttons each) |
 | `suggested_replies` | inline reply chips | WhatsApp (reply buttons, max 3), RCS (suggestion chips, max 11) |
 | `suggested_actions` | `open_url` / `call` / `location` / `calendar` / `custom` (each shows a simulated modal) | `reply`/`open_url` only — the others have no real WhatsApp button equivalent |
-| `list` | opens a bottom-sheet menu of sections/rows | WhatsApp (native list picker) |
+| `list` | opens a bottom-sheet menu of sections/rows, with optional text-only `header`/`footer` | WhatsApp (native list picker; header/footer only render on WhatsApp) |
 | `location` | map-preview card with an "Open in Maps" simulated action | WhatsApp, RCS |
 | `product_catalog` | horizontally scrollable products, each with "Add to cart" (simulated) | WhatsApp (multi-product/catalog message) |
 | `whatsapp_flow` | placeholder card for an embedded WhatsApp Flow, with a configurable CTA | WhatsApp (Flows) |

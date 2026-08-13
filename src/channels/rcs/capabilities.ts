@@ -25,6 +25,12 @@ export const rcsCapabilities: ChannelCapabilities = {
   // characters, descriptions at 2000, and chip labels at 25. Source:
   // developers.google.com/business-communications/rcs-business-messaging
   // (rich cards + agentMessages reference).
+  //
+  // No maxHeaderTextLength/maxFooterTextLength here on purpose: RCS rich
+  // cards and lists have no dedicated header/footer fields at all (a rich
+  // card is title + description + media + suggestions, full stop) — these
+  // are a genuine WhatsApp-only interactive-message concept, so `header`/
+  // `footer` on a message only render on the WhatsApp channel.
   maxSuggestedReplies: 11,
   maxSuggestedActions: 4,
   maxCarouselCards: 10,

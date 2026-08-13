@@ -70,6 +70,22 @@ describe('normalizeForWhatsApp', () => {
     expect(errors.some((e) => e.includes('no body text'))).toBe(true)
   })
 
+  it('hard-errors on a rich_card that sets both header text and image', () => {
+    const messages: Message[] = [
+      { type: 'rich_card', sender: 'business', header: 'Limited time', image: '/promo.png', title: 'Sale', actions: [] },
+    ]
+    const { errors } = normalizeForWhatsApp(messages)
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain('text OR media')
+  })
+
+  it('does not error on a rich_card with only header text or only an image', () => {
+    const headerOnly: Message[] = [{ type: 'rich_card', sender: 'business', header: 'Limited time', title: 'Sale', actions: [] }]
+    const imageOnly: Message[] = [{ type: 'rich_card', sender: 'business', image: '/promo.png', title: 'Sale', actions: [] }]
+    expect(normalizeForWhatsApp(headerOnly).errors).toEqual([])
+    expect(normalizeForWhatsApp(imageOnly).errors).toEqual([])
+  })
+
   it('hard-errors on a rich_card with more buttons than WhatsApp allows', () => {
     const messages: Message[] = [
       {

@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.13.0',
+    date: '2026-08-13',
+    changes: [
+      'New: `header` and `footer` text fields on `rich_card` and `list` messages, matching a real WhatsApp interactive message\'s header/body/footer/buttons envelope. A `rich_card` header is text OR `image`, never both — setting both now fails validation, the same as a real WhatsApp send would reject it. Length is capped at 60 characters each (Meta\'s real limit), enforced as the usual live capability warning.',
+      'These only render on the WhatsApp channel — RCS rich cards have no dedicated header/footer fields at all (title + description + media + suggestions only, per Google\'s spec), so authoring them for a scenario that\'s also viewed on RCS is a no-op there rather than an invented approximation.',
+      'Demoed in two built-ins: the e-commerce scenario\'s priority-upgrade card now has a "Limited-time offer" header, and Beerlao\'s event-promotion card has a "Drink responsibly" footer.',
+    ],
+  },
+  {
     version: '0.12.2',
     date: '2026-08-13',
     changes: [

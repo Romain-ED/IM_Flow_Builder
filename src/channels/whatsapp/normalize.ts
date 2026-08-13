@@ -99,6 +99,11 @@ export function normalizeForWhatsApp(messages: Message[]): WhatsAppNormalizeResu
         normalized.push({ kind: 'location' })
         break
       case 'rich_card': {
+        if (message.header && message.image) {
+          errors.push(
+            `rich_card "${message.title}" sets both "header" text and "image" — a real WhatsApp interactive message has one header type, text OR media, never both.`,
+          )
+        }
         const buttonCount = message.actions?.length ?? 0
         if (buttonCount > whatsappCapabilities.maxSuggestedActions) {
           errors.push(

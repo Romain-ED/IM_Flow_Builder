@@ -451,6 +451,46 @@ following that file's existing separation of "matching algorithm" from
 every other `next`-like field — triggers are global (no owning node), so
 that one check doesn't go through the node-scoped `checkRef` helper.
 
+## `rich_card`/`list` header & footer (0.13.0) — WhatsApp-only, gated at render time
+
+Added `header`/`footer` string fields to `richCardMessageSchema` and
+`listMessageSchema`, matching Meta's real WhatsApp Cloud API interactive-
+message envelope (`header` + `body` + `footer` + `action`). Two real-spec
+constraints drove the design, both verified via search rather than assumed:
+
+- **A `rich_card` header is text OR `image`, never both** — a real WhatsApp
+  button-type interactive message has exactly one header type.
+  `channels/whatsapp/normalize.ts`'s `rich_card` case hard-errors if a
+  scenario sets both (same "count/structural checks are hard errors"
+  bucket as button-count violations — see the `normalize.ts` section
+  above). A `list`'s header has no such conflict since list headers are
+  always text-only on the real platform (no media option at all), so no
+  equivalent check was needed there.
+- **RCS has no header/footer fields on its rich card at all** — Google's
+  RCS rich card is title + description + media + suggestions, full stop
+  (confirmed against the RCS `agentMessages` reference). Rather than
+  invent an approximation for RCS (which the "Automated guard against
+  built-ins regressing to invented types" section above exists specifically
+  to prevent), `RichCard.tsx`/`ListMessage.tsx` gate `header`/`footer`
+  rendering on `channel === 'whatsapp'` — the fields simply don't render on
+  RCS, same as how `list` itself doesn't natively render there. This also
+  matches the literal scope of the request that added this feature
+  ("header and footer for **WhatsApp** messages").
+
+Length limits (both capped at 60 chars per Meta's docs) are the usual live
+soft warning via `getCapabilityWarning`/`maxHeaderTextLength`/
+`maxFooterTextLength` on `ChannelCapabilities` — WhatsApp defines them,
+RCS deliberately leaves them `undefined` (there's no field to have a limit
+on), following the same "count = hard error, length = soft warning"
+split as everything else in `capabilities.ts`/`normalize.ts`.
+
+Demoed in two built-ins rather than left untested-in-practice: `ecommerce.yaml`'s
+`priority_upgrade` rich_card (no `image`, so got `header: "Limited-time
+offer"`) and `beerlao.yaml`'s `event_promotion` rich_card (already has
+`image`, so only got `footer: "Drink responsibly. 18+."` — adding `header`
+there too would have tripped the new mutual-exclusivity error, which is
+exactly the point of that check).
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number

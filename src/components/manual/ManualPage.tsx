@@ -126,11 +126,11 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
             rows={[
               ['text', 'Multiline text, basic URL auto-linking, **bold**/_italic_. Official on every channel.'],
               ['image / video / document', 'Media with graceful broken-asset fallback; document taps simulate a download. Official on every channel.'],
-              ['rich_card', 'A header (image) + title + description + up to a few buttons. Official: matches a real WhatsApp interactive message (header/body/footer/buttons) and a real RCS rich card.'],
+              ['rich_card', 'An optional header (text OR image, not both) + title + description + optional footer + up to a few buttons. Official: matches a real WhatsApp interactive message (header/body/footer/buttons) and a real RCS rich card — RCS has no separate header/footer fields, so those two only render on the WhatsApp channel.'],
               ['carousel', 'A horizontally scrollable row of cards, each with its own buttons. Official: matches WhatsApp\'s Carousel Template (Meta-approved, up to 10 cards / 2 buttons each) and a real RCS carousel (2–10 cards / 4 buttons each).'],
               ['suggested_replies', 'Inline reply chips. Official — matches WhatsApp interactive reply buttons (max 3) and RCS suggestion chips (max 11).'],
               ['suggested_actions', 'Richer buttons (open_url, call, location, calendar, custom). The reply/open_url subtypes are official; the others are simulator conveniences shown as a modal/toast rather than a real WhatsApp button type.'],
-              ['list', 'Opens a bottom-sheet menu of grouped rows. Official on WhatsApp (native list picker). RCS has no equivalent — see below.'],
+              ['list', 'Opens a bottom-sheet menu of grouped rows, with an optional text-only header/footer. Official on WhatsApp (native list picker). RCS has no equivalent — see below.'],
               ['input', 'Free-text/email/phone/numeric/date entry that drives the composer and stores the value in a variable. Simulator convenience: real WhatsApp/RCS composers are always plain text; there\'s no structured input-type UI.'],
               ['location', 'A map-preview card with a label/address and an "Open in Maps" simulated action. Official on both — matches WhatsApp\'s location message and RCS\'s location suggested action.'],
               ['product_catalog', 'A horizontally scrollable row of products. Official on WhatsApp (multi-product/catalog message); RCS has no equivalent, shown as a generic fallback.'],
@@ -325,6 +325,7 @@ const PLATFORM_LIMITS: [string, string, string][] = [
   ['List rows (total, all sections)', '10', '— (no native list picker)'],
   ['List row title length', '24 chars', '—'],
   ['Rich card title / description length', 'not separately capped', '200 / 2000 chars'],
+  ['Header / footer text length (rich_card, list)', '60 / 60 chars', 'no dedicated fields — not rendered'],
 ]
 
 function PlatformLimitsTable() {

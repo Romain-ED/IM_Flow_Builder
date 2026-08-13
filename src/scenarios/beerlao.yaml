@@ -90,6 +90,7 @@ nodes:
         image: "/assets/event-boun-souang-heua.svg"
         title: "Celebrate {{eventName}} with Beerlao"
         description: "The boats are racing and Beerlao is bringing something new. Discover {{productName}} during the celebrations on {{eventDate}} and enjoy 15% off your next order with code {{promoCode}}."
+        footer: "Drink responsibly. 18+."
         actions:
           - type: open_url
             label: "Discover the new beer"

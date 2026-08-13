@@ -161,12 +161,22 @@ default.
   fileType: PDF
 ```
 
-**`rich_card`** — official (WhatsApp interactive message; RCS rich card). Header image + title + description + up to 3 buttons.
+**`rich_card`** — official (WhatsApp interactive message; RCS rich card). Title + description + up to 3 buttons, plus an optional header and footer:
+- `header` (text, max 60 chars) **or** `image` (media) — never both. A real
+  WhatsApp interactive message has one header type; setting both fails
+  validation.
+- `footer` (text, max 60 chars) — small text below the body, above the
+  buttons.
+- RCS has no dedicated header/footer fields at all (a rich card there is
+  just title + description + media + suggestions), so `header`/`footer`
+  only render on the WhatsApp channel — don't rely on them for RCS-only
+  content.
 ```yaml
 - type: rich_card
   image: "/assets/package.svg"
   title: "On its way"
   description: "Estimated arrival: {{eta}}"
+  footer: "Questions? Reply to this chat."
   actions:
     - type: reply
       label: "Track package"
@@ -221,10 +231,12 @@ default.
 > `suggested_replies`/`suggested_actions` with nothing usable before it, so
 > don't ever open a node with one of these as the first message).
 
-**`list`** — official on WhatsApp only (native list picker, max 10 rows total across sections, 24-char row titles). RCS has no list type — don't rely on `list` for RCS-only content, it falls back to a stacked rich card there.
+**`list`** — official on WhatsApp only (native list picker, max 10 rows total across sections, 24-char row titles). Also supports an optional text-only `header` and `footer` (max 60 chars each, same as `rich_card` — but unlike `rich_card`, a list header can only be text, never media). RCS has no list type — don't rely on `list` for RCS-only content, it falls back to a stacked rich card there.
 ```yaml
 - type: list
+  header: "Delivery options"
   title: "Choose an option"
+  footer: "Prices include tax"
   buttonLabel: "View options"
   sections:
     - title: "Popular"
@@ -305,6 +317,11 @@ step" or "verify the user's identity with a code" must use `input`, not
 | Carousel cards | up to 10 | 2–10 (1 card is invalid — use a standalone `rich_card` instead) |
 | Buttons per carousel card | 2 | 4 |
 | List rows (total, all sections) | 10 | — (no native list) |
+| `rich_card` header type | text OR `image`, never both | n/a (no header field) |
+
+Header/footer/label/title *character length* limits (e.g. the 60-char
+header/footer cap above) are a live soft warning, not a hard validation
+failure — see the note on why in the app's `CLAUDE.md`.
 
 ## Worked example
 

@@ -99,8 +99,10 @@ nodes:
   - id: priority_upgrade
     messages:
       - type: rich_card
+        header: "Limited-time offer"
         title: Priority delivery upgrade — $6.99
         description: "Get {{itemName}} delivered today instead of {{eta}}."
+        footer: "Offer applies to this order only."
         actions:
           - type: open_url
             label: Pay now

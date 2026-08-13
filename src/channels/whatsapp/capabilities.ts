@@ -26,6 +26,10 @@ export const whatsappCapabilities: ChannelCapabilities = {
   // (quick-reply, phone-number, or URL — not arbitrary action types). List
   // messages support at most 10 rows total across up to 10 sections, each
   // with a 24-character row title. Button/chip labels cap at 20 characters.
+  // An interactive message's optional header is text (<=60 chars) OR media
+  // (image/video/document) — never both — and its optional footer is plain
+  // text, also capped at 60 chars. List messages support the same
+  // header/footer wrapper, but their header can only be text (no media).
   // Source: Meta's WhatsApp Cloud API interactive-message reference and
   // Carousel Template docs.
   maxSuggestedReplies: 3,
@@ -35,6 +39,8 @@ export const whatsappCapabilities: ChannelCapabilities = {
   maxListRows: 10,
   maxButtonLabelLength: 20,
   maxListRowTitleLength: 24,
+  maxHeaderTextLength: 60,
+  maxFooterTextLength: 60,
   fallbackNotes: {
     // These have no official WhatsApp equivalent at all — not even as a
     // template — so the built-in scenarios avoid them on this channel;

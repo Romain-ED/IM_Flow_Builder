@@ -129,9 +129,22 @@ export const documentMessageSchema = z.object({
 export const richCardMessageSchema = z.object({
   type: z.literal('rich_card'),
   ...messageBase,
+  /**
+   * WhatsApp's optional text header — mutually exclusive with `image` on a
+   * real send (an interactive message has one header type, text OR media,
+   * never both); `channels/whatsapp/normalize.ts` hard-rejects a card that
+   * sets both. RCS rich cards have no separate header field at all, so this
+   * only renders on the WhatsApp channel.
+   */
+  header: z.string().optional(),
   image: z.string().optional(),
   title: z.string(),
   description: z.string().optional(),
+  /**
+   * WhatsApp's optional small footer line below the body, above the
+   * buttons. Same "no dedicated field on RCS" caveat as `header`.
+   */
+  footer: z.string().optional(),
   mediaHeight: z.enum(['short', 'medium', 'tall']).optional(),
   orientation: z.enum(['horizontal', 'vertical']).optional(),
   actions: z.array(actionSchema).optional(),
@@ -185,8 +198,12 @@ export type ListSection = z.infer<typeof listSectionSchema>
 export const listMessageSchema = z.object({
   type: z.literal('list'),
   ...messageBase,
+  /** WhatsApp's optional text-only header line above the list body — a real interactive list message's header can't be media (unlike the button-type interactive message rich_card models). RCS has no list type at all, so this only renders on WhatsApp. */
+  header: z.string().optional(),
   title: z.string(),
   description: z.string().optional(),
+  /** WhatsApp's optional small footer line below the body, above the "open list" button. */
+  footer: z.string().optional(),
   buttonLabel: z.string(),
   sections: z.array(listSectionSchema).min(1),
 })
