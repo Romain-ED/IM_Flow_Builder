@@ -127,9 +127,9 @@ nodes:
           - type: reply
             label: "Notify me at launch"
             next: notify_confirmed
-    actions:
-      - label: "Not right now"
-        next: dismissed
+          - type: reply
+            label: "Not right now"
+            next: dismissed
 
   - id: notify_confirmed
     messages:

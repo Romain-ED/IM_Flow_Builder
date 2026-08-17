@@ -88,7 +88,7 @@ nodes:
   - id: event_promotion
     messages:
       - type: rich_card
-        image: "/assets/event-boun-souang-heua-promo.jpg"
+        image: "/assets/event-boun-souang-heua-promo.png"
         title: "Celebrate {{eventName}} with Beerlao"
         description: "Enjoy {{discount}} OFF your next order of {{productName}}. Use code {{promoCode}}. Offer valid {{eventDate}} only. Don't miss the wave! 🌊"
         footer: "Drink responsibly. 18+."
@@ -99,9 +99,9 @@ nodes:
           - type: reply
             label: "Event details"
             next: event_details
-    actions:
-      - label: "Maybe later"
-        next: dismissed
+          - type: reply
+            label: "Maybe later"
+            next: dismissed
 
   - id: event_details
     messages:

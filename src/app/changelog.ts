@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.1',
+    date: '2026-08-17',
+    changes: [
+      'Fix: `input` messages showed a pencil icon and a "— reply using the box below." hint — neither exists on a real WhatsApp/RCS message, and it undercut the entire reason `input` is used over the invented `otp` type (rendering as an ordinary, unannotated text bubble). Removed both; `input` now renders identically to a plain business text message.',
+      'Fix: the Beerlao and Pro Gadget Laos event/launch cards showed an extra "Maybe later"/"Not right now" button floating separately below the rich_card, instead of inside it — node-level `actions` only attach into the same card when the last message is business `text`, not a `rich_card`/`carousel`/`list`, so it rendered as a second independent button group, which no real WhatsApp/RCS message has. Folded both into the card\'s own `actions` list as a third embedded button instead. `docs/SCENARIO_AUTHORING_GUIDE.md` gained an explicit warning against this pairing so it doesn\'t recur.',
+      'Fix: `event-boun-souang-heua-promo.jpg` was actually PNG data saved with a `.jpg` extension (a GitHub upload doesn\'t validate this) — broke image loading, and separately hid the file from the PWA precache entirely since `.jpg` wasn\'t in `vite.config.ts`\'s glob patterns, so the bug never surfaced in a build. Renamed to `.png`, added `jpg`/`jpeg` to the precache patterns, and raised the precache size cap so this real ~2.5 MB photo is included for offline use.',
+    ],
+  },
+  {
     version: '0.15.0',
     date: '2026-08-17',
     changes: [

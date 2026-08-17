@@ -567,6 +567,22 @@ Beerlao, which got real committed PNG/JPG assets later) — same "seeded
 decorative placeholder" precedent documented in the README's Known
 Limitations section for boarding-pass QR codes etc.
 
+## `input` renders as plain, unannotated text (0.15.1)
+
+`InputMessage.tsx` used to add a `PencilLine` icon and, while the field
+was still active, an inline "— reply using the box below." hint. The user
+correctly flagged this as non-standard: no real WhatsApp/RCS message has
+an icon like that, so it was quietly reintroducing the exact problem the
+`otp`→`input` swap (0.12.1) was meant to fix — a component that visually
+signals "this is special software UI" rather than an ordinary business
+text message. Removed both; `input` now renders as bare text in a plain
+bubble, indistinguishable from `TextMessage`, which is the whole point of
+using it over `otp`. If you're tempted to add any visual affordance to
+`input` (icon, color, hint text) to make it "clearer" that a reply is
+expected, don't — that clarity is exactly what a real WhatsApp/RCS
+composer doesn't provide either, and this component's entire job is to
+not claim more than a real platform does.
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number
@@ -648,6 +664,17 @@ straight to GitHub (`public/assets/beerlao_logo.png`,
 reliable path when a session needs a real binary asset it can't otherwise
 reach: have the user commit it, then wire it in from there. Don't assume a
 pasted image can be saved to disk from chat content alone.
+
+**The uploaded promo photo was later renamed** from
+`event-boun-souang-heua-promo.jpg` to `.png` (0.15.1) — GitHub's upload UI
+doesn't validate that a file's extension matches its actual content, and
+this one was real PNG data saved with a `.jpg` name. That silently broke
+image loading (browsers/servers that respect the declared content type
+over sniffed content can refuse a mismatched pair) and, separately, hid
+the file from the PWA precache entirely, since `vite.config.ts`'s
+`globPatterns` didn't list `jpg`/`jpeg` at all — so the bug had no way to
+surface in a build check. If a future uploaded "photo" file misbehaves,
+check `file <path>` before assuming the code is wrong.
 
 `brand.avatar` now points at the real logo PNG and `event_promotion`'s
 `rich_card.image` at the real promo photo (which already carries its own

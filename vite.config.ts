@@ -40,8 +40,19 @@ export default defineConfig(({ command }) => {
         workbox: {
           // Everything the app needs is already bundled at build time, so a
           // simple precache-all strategy is enough for full offline use —
-          // no runtime network dependency to design around.
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+          // no runtime network dependency to design around. jpg/jpeg was
+          // missing here until a real (non-placeholder) photo asset was
+          // added — a real bug: that asset was silently excluded from
+          // offline precaching (and, separately, from Workbox's precache
+          // manifest checks entirely, which is exactly how a mislabeled
+          // PNG saved as ".jpg" went unnoticed until it broke image
+          // loading — fixed alongside this by renaming the file to match
+          // its real content).
+          globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,ico,woff2}'],
+          // Workbox's default cap (2 MiB) is too small for a real
+          // marketing photo (the Beerlao event promo is ~2.5 MB) — raised
+          // with headroom for future real assets, not tuned to one file.
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         },
       }),
     ],

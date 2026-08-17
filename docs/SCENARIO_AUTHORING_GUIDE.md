@@ -85,7 +85,7 @@ no automatic response — that's expected, not a bug to work around.
 |---|---|
 | `id` | Unique identifier other nodes reference via `next`. |
 | `messages` | Ordered list of messages/pseudo-messages played when the node is entered. |
-| `actions` | Buttons shown once messages finish, attached to the last message. Lighter-weight alternative to a `suggested_replies` message — same rendering. Each item: `{ label, next?, set? }` (see "Choice" below). |
+| `actions` | Buttons shown once messages finish. Lighter-weight alternative to a `suggested_replies` message. Only attaches into the last message's own card/bubble when that message is a business `text` — see the warning below for every other case. Each item: `{ label, next?, set? }` (see "Choice" below). |
 | `set` | Variables to assign unconditionally as soon as the node is entered: `{ key: value }`. |
 | `condition` / `then` / `else` | Declarative branch: `condition: { variable, operator, value }`, `operator` one of `equals \| not_equals \| exists \| contains \| greater_than \| less_than`. Routes to `then` or `else`. |
 | `next` | Automatic transition to another node once messages finish (used only when there's no `condition`/`actions`/inline-interactive message awaiting a tap). |
@@ -94,6 +94,18 @@ no automatic response — that's expected, not a bug to work around.
 Every node needs an outcome: `actions`, a `condition`, `next`, `end: true`,
 or a message that's itself interactive (`suggested_replies`, `list`,
 `input`). A node with none of these is a dead end.
+
+> **Don't pair node-level `actions` with a `rich_card`/`carousel`/`list` as
+> the last message.** `actions` only merges into the same card when the
+> last message is business `text` (the same merge behavior a standalone
+> `suggested_replies`/`suggested_actions` message gets — see the
+> attachment rule below). After a `rich_card`/`carousel`/`list`, a node's
+> `actions` instead render as a *separate* floating pill row below the
+> card — a real WhatsApp/RCS message never has two independent button
+> groups like that. If a `rich_card` needs one more button (e.g. a
+> "Maybe later"/"Not now" option), add it to that message's own `actions`
+> list instead (up to 3 on WhatsApp, 4 on RCS) — don't reach for the
+> node-level field once the node already ends on a card.
 
 ## Templating
 
