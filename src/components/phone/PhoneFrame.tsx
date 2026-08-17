@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 export function PhoneFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative mx-auto w-full max-w-[380px] aspect-[9/19] max-h-full">
+    <div className="relative phone-frame-fit">
       <div className="absolute inset-0 rounded-[2.5rem] bg-slate-900 shadow-2xl p-2.5">
         <div className="relative h-full w-full rounded-[2rem] overflow-hidden bg-white flex flex-col">
           <StatusBar />

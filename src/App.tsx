@@ -38,7 +38,7 @@ function App() {
   if (sharedLinkMode) {
     return (
       <div className="h-screen w-screen bg-slate-100 flex items-center justify-center p-6">
-        <div className="h-full w-full max-w-[420px] max-h-[900px]">
+        <div className="phone-viewport h-full w-full">
           <PhoneFrame>
             <PhoneScreen />
           </PhoneFrame>
@@ -51,7 +51,7 @@ function App() {
   if (presenterMode) {
     return (
       <div className="h-screen w-screen bg-slate-100 flex items-center justify-center p-6">
-        <div className="h-full w-full max-w-[420px] max-h-[900px]">
+        <div className="phone-viewport h-full w-full">
           <PhoneFrame>
             <PhoneScreen />
           </PhoneFrame>
@@ -83,7 +83,7 @@ function App() {
             <ComparePhones />
           ) : (
             <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
-              <div className="h-full w-full max-w-[420px]">
+              <div className="phone-viewport h-full w-full">
                 <PhoneFrame>
                   <PhoneScreen />
                 </PhoneFrame>

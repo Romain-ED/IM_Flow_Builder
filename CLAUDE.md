@@ -627,6 +627,50 @@ disclaimers/status notes — not just the user's literal OTP example.
 `beerlao.yaml`'s and `progadget-laos.yaml`'s OTP delivery messages are the
 canonical example (`**{{otpCode}}**` / `_Expires in {{otpExpiry}}._`).
 
+## Adaptive phone sizing via CSS container queries (0.16.1)
+
+`PhoneFrame` used to be hard-capped at `max-w-[380px]` (or `420px` in the
+main/presenter/shared-link wrappers), regardless of how much room the
+window actually had — the user asked for it to scale with the page and
+be bigger. The fix is `.phone-viewport`/`.phone-frame-fit` in
+`index.css`: the wrapper opts into `container-type: size` (a CSS
+container query, sizing on *both* axes, not Tailwind's default
+inline-size-only `@container`), and the frame itself is sized
+`width: min(100cqw, calc(100cqh * 9 / 19))` with `aspect-ratio: 9/19` —
+i.e. "as wide as the container allows, but never wider than what the
+container's height would allow at the real phone aspect ratio." This
+picks whichever axis is actually tighter *without knowing which one that
+is ahead of time*, which a single fixed `max-w` can never do.
+
+**Why not just raise the pixel cap instead**: a fixed cap can't be
+"adaptive" by definition — it's still a fixed number, just a bigger one.
+It would also still have the latent bug the old CSS had: `w-full max-w-
+[Npx] aspect-[9/19] max-h-full` is *width*-driven (aspect-ratio computes
+height from the definite width), so on a short-but-wide window the
+`max-h-full` clamp would shrink height without doing the reverse
+recompute on width — silently distorting the 9:19 ratio instead of
+shrinking proportionally. Confirmed via Playwright across five very
+different window shapes (1280×800 laptop, 1920×1080, 2560×1440, and a
+deliberately awkward 1920×600) that the *rendered* aspect ratio is
+exactly 9:19 = 0.474 in every case — the old approach could not have
+guaranteed that.
+
+**One rule, four call sites, no special-casing per mode.** The same
+`.phone-viewport`/`.phone-frame-fit` pair is used in the main simulator
+view (normally height-bound — desktop windows are far wider than a full-
+height phone needs), Presenter Mode and the shared-link viewer (same
+pattern, full-screen), and `ComparePhones.tsx`'s per-channel columns
+(width-bound instead, since those are fixed `w-[260px]`) — the CSS
+formula is symmetric, so it self-selects the binding constraint per
+call site instead of needing a width-driven variant and a height-driven
+variant maintained separately.
+
+Compare mode's fixed 260px columns are deliberately unchanged — that
+width is chosen so 2+ phones fit side by side without horizontal
+scrolling being the default experience; don't apply the "bigger" request
+there without the user asking, it would defeat the point of side-by-side
+comparison.
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number

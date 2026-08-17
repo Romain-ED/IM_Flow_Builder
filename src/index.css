@@ -19,6 +19,29 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * The phone frame scales to fill whichever axis of its container is
+ * tighter — width or height — while keeping the real 9:19 phone aspect
+ * ratio, instead of being capped at a fixed pixel width regardless of how
+ * much room the window actually has. `.phone-viewport` (the wrapper) opts
+ * into CSS container queries on both axes; `.phone-frame-fit` (the frame
+ * itself) sizes from container query units: width is the smaller of
+ * "100% of the container's width" and "the width a full-height phone
+ * would need," so it never overflows either dimension. Works identically
+ * for a single centered phone (usually height-bound: desktop windows are
+ * far wider than a phone needs, so height is what actually limits it) and
+ * for narrow side-by-side columns in Compare mode (width-bound instead) —
+ * one rule, both cases, no per-caller special-casing.
+ */
+.phone-viewport {
+  container-type: size;
+}
+.phone-frame-fit {
+  width: min(100cqw, calc(100cqh * 9 / 19));
+  aspect-ratio: 9 / 19;
+  margin-inline: auto;
+}
+
 /* Slim, unobtrusive scrollbars used throughout the simulator */
 .thin-scrollbar {
   scrollbar-width: thin;

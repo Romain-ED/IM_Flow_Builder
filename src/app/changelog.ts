@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.16.1',
+    date: '2026-08-17',
+    changes: [
+      'Fix: the phone simulator was capped at a fixed max-width (380-420px) regardless of how much room the browser window actually had. It now scales adaptively via CSS container queries — sized to whichever of the window\'s width or height is actually the tighter constraint, always preserving the real 9:19 phone aspect ratio. On a typical widescreen monitor this is noticeably bigger than before; on an unusually short window it correctly shrinks instead of being cropped or distorted.',
+      'Same fix applies uniformly to the main simulator view, Presenter Mode, and the shared-link viewer. Compare mode\'s fixed-width columns are unchanged on purpose, so multiple channels still fit side by side.',
+    ],
+  },
+  {
     version: '0.16.0',
     date: '2026-08-17',
     changes: [
