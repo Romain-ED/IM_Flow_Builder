@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.13.1',
+    date: '2026-08-17',
+    changes: [
+      'Beerlao now uses real brand assets instead of placeholder SVGs: the actual Beerlao logo as the account avatar, and the real Boun Souang Heua boat-racing promo photo (with its own header/footer/16%-off copy) as the event_promotion rich_card image.',
+      'Removed the placeholder brand-avatar-beerlao.svg and event-boun-souang-heua.svg they replaced, plus a duplicate copy of the promo photo left over from the asset upload, so the repo doesn\'t carry unreferenced image files.',
+    ],
+  },
+  {
     version: '0.13.0',
     date: '2026-08-13',
     changes: [

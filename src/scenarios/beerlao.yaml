@@ -12,7 +12,7 @@ metadata:
 brand:
   name: "Beerlao"
   shortName: "Beerlao"
-  avatar: "/assets/brand-avatar-beerlao.svg"
+  avatar: "/assets/beerlao_logo.png"
   verified: true
 
 defaults:

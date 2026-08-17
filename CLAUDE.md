@@ -560,6 +560,36 @@ verification above was actually done — prefer it over assuming you
 remember a spec correctly, especially for anything with specific numeric
 limits.
 
+## Real Beerlao brand assets (0.13.1) — and a note on getting images into the repo
+
+Chat-attached images (pasted directly into the conversation) aren't
+reachable by this session's tools — they render as visual content the
+model can see, but there's no filesystem path to them, and this sandbox's
+network policy blocks fetching arbitrary external URLs too (see "Sandbox
+networking" below). The user resolved this by committing the files
+straight to GitHub (`public/assets/beerlao_logo.png`,
+`beerlao_event.png` / `event-boun-souang-heua-promo.jpg`) — that's the
+reliable path when a session needs a real binary asset it can't otherwise
+reach: have the user commit it, then wire it in from there. Don't assume a
+pasted image can be saved to disk from chat content alone.
+
+`brand.avatar` now points at the real logo PNG and `event_promotion`'s
+`rich_card.image` at the real promo photo (which already carries its own
+16%-off copy baked into the image, so `event_intro`/`event_details`'
+authored text was updated to match rather than duplicate generic
+placeholder wording). The two placeholder SVGs they replaced
+(`brand-avatar-beerlao.svg`, `event-boun-souang-heua.svg`) were deleted as
+genuinely orphaned — confirmed via grep that nothing else referenced them
+first, per this file's "delete only what's truly unused" convention.
+
+One leftover from the user's GitHub upload,
+`public/assets/38198693_1848856781874876_6406656325777883136_n.jpg` (a
+Beerlao product-lineup photo, unrelated to the boat-race promo), is not
+referenced anywhere — it was part of the same upload batch but never
+requested for a specific use. Left in place rather than deleted (it's the
+user's own content, not this session's to remove without asking) — ask
+before wiring it in or removing it if you're picking this up later.
+
 ## Where things are (quick index)
 
 - Built-in scenarios: `src/scenarios/{singapore-airlines,ecommerce,restaurant,beerlao}.yaml`,
