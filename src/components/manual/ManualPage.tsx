@@ -71,7 +71,7 @@ export function ManualPage() {
           <P>The main Simulator screen has three regions: a control sidebar, the phone preview, and an optional flow inspector.</P>
           <ParamTable
             rows={[
-              ['Scenario', 'Shows the loaded flow\'s name, a dropdown of built-in examples, "Edit flow" (opens the quick JSON/YAML editor for the live flow), "Export" (downloads the current flow as YAML), and "Copy share link" (encodes the flow into a URL — opening it loads the same scenario, no file needed).'],
+              ['Scenario', 'Shows the loaded flow\'s name, a dropdown of built-in examples, "Edit flow" (opens the quick JSON/YAML editor for the live flow), "Export" (downloads the current flow as YAML), and "Copy share link" (encodes the flow into a URL — opening it loads the same scenario in a restricted viewer, no file needed; see "Presenter mode" below).'],
               ['Channel', 'Switches the rendering between RCS and WhatsApp. The same flow definition renders through each channel\'s own visual language and capability set. "Compare all channels" shows both at once, driven by the same live conversation — tap a button in either and the other follows.'],
               ['Brand', 'Edit the business profile shown in the header: name, short name, picture (upload a file or paste a URL), description subtitle, and the verified checkmark. Applies immediately, no restart needed — useful for re-skinning a demo without touching the scenario file. "Reset" reverts to the loaded flow\'s own brand block.'],
               ['Variables', 'Editable list of the flow\'s top-level variables (e.g. customer name, booking reference, seat). Edits apply on the next Restart, not live — this lets a presenter line up several fields before restarting the demo.'],
@@ -79,7 +79,8 @@ export function ManualPage() {
               ['Playback', 'Restart (replays from the start node using the current variable values), Back (undoes the last user interaction using a state snapshot), Pause/Resume (freezes automatic playback), Clear (same as Restart).'],
               ['Phone preview', 'The focal point — a realistic mobile chat UI rendering the live conversation for the selected channel.'],
               ['Flow inspector', 'Shows the current node id, live variable values, the node-visit history (click any entry to jump straight to that node), validation errors if any, and a recent event log. The "Flow graph" section has a List/Graph toggle — Graph lays out every node and connection automatically and lets you click any box to jump straight to it live. The same graph view (read-only there) is also available while editing a scenario, or via "View" on any scenario card on the Scenarios page.'],
-              ['Presenter mode', 'Hides all configuration chrome and enlarges the phone for screen-sharing with customers; a small floating control keeps Restart and fullscreen within reach.'],
+              ['Presenter mode', 'Hides all configuration chrome and enlarges the phone for screen-sharing with customers; a small floating control keeps Restart and fullscreen within reach. Toggled on/off from the header — a preference, not a lock.'],
+              ['Shared links', 'Opening a "Copy share link" URL goes further than Presenter mode: there\'s no header, no Sidebar, no Scenarios/Manual pages, and no Flow Inspector at all — just the phone and a Restart button, permanently for that page load. A link recipient only ever sees the one scenario the link author shared, with no path to anything else in the tool, including whatever scenario is saved in their own browser.'],
             ]}
           />
         </Section>

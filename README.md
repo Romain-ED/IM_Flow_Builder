@@ -12,7 +12,7 @@ It is **not connected to any real messaging API**. It's built for demos, custome
 - Lets a presenter tweak variables (customer name, booking reference, seat, …), restart, step back, jump to any node, switch channels live, and demo cleanly in **Presenter Mode**.
 - Ships with four complete example scenarios — an airline check-in/boarding-pass journey (the default), an e-commerce delivery tracker, a restaurant reservation flow, and a Beerlao OTP login + event promotion flow.
 - Has three pages, reachable from the top nav: **Simulator** (the demo tool itself), **Scenarios** (load/duplicate/edit/import/export/delete flow definitions — custom ones are saved to `localStorage`), and **Manual** (an in-app guide covering usage, every parameter, the technical architecture, and a changelog).
-- Installable and fully offline-capable (PWA) after the first load, and supports **shareable scenario links** (a flow encoded straight into a URL) and a **side-by-side channel comparison** view.
+- Installable and fully offline-capable (PWA) after the first load, and supports **shareable scenario links** (a flow encoded straight into a URL, opening in a restricted viewer with just the phone and a Restart button — no access to Scenarios/Manual or any editing controls) and a **side-by-side channel comparison** view.
 
 ## Installation & development
 
@@ -70,7 +70,7 @@ src/
                            used by Compare Mode)
   components/
     layout/               AppHeader (nav + version badge), Sidebar,
-                           PresenterFloatingControls
+                           PresenterFloatingControls, SharedLinkFloatingControls
     phone/                PhoneFrame, PhoneScreen, ComparePhones, ConversationView,
                            Composer, MessageShell, ChoiceChips,
                            ActionButton, ListSheet, Toast, ExternalActionModal, …
@@ -279,7 +279,7 @@ The conversation engine needs no changes — `computeNodePlan` interpolates and 
 
 ## Channel capability warnings
 
-Each channel declares which message types it natively supports in `capabilities.ts` (kept out of React entirely). When a scenario uses a type a channel doesn't support, the simulator still renders a reasonable generic approximation and — outside Presenter Mode, when "Show capability warnings" is on — shows a small inline note explaining the fallback.
+Each channel declares which message types it natively supports in `capabilities.ts` (kept out of React entirely). When a scenario uses a type a channel doesn't support, the simulator still renders a reasonable generic approximation and — outside Presenter Mode and shared-link viewing, when "Show capability warnings" is on — shows a small inline note explaining the fallback.
 
 The same file also declares each channel's real structural limits, sourced from Meta's WhatsApp Cloud API docs and Google's RCS Business Messaging spec, and `getCapabilityWarning` checks authored content against them at render time (same inline-note mechanism):
 
@@ -292,12 +292,17 @@ The same file also declares each channel's real structural limits, sourced from 
 | List rows (total, across all sections) | 10 | — *(RCS has no native list; see below)* |
 | List row title length | 24 chars | — |
 | Rich card title / description length | not separately capped | 200 / 2000 chars |
+| Header / footer text length (`rich_card`, `list`) | 60 / 60 chars | no dedicated fields — not rendered |
 
 RCS's real content model is text, an uploaded file, or a rich card (standalone or in a carousel) — there's no native list/menu picker like WhatsApp's, so `list` intentionally falls back to a stacked-option rich card on that channel rather than being marked as supported.
 
 ## Real-payload-shape validation
 
 Beyond the live, render-time warnings above, `channels/whatsapp/normalize.ts` and `channels/rcs/normalize.ts` build the actual payload shape each platform's API expects (WhatsApp interactive messages, RCS `AgentMessage` content) from a node's authored messages, and **hard-fail scenario loading** — the same place a broken `next` reference already does — when content can't become a valid payload: buttons with no owning body text, too many buttons/rows/cards, an RCS carousel under 2 cards. This is checked once at load time (before variable interpolation), so it's scoped to count/structural violations that don't depend on variable values — label/title *length* limits stay the live soft check above, since a `{{variable}}` can change a length per run.
+
+## Shared links
+
+"Copy share link" (Sidebar and the Scenarios page) encodes a scenario's flow source into the URL hash and opens in a **restricted viewer**: just the phone simulator and a Restart button, full-screen — no `AppHeader` nav, no Sidebar (so no scenario switcher, channel toggle, brand/variable editors, or debug options), no Scenarios/Manual pages, no Flow Inspector. A link recipient can only experience the one scenario the link author shared and restart it; they get no path back to the rest of the tool or any other scenario, including whatever's saved in the sender's own `localStorage`. This is driven by a `sharedLinkMode` store flag set once in `initialize()` when a share-link hash is present at load — unlike Presenter Mode, it isn't a user-togglable preference and is never persisted, since it's a fact about how that page load started, not a setting to remember.
 
 ## Known limitations
 

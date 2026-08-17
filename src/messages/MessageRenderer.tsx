@@ -44,19 +44,24 @@ export function MessageRenderer({ message, channel, trailingActions }: MessageRe
   const currentNodeId = useSimulatorStore((s) => s.currentNodeId)
   const debugWarningsEnabled = useSimulatorStore((s) => s.debugWarningsEnabled)
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
+  const sharedLinkMode = useSimulatorStore((s) => s.sharedLinkMode)
   const showTimestamps = useSimulatorStore((s) => s.flow?.defaults?.showTimestamps ?? true)
   const locale = useSimulatorStore((s) => s.flow?.defaults?.locale)
 
   const interactive = isMessageInteractive(message, currentNodeId)
   const capabilities = channelCapabilities[channel]
   const supported = isMessageTypeSupported(capabilities, message.message.type)
-  const showFallbackNote = !supported && debugWarningsEnabled && !presenterMode
+  // Hidden in presenter mode (a live demo) and shared-link mode (an
+  // external viewer) alike — both are "just show the conversation" views
+  // with no debug-toggle UI reachable to turn these back on anyway, since
+  // sharedLinkMode hides the sidebar the toggle itself lives in.
+  const showFallbackNote = !supported && debugWarningsEnabled && !presenterMode && !sharedLinkMode
   // Only worth checking real structural limits (button counts, label
   // lengths, carousel size...) when the channel natively renders this type —
   // a message already falling back to a generic component isn't subject to
   // the native platform's constraints in the first place.
   const capabilityWarning = supported ? getCapabilityWarning(capabilities, message.message) : null
-  const showCapabilityWarning = Boolean(capabilityWarning) && debugWarningsEnabled && !presenterMode
+  const showCapabilityWarning = Boolean(capabilityWarning) && debugWarningsEnabled && !presenterMode && !sharedLinkMode
   const timestampLabel = showTimestamps ? formatTime(message.timestamp, locale) : undefined
   const deliveryState = message.message.sender === 'user' ? 'read' : undefined
 

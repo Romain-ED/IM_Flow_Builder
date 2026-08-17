@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.14.0',
+    date: '2026-08-17',
+    changes: [
+      'New: shared scenario links now open in a restricted viewer instead of the full app — just the phone simulation and a Restart button, with no header nav, no Sidebar (scenario switcher, channel toggle, brand/variable editors, debug options), no Scenarios/Manual pages, and no Flow Inspector. A link recipient can only experience the one scenario the link author shared, never the rest of the tool or any other scenario.',
+      'This is a new `sharedLinkMode` flag, set once when a page load starts from a share-link URL — deliberately not a user-togglable preference like Presenter Mode, and never persisted, since it describes how this page load started rather than a setting to remember.',
+      'Capability-warning/fallback notes (the small amber debug text) are now also hidden in shared-link mode, matching Presenter Mode — a link recipient has no "Show capability warnings" toggle to reach anyway, since there\'s no Sidebar.',
+    ],
+  },
+  {
     version: '0.13.1',
     date: '2026-08-17',
     changes: [

@@ -491,6 +491,48 @@ offer"`) and `beerlao.yaml`'s `event_promotion` rich_card (already has
 there too would have tripped the new mutual-exclusivity error, which is
 exactly the point of that check).
 
+## Restricted shared-link viewer (0.14.0) — `sharedLinkMode`, stricter than Presenter Mode
+
+Shared links previously opened the *entire* app pre-loaded with the shared
+scenario — full header nav, Sidebar (scenario switcher, channel toggle,
+brand/variable editors, debug options), Scenarios/Manual pages, Flow
+Inspector, all of it. The user explicitly asked for this to be locked down:
+a link recipient should see only the phone simulation for the one shared
+scenario, plus a Restart button — nothing else in the tool, no way to
+switch to a different scenario (including whatever's cached in their own
+`localStorage` from a prior visit).
+
+Implementation mirrors `presenterMode`'s existing early-return pattern in
+`App.tsx` (a boolean store flag short-circuits the entire normal render
+tree down to just `PhoneFrame`/`PhoneScreen`), but as a **new, stricter,
+non-togglable** flag rather than reusing `presenterMode` itself — the two
+are conceptually different: `presenterMode` is a user preference toggled
+from the header and persisted across visits (a presenter chooses
+distraction-free mode for their own demo, and can toggle back), while
+`sharedLinkMode` is a fact about how *this specific page load* started
+(`initialize()` sets it once, only when `readShareHash()` finds and
+successfully loads a share hash) and is deliberately **not** persisted or
+exposed as a preference anywhere — there is no UI control that can turn it
+off, matching "no access to other features of the tool" being a hard
+requirement, not a default. `App.tsx` checks `sharedLinkMode` before
+`presenterMode` so restriction always wins if both were somehow true.
+
+`MessageRenderer.tsx`'s capability-warning/fallback-note suppression
+(`!presenterMode`) needed the same `&& !sharedLinkMode` treatment — those
+inline amber notes are debug/authoring information, not something an
+external viewer should see, and since the Sidebar's "Show capability
+warnings" toggle is unreachable in this mode anyway (no Sidebar), a viewer
+would have had no way to turn them back off if left unguarded. If you add
+another `presenterMode`-gated UI behavior later, ask whether `sharedLinkMode`
+needs the same gate — the two "hide the debug chrome" cases so far have
+both needed it.
+
+`SharedLinkFloatingControls.tsx` intentionally has only a Restart button —
+no fullscreen toggle, no "exit" button like `PresenterFloatingControls` has
+(there's nothing to exit back to; this isn't a togglable view). Don't grow
+this control set without the user asking; the whole point of this mode is
+that it doesn't offer more.
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number

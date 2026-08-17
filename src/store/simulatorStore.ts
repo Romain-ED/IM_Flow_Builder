@@ -61,6 +61,18 @@ export interface SimulatorState {
   channel: ChannelId
   fastMode: boolean
   presenterMode: boolean
+  /**
+   * True for the rest of this session once a scenario was loaded from a
+   * shared link's URL hash (see `initialize()`/`readShareHash`). Gates
+   * `App.tsx` down to just the phone + a Restart button — no Scenarios/
+   * Manual pages, no scenario switcher, no brand/variable/channel/debug
+   * controls — so a link recipient only ever sees the one scenario the
+   * link author shared, never the rest of the tool. Deliberately not a
+   * user-togglable preference (unlike `presenterMode`) and never persisted:
+   * it's a fact about how this page load started, re-derived from the URL
+   * on every `initialize()` rather than remembered across visits.
+   */
+  sharedLinkMode: boolean
   debugPanelOpen: boolean
   debugWarningsEnabled: boolean
   compareMode: boolean
@@ -239,6 +251,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     channel: 'rcs',
     fastMode: false,
     presenterMode: false,
+    sharedLinkMode: false,
     debugPanelOpen: false,
     compareMode: false,
     debugWarningsEnabled: true,
@@ -281,6 +294,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       try {
         const sharedSource = await readShareHash()
         if (sharedSource && get().loadScenarioSource(sharedSource)) {
+          set({ sharedLinkMode: true })
           get().showToast('Loaded scenario from shared link')
           return
         }

@@ -5,6 +5,7 @@ import type { AppPage } from './app/pages'
 import { AppHeader } from './components/layout/AppHeader'
 import { Sidebar } from './components/layout/Sidebar'
 import { PresenterFloatingControls } from './components/layout/PresenterFloatingControls'
+import { SharedLinkFloatingControls } from './components/layout/SharedLinkFloatingControls'
 import { PhoneFrame } from './components/phone/PhoneFrame'
 import { PhoneScreen } from './components/phone/PhoneScreen'
 import { ComparePhones } from './components/phone/ComparePhones'
@@ -16,6 +17,7 @@ import { ManualPage } from './components/manual/ManualPage'
 function App() {
   const initialize = useSimulatorStore((s) => s.initialize)
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
+  const sharedLinkMode = useSimulatorStore((s) => s.sharedLinkMode)
   const debugPanelOpen = useSimulatorStore((s) => s.debugPanelOpen)
   const compareMode = useSimulatorStore((s) => s.compareMode)
 
@@ -27,6 +29,24 @@ function App() {
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  // A shared-link recipient never gets the rest of the tool — no
+  // Scenarios/Manual pages, no scenario switcher, no brand/variable/
+  // channel/debug controls, not even Presenter Mode's toggle-back button
+  // (checked first, so it wins over presenterMode if both were somehow
+  // true — restriction is mandatory here, not a togglable view).
+  if (sharedLinkMode) {
+    return (
+      <div className="h-screen w-screen bg-slate-100 flex items-center justify-center p-6">
+        <div className="h-full w-full max-w-[420px] max-h-[900px]">
+          <PhoneFrame>
+            <PhoneScreen />
+          </PhoneFrame>
+        </div>
+        <SharedLinkFloatingControls />
+      </div>
+    )
+  }
 
   if (presenterMode) {
     return (
