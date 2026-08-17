@@ -26,9 +26,10 @@ variables:
   otpExpiry: "10 minutes"
   eventName: "Boun Souang Heua"
   eventLocation: "Vientiane"
-  eventDate: "18 October 2026"
+  eventDate: "10–20 October 2026"
   promoCode: "RACEDAY15"
-  productName: "Beerlao Gold Reserve"
+  discount: "16%"
+  productName: "Beerlao Gold or Dark"
 
 start: otp_delivery
 
@@ -81,19 +82,19 @@ nodes:
   - id: event_intro
     messages:
       - type: text
-        text: "🍺 Something special is coming to {{eventLocation}} for {{eventName}}."
+        text: "🍺 The drums are beating, the boats are racing — and Beerlao is ready to celebrate with you! 🛶"
     next: event_promotion
 
   - id: event_promotion
     messages:
       - type: rich_card
-        image: "/assets/event-boun-souang-heua.svg"
+        image: "/assets/event-boun-souang-heua-promo.jpg"
         title: "Celebrate {{eventName}} with Beerlao"
-        description: "The boats are racing and Beerlao is bringing something new. Discover {{productName}} during the celebrations on {{eventDate}} and enjoy 15% off your next order with code {{promoCode}}."
+        description: "Enjoy {{discount}} OFF your next order of {{productName}}. Use code {{promoCode}}. Offer valid {{eventDate}} only. Don't miss the wave! 🌊"
         footer: "Drink responsibly. 18+."
         actions:
           - type: open_url
-            label: "Discover the new beer"
+            label: "Order now"
             url: "https://beerlao.la/"
           - type: reply
             label: "Event details"
@@ -105,11 +106,11 @@ nodes:
   - id: event_details
     messages:
       - type: text
-        text: "Join the {{eventName}} celebrations in {{eventLocation}} on {{eventDate}}. 🛶🍺 Try {{productName}} and use code {{promoCode}} for 15% off your next order."
+        text: "Join the {{eventName}} boat racing celebrations in {{eventLocation}}! 🛶🍺 Enjoy {{discount}} off {{productName}} from {{eventDate}}. Use code {{promoCode}} at checkout."
       - type: suggested_actions
         actions:
           - type: open_url
-            label: "Explore Beerlao"
+            label: "Order Beerlao"
             url: "https://beerlao.la/"
           - type: reply
             label: "Sounds good"
@@ -121,7 +122,7 @@ nodes:
   - id: interested
     messages:
       - type: text
-        text: "See you at the celebrations, {{customerName}}! 🍺 Remember your code: {{promoCode}}."
+        text: "See you at the races, {{customerName}}! 🍺🛶 Remember your code: {{promoCode}} for {{discount}} off."
     end: true
 
   - id: dismissed
