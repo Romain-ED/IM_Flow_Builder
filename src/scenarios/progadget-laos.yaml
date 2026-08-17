@@ -7,7 +7,7 @@ version: "1.0"
 metadata:
   id: progadget-laos-preorder
   name: "Pro Gadget Laos — Pre-order OTP & Product Launch"
-  description: "Phone-verified pre-order confirmation and shipping updates, followed by a WhatsApp product-launch broadcast."
+  description: "Phone-verified pre-order confirmation and shipping updates, followed by a WhatsApp promotional broadcast."
   channel: whatsapp
   tags: [progadget, laos, ecommerce, otp, preorder, broadcast]
 
@@ -29,11 +29,10 @@ variables:
   otpCode: "493218"
   otpExpiry: "10 minutes"
   orderNumber: "ORD-260724-002"
-  productName: "WHOOP Peak"
+  productName: "Garmin CIRQA (Mauve)"
   quantity: "1"
-  orderTotal: "6,880,500 ₭"
+  orderTotal: "5,908,000 ₭"
   trackUrl: "https://progadget.tech/track/ORD-260724-002"
-  newProductName: "WHOOP Life"
   promoCode: "LAUNCH10"
   discount: "10%"
 
@@ -90,7 +89,7 @@ nodes:
       - type: text
         text: "Phone verified! Your pre-order is confirmed, {{customerName}}."
       - type: rich_card
-        image: "/assets/whoop-peak.svg"
+        image: "/assets/garmin_cirqa.jpeg"
         title: "{{productName}} x{{quantity}}"
         description: "Order **{{orderNumber}}** · **{{orderTotal}}**. We'll text you at every step — payment, shipping, and delivery."
         footer: "_Track anytime using the link below._"
@@ -115,17 +114,17 @@ nodes:
   - id: product_launch
     messages:
       - type: text
-        text: "🚀 Something new just dropped at Pro Gadget Laos."
+        text: "🚀 Thanks for being a Pro Gadget Laos customer, {{customerName}}."
       - type: rich_card
-        image: "/assets/whoop-life.svg"
-        title: "Introducing {{newProductName}}"
-        description: "The next generation is here. Pre-order now and get **{{discount}} off** with code **{{promoCode}}**."
+        image: "/assets/garmin_cirqa.jpeg"
+        title: "10% off your next order"
+        description: "Enjoying your {{productName}}? Use code **{{promoCode}}** for **{{discount}} off** your next pre-order — or share it with a friend."
         actions:
           - type: open_url
-            label: "View {{newProductName}}"
-            url: "https://progadget.tech/products/whoop-life"
+            label: "Browse Pro Gadget Laos"
+            url: "https://www.progadget.tech"
           - type: reply
-            label: "Notify me at launch"
+            label: "Notify me about new arrivals"
             next: notify_confirmed
           - type: reply
             label: "Not right now"
@@ -134,7 +133,7 @@ nodes:
   - id: notify_confirmed
     messages:
       - type: text
-        text: "You're on the list, {{customerName}}! We'll message you the moment {{newProductName}} lands. Remember your code: **{{promoCode}}** for **{{discount}} off**."
+        text: "You're on the list, {{customerName}}! We'll message you when new arrivals land. Remember your code: **{{promoCode}}** for **{{discount}} off**."
     end: true
 
   - id: dismissed

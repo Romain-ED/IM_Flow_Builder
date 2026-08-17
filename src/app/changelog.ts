@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.16.3',
+    date: '2026-08-17',
+    changes: [
+      'Pro Gadget Laos now features a real product — the Garmin CIRQA — with real price (5,908,000 ₭), SKU-backed details, and the actual product photo, replacing the placeholder WHOOP Peak/WHOOP Life names and hand-drawn SVGs.',
+      'Since only one real product was available, the WhatsApp broadcast node (previously a second "new product launch") was reframed as a promotion/discount broadcast about the same order — a different real use case from the same integration spec, and one that doesn\'t contradict a customer already having received the item earlier in the same conversation.',
+    ],
+  },
+  {
     version: '0.16.2',
     date: '2026-08-17',
     changes: [

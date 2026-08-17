@@ -39,7 +39,7 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
   {
     id: 'progadget-laos',
     name: 'Pro Gadget Laos pre-order & launch',
-    description: 'Phone-verified pre-order (OTP) → order/shipping updates → WhatsApp product-launch broadcast.',
+    description: 'Phone-verified pre-order (OTP) → order/shipping updates → WhatsApp promo broadcast.',
     source: progadgetLaosSource,
   },
 ]

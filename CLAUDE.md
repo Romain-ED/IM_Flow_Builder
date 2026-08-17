@@ -671,6 +671,39 @@ scrolling being the default experience; don't apply the "bigger" request
 there without the user asking, it would defeat the point of side-by-side
 comparison.
 
+## Pro Gadget Laos: WHOOP → real Garmin CIRQA (0.16.3)
+
+The WHOOP Peak/WHOOP Life product names in `progadget-laos.yaml` (0.15.0)
+were themselves pulled from the spec PDF's own worked examples — not
+invented by this session — but the user later asked to replace them with
+a real product from the actual storefront: the Garmin CIRQA (a real SKU,
+`https://www.progadget.tech/products/item-51`). Both the product page and
+its image URL are on `progadget.tech`, which this sandbox's egress proxy
+blocks (confirmed via a `WebFetch` `EGRESS_BLOCKED` error, not assumed) —
+same "can't reach it directly" situation as the Beerlao assets above. The
+user resolved it the same way: pasted a screenshot of the product page for
+the copy/price/SKU, and committed the real photo to the repo
+(`public/garmin_cirqa.jpeg`, moved to `public/assets/` per their
+instruction) rather than relying on a chat-pasted image.
+
+**Only one real product was provided, which forced a narrative fix, not
+just a find-replace.** The original two-node structure needed *two*
+different products — `order_confirmed` (Track A: what was pre-ordered)
+and `product_launch` (Track B: a `**new**` product announcement) — because
+announcing a "new" product that's actually the exact item the customer
+already received in the same conversation doesn't make sense. Rather than
+invent a second fictional product (the thing this file's whole "audited
+against real docs" ethos argues against) or ask another round-trip
+question, `product_launch` was reframed from a *new product launch*
+broadcast to a *promotion/discount* broadcast — a different real use case
+from the same spec PDF's Track B section ("occasional limited-time
+discount broadcasts to customers who opted in during checkout") — still
+featuring the real Garmin CIRQA image, but now honestly framed as "here's
+10% off your next order" rather than implying a second product exists.
+`newProductName` was removed from `variables` entirely; if you're tempted
+to reintroduce a "new arrival" narrative here, you need a second real
+product's info first, not an invented name.
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number
