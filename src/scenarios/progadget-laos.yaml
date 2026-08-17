@@ -1,0 +1,160 @@
+# Business Messaging Flow Simulator — example scenario
+# Fictional Pro Gadget Laos phone-verified pre-order + product-launch journey,
+# based on the storefront's own "SMS & WhatsApp Integration Spec for LTC"
+# (Track A: transactional OTP/order updates; Track B: WhatsApp broadcast).
+version: "1.0"
+
+metadata:
+  id: progadget-laos-preorder
+  name: "Pro Gadget Laos — Pre-order OTP & Product Launch"
+  description: "Phone-verified pre-order confirmation and shipping updates, followed by a WhatsApp product-launch broadcast."
+  channel: whatsapp
+  tags: [progadget, laos, ecommerce, otp, preorder, broadcast]
+
+brand:
+  name: "Pro Gadget Laos"
+  shortName: "Pro Gadget"
+  avatar: "/assets/brand-avatar-progadget.svg"
+  verified: true
+  website: "https://progadget.tech"
+  supportPhone: "+856 20 5515 5569"
+
+defaults:
+  messageDelayMs: 500
+  typingDurationMs: 800
+  showTimestamps: true
+
+variables:
+  customerName: Aiy
+  otpCode: "493218"
+  otpExpiry: "10 minutes"
+  orderNumber: "ORD-260724-002"
+  productName: "WHOOP Peak"
+  quantity: "1"
+  orderTotal: "6,880,500 ₭"
+  trackUrl: "https://progadget.tech/track/ORD-260724-002"
+  newProductName: "WHOOP Life"
+  promoCode: "LAUNCH10"
+  discount: "10%"
+
+start: otp_delivery
+
+# Global keyword trigger, matching the spec's "1:1 chat handling" note —
+# inbound customer messages continue to route to the shop's existing
+# WhatsApp Business account. Same pattern as the ecommerce demo's help trigger.
+triggers:
+  - keywords: ["help", "support"]
+    next: help
+
+nodes:
+  - id: otp_delivery
+    messages:
+      - type: text
+        text: "Pro Gadget Laos — code: {{otpCode}}. Expires in {{otpExpiry}}."
+    next: otp_entry
+
+  # `input` (not `otp`) on purpose — WhatsApp has no real message that
+  # renders a segmented code-entry UI with an embedded Verify button, so
+  # that component always shows the "not officially supported" warning.
+  # `input` is a real supported type: plain text bubble, reply typed into
+  # the ordinary composer, same validate/retry behavior, no warning. Same
+  # pattern as the Beerlao demo's otp_entry node.
+  - id: otp_entry
+    messages:
+      - type: input
+        inputType: numeric
+        placeholder: "Enter the 6-digit code we sent you."
+        submitLabel: "Verify"
+        variable: enteredOtp
+        next: otp_check
+
+  # Pure routing node: evaluates the moment enteredOtp is set by otp_entry.
+  - id: otp_check
+    condition:
+      variable: enteredOtp
+      operator: equals
+      value: "493218"
+    then: order_confirmed
+    else: otp_error
+
+  - id: otp_error
+    messages:
+      - type: text
+        text: "That code doesn't look right. Please check the code and try again."
+    actions:
+      - label: "Try again"
+        next: otp_entry
+
+  - id: order_confirmed
+    messages:
+      - type: text
+        text: "Phone verified! Your pre-order is confirmed, {{customerName}}."
+      - type: rich_card
+        image: "/assets/whoop-peak.svg"
+        title: "{{productName}} x{{quantity}}"
+        description: "Order {{orderNumber}} · {{orderTotal}}. We'll text you at every step — payment, shipping, and delivery."
+        footer: "Track anytime using the link below."
+        actions:
+          - type: open_url
+            label: "Track my order"
+            url: "{{trackUrl}}"
+    next: order_shipped
+
+  - id: order_shipped
+    messages:
+      - type: text
+        text: "Pro Gadget Laos\n{{orderNumber}} updated · Shipped, on the way.\n{{trackUrl}}"
+    next: order_delivered
+
+  - id: order_delivered
+    messages:
+      - type: text
+        text: "Your {{productName}} has arrived, ready for pickup! 🎉"
+    next: product_launch
+
+  - id: product_launch
+    messages:
+      - type: text
+        text: "🚀 Something new just dropped at Pro Gadget Laos."
+      - type: rich_card
+        image: "/assets/whoop-life.svg"
+        title: "Introducing {{newProductName}}"
+        description: "The next generation is here. Pre-order now and get {{discount}} off with code {{promoCode}}."
+        actions:
+          - type: open_url
+            label: "View {{newProductName}}"
+            url: "https://progadget.tech/products/whoop-life"
+          - type: reply
+            label: "Notify me at launch"
+            next: notify_confirmed
+    actions:
+      - label: "Not right now"
+        next: dismissed
+
+  - id: notify_confirmed
+    messages:
+      - type: text
+        text: "You're on the list, {{customerName}}! We'll message you the moment {{newProductName}} lands. Remember your code: {{promoCode}} for {{discount}} off."
+    end: true
+
+  - id: dismissed
+    messages:
+      - type: text
+        text: "No problem — we'll keep you posted on new arrivals. Reply HELP anytime if you need us."
+    end: true
+
+  - id: help
+    messages:
+      - type: text
+        text: "Need a hand with your order? You can reach our team directly here on WhatsApp or call us."
+      - type: suggested_actions
+        actions:
+          - type: call
+            label: "Call Pro Gadget Laos"
+            phoneNumber: "{{supportPhone}}"
+          - type: open_url
+            label: "Visit progadget.tech"
+            url: "https://progadget.tech"
+    actions:
+      - label: "Back"
+        next: order_confirmed

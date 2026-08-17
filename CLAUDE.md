@@ -52,8 +52,8 @@ a message type" checklist in the README if it does).
 
 ## Official vs. invented message types — the most important open decision
 
-All four built-in scenarios (`singapore-airlines.yaml`, `ecommerce.yaml`,
-`restaurant.yaml`, `beerlao.yaml`) were audited against the real WhatsApp
+All five built-in scenarios (`singapore-airlines.yaml`, `ecommerce.yaml`,
+`restaurant.yaml`, `beerlao.yaml`, `progadget-laos.yaml`) were audited against the real WhatsApp
 Cloud API (interactive messages guide, interactive message templates,
 commerce/product-sharing guide) and Google's RCS Business Messaging spec,
 and use **only types with a real platform equivalent** — none of them
@@ -532,6 +532,40 @@ no fullscreen toggle, no "exit" button like `PresenterFloatingControls` has
 (there's nothing to exit back to; this isn't a togglable view). Don't grow
 this control set without the user asking; the whole point of this mode is
 that it doesn't offer more.
+
+## Fifth built-in: Pro Gadget Laos (0.15.0) — adapted from a real spec PDF, not invented
+
+The user uploaded a PDF ("Pro Gadget Laos — SMS + WhatsApp Integration Spec
+for LTC") — a technical integration doc, not a conversation script — and
+asked for a scenario "based on this." The PDF itself isn't a flow; it's an
+API contract between a Vientiane phone/wearables storefront and their
+telecom provider, split into Track A (transactional SMS: OTP, order
+confirmation, status updates) and Track B (WhatsApp broadcast: product
+launch, lot arrival, promotions). `progadget-laos.yaml` dramatizes the
+**customer-facing conversation those API calls would actually produce** —
+every piece of copy (the OTP format "Pro Gadget Laos — code: NNNNNN.
+Expires in N minutes", the order confirmation shape, the "{{order}} updated
+· Shipped, on the way" status-update phrasing, the WHOOP Peak/WHOOP Life
+product names, the LAUNCH10 promo pattern) is pulled directly from the
+PDF's own worked examples, not invented from scratch.
+
+Same `otp`→`input` substitution as Beerlao, for the same reason: the PDF's
+OTP flow ("customer enters phone... code: 493218") is exactly the "typed
+code with validation" case `docs/SCENARIO_AUTHORING_GUIDE.md` says must use
+`input`. Hit the exact same `rich_card` header/image mutual-exclusivity
+error this session's own validator now enforces (0.13.0) while first
+drafting `order_confirmed` — tried both `header: "Pre-order confirmed"`
+and `image: "/assets/whoop-peak.svg"` on the same card, exactly what
+`whatsapp/normalize.ts` now hard-rejects. Fixed by folding the confirmation
+language into the preceding `text` message instead and keeping the image.
+
+Three new placeholder SVGs (`brand-avatar-progadget.svg`,
+`whoop-peak.svg`, `whoop-life.svg`) were hand-drawn in the same flat-icon
+style as the existing placeholder set (`package.svg`, `brand-avatar-shop.svg`)
+since no real logo/product photos were provided this time (contrast with
+Beerlao, which got real committed PNG/JPG assets later) — same "seeded
+decorative placeholder" precedent documented in the README's Known
+Limitations section for boarding-pass QR codes etc.
 
 ## Versioning — do this on every change
 

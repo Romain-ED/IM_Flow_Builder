@@ -2,6 +2,7 @@ import singaporeAirlinesSource from './singapore-airlines.yaml?raw'
 import ecommerceSource from './ecommerce.yaml?raw'
 import restaurantSource from './restaurant.yaml?raw'
 import beerlaoSource from './beerlao.yaml?raw'
+import progadgetLaosSource from './progadget-laos.yaml?raw'
 
 export interface BuiltInScenario {
   id: string
@@ -34,6 +35,12 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
     name: 'Beerlao login & event promo',
     description: 'OTP login (retry on a wrong code) → event promotion with images.',
     source: beerlaoSource,
+  },
+  {
+    id: 'progadget-laos',
+    name: 'Pro Gadget Laos pre-order & launch',
+    description: 'Phone-verified pre-order (OTP) → order/shipping updates → WhatsApp product-launch broadcast.',
+    source: progadgetLaosSource,
   },
 ]
 

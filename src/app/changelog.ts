@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.0',
+    date: '2026-08-17',
+    changes: [
+      'New: fifth built-in scenario, "Pro Gadget Laos pre-order & launch" — adapted from a real technical integration spec PDF (SMS + WhatsApp requirements for a Vientiane phone/wearables storefront). Phone-verified pre-order via a typed OTP code, order confirmation and shipping status updates, then a WhatsApp product-launch broadcast with a promo code — with copy pulled directly from the spec\'s own worked examples rather than invented.',
+      'Same otp→input approach as Beerlao (see 0.12.1): the spec\'s "typed code with validation" OTP flow uses the real-supported input type, not the invented otp segmented-entry component.',
+      'Added three placeholder assets (brand avatar, two product illustrations) in the existing flat-icon style since no real photos were supplied for this one.',
+    ],
+  },
+  {
     version: '0.14.0',
     date: '2026-08-17',
     changes: [
