@@ -11,6 +11,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.16.2',
+    date: '2026-08-17',
+    changes: [
+      'Beerlao\'s OTP delivery message is now three short, airy paragraphs (code, instruction, italicized disclaimer) instead of one dense sentence — same content, easier to scan at a glance.',
+    ],
+  },
+  {
     version: '0.16.1',
     date: '2026-08-17',
     changes: [

@@ -37,7 +37,12 @@ nodes:
   - id: otp_delivery
     messages:
       - type: text
-        text: "Your Beerlao verification code is **{{otpCode}}**. Enter it below to log in to your account. _It expires in {{otpExpiry}}._ If you did not request this code, you can safely ignore this message."
+        text: |
+          Your Beerlao verification code is **{{otpCode}}**.
+
+          Enter it below to log in to your account.
+
+          _It expires in {{otpExpiry}}. If you did not request this code, you can safely ignore this message._
     next: otp_entry
 
   # `input` (not `otp`) on purpose — WhatsApp has no real message that
