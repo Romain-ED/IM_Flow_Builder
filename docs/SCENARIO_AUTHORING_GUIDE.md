@@ -115,6 +115,19 @@ expression language, nothing is ever evaluated as code. Unknown/null
 variables render as an empty string — don't rely on that, always declare
 every variable you use under `variables:`.
 
+## Text formatting (`**bold**` / `_italic_`)
+
+Use these to make key facts scannable — a code, a price, a date, a status
+word. They render in `text` messages, `rich_card`/`list` `description`/
+`footer`, carousel card `subtitle`/`description`, and image/video
+`caption`. **They do not render** in `title`/`header` fields, button/chip
+labels, or `document` title/description — those stay plain text on the
+real platform too, so don't put `**`/`_` markers there (they'll show up
+as literal asterisks/underscores instead of being parsed). Don't nest
+`**_like this_**` — the parser matches one marker type at a time and
+won't recursively re-parse inside a captured token, so nested markup
+renders as literal characters instead of both stylings applying.
+
 ## `Choice` — the lightweight interaction primitive
 
 Used by node-level `actions`, `suggested_replies.options`, and `list` rows.

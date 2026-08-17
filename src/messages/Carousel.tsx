@@ -4,6 +4,7 @@ import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import type { CarouselCard } from '../schema/messages'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
+import { FormattedText } from '../components/common/FormattedText'
 import { ActionButton } from '../components/phone/ActionButton'
 import { channelThemes } from '../channels/theme'
 
@@ -101,8 +102,16 @@ function CarouselCardView({
           </div>
         )}
         <h5 className="text-[13.5px] font-semibold text-slate-900 m-0">{card.title}</h5>
-        {card.subtitle && <p className="text-[12px] text-slate-500 m-0">{card.subtitle}</p>}
-        {card.description && <p className="text-[12px] text-slate-600 m-0">{card.description}</p>}
+        {card.subtitle && (
+          <p className="text-[12px] text-slate-500 m-0">
+            <FormattedText text={card.subtitle} />
+          </p>
+        )}
+        {card.description && (
+          <p className="text-[12px] text-slate-600 m-0">
+            <FormattedText text={card.description} />
+          </p>
+        )}
         {card.price && <p className="text-[13px] font-semibold text-slate-900 mt-0.5 m-0">{card.price}</p>}
       </div>
       {card.actions && card.actions.length > 0 && (

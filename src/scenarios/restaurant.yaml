@@ -38,7 +38,7 @@ nodes:
   - id: reminder
     messages:
       - type: text
-        text: "Hi {{customerName}}, this is a reminder of your reservation at Riverside Bistro for {{partySize}} on {{reservationDate}} at {{reservationTime}}."
+        text: "Hi {{customerName}}, this is a reminder of your reservation at Riverside Bistro for **{{partySize}}** on **{{reservationDate}}** at **{{reservationTime}}**."
     actions:
       - label: Confirm
         next: confirmed
@@ -54,7 +54,7 @@ nodes:
           - id: slot-1
             title: "6:00pm"
             subtitle: "Friday, 14 Aug"
-            description: Available
+            description: _Available_
             actions:
               - type: reply
                 label: Choose 6:00pm
@@ -63,7 +63,7 @@ nodes:
           - id: slot-2
             title: "7:00pm"
             subtitle: "Friday, 14 Aug"
-            description: Available
+            description: _Available_
             actions:
               - type: reply
                 label: Choose 7:00pm
@@ -72,7 +72,7 @@ nodes:
           - id: slot-3
             title: "8:30pm"
             subtitle: "Friday, 14 Aug"
-            description: Available
+            description: _Available_
             actions:
               - type: reply
                 label: Choose 8:30pm
@@ -82,7 +82,7 @@ nodes:
   - id: time_changed
     messages:
       - type: text
-        text: "Updated — see you at {{reservationTime}} on {{reservationDate}}."
+        text: "Updated — see you at **{{reservationTime}}** on {{reservationDate}}."
     next: confirmed
 
   - id: cancelled
@@ -96,12 +96,12 @@ nodes:
       - type: rich_card
         image: "/assets/restaurant-table.svg"
         title: "Table confirmed"
-        description: "{{tableArea}} · {{partySize}} guests · {{reservationTime}}"
+        description: "{{tableArea}} · {{partySize}} guests · **{{reservationTime}}**"
       - type: text
         text: |
           Dinner at Riverside Bistro
 
-          {{reservationDate}}, {{reservationTime}}
+          **{{reservationDate}}, {{reservationTime}}**
           {{tableArea}} · {{partySize}} guests
       - type: suggested_replies
         options:
@@ -123,7 +123,7 @@ nodes:
   - id: preorder_prompt
     messages:
       - type: text
-        text: "Would you like to pre-order anything from our tasting menu?"
+        text: "Would you like to pre-order anything from our _tasting menu_?"
     actions:
       - label: "View menu"
         next: menu
@@ -180,5 +180,5 @@ nodes:
   - id: done
     messages:
       - type: text
-        text: "See you {{reservationDate}} at {{reservationTime}}, {{customerName}}!"
+        text: "See you **{{reservationDate}}** at **{{reservationTime}}**, {{customerName}}!"
     end: true

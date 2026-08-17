@@ -2,6 +2,7 @@ import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { MessageShell } from '../components/phone/MessageShell'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
+import { FormattedText } from '../components/common/FormattedText'
 import { ActionButton } from '../components/phone/ActionButton'
 
 interface RichCardProps {
@@ -31,9 +32,15 @@ export function RichCard({ message, channel, interactive, timestampLabel }: Rich
           <p className="text-[12.5px] font-semibold text-slate-500 m-0 mb-1">{header}</p>
         )}
         <h4 className="text-[14.5px] font-semibold text-slate-900 m-0">{title}</h4>
-        {description && <p className="text-[13px] text-slate-600 mt-1 mb-0">{description}</p>}
+        {description && (
+          <p className="text-[13px] text-slate-600 mt-1 mb-0">
+            <FormattedText text={description} />
+          </p>
+        )}
         {showWhatsAppFields && footer && (
-          <p className="text-[12px] text-slate-400 mt-2 mb-0">{footer}</p>
+          <p className="text-[12px] text-slate-400 mt-2 mb-0">
+            <FormattedText text={footer} />
+          </p>
         )}
       </div>
       {actions && actions.length > 0 && (

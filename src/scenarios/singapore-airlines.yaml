@@ -73,9 +73,9 @@ nodes:
         text: |
           Good morning {{customerName}} 👋
 
-          Your flight {{flightNumber}} to {{destinationCity}} departs in 2 days.
+          Your flight **{{flightNumber}}** to {{destinationCity}} departs in 2 days.
 
-          Online check-in is now available.
+          _Online check-in is now available._
       - type: suggested_replies
         sender: business
         options:
@@ -99,7 +99,7 @@ nodes:
         text: |
           No problem.
 
-          You can check in anytime before online check-in closes.
+          _You can check in anytime before online check-in closes._
       - type: suggested_replies
         sender: business
         options:
@@ -117,11 +117,11 @@ nodes:
         sender: business
         title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
-          {{departureDate}} · Departs {{departureTime}}, arrives {{arrivalTime}}
+          {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
 
-          Terminal {{terminal}} · Gate {{gate}}
+          Terminal **{{terminal}}** · Gate **{{gate}}**
 
-          Booking ref {{bookingReference}} · Check-in available
+          Booking ref **{{bookingReference}}** · _Check-in available_
       - type: text
         sender: business
         text: "What would you like to do?"
@@ -145,22 +145,22 @@ nodes:
       - type: text
         sender: business
         text: |
-          Let's get you checked in for {{flightNumber}}.
+          Let's get you checked in for **{{flightNumber}}**.
       - type: rich_card
         sender: business
         title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
-          {{departureDate}} · Departs {{departureTime}}, arrives {{arrivalTime}}
+          {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
 
-          Terminal {{terminal}}
+          Terminal **{{terminal}}**
       - type: text
         sender: business
         text: |
           Passenger
 
-          {{customerName}} {{lastName}}
+          **{{customerName}} {{lastName}}**
 
-          KrisFlyer {{krisFlyerStatus}}
+          KrisFlyer **{{krisFlyerStatus}}**
       - type: suggested_replies
         sender: business
         options:
@@ -195,7 +195,7 @@ nodes:
       - type: text
         sender: business
         text: |
-          Here are some available seats for {{flightNumber}}.
+          Here are some available seats for **{{flightNumber}}**.
       - type: carousel
         sender: business
         cards:
@@ -203,10 +203,10 @@ nodes:
             title: 21A
             subtitle: Window seat
             description: |
-              Economy Class
+              **Economy Class**
 
               Window
-              Standard seat
+              _Standard seat_
             badges: [Available, Window]
             actions:
               - type: reply
@@ -217,10 +217,10 @@ nodes:
             title: 21C
             subtitle: Aisle seat
             description: |
-              Economy Class
+              **Economy Class**
 
               Aisle
-              Standard seat
+              _Standard seat_
             badges: [Available, Aisle]
             actions:
               - type: reply
@@ -231,12 +231,12 @@ nodes:
             title: 32A
             subtitle: Extra legroom
             description: |
-              Economy Class
+              **Economy Class**
 
               Window
               Extra legroom
 
-              SGD 65
+              **SGD 65**
             badges: [Window, Extra legroom]
             actions:
               - type: reply
@@ -263,7 +263,7 @@ nodes:
         text: |
           Seat 32A is an extra-legroom window seat.
 
-          Additional charge: SGD {{seatUpgradePrice}}
+          Additional charge: **SGD {{seatUpgradePrice}}**
       - type: suggested_replies
         sender: business
         options:
@@ -280,9 +280,9 @@ nodes:
       - type: text
         sender: business
         text: |
-          {{seat}} selected ✓
+          **{{seat}}** selected ✓
 
-          Your seat will be confirmed when check-in is completed.
+          _Your seat will be confirmed when check-in is completed._
       - type: suggested_replies
         sender: business
         options:
@@ -318,7 +318,7 @@ nodes:
         text: |
           You're checked in, {{customerName}} ✓
 
-          Your boarding pass for {{flightNumber}} is ready.
+          Your boarding pass for **{{flightNumber}}** is ready.
       - type: delay
         duration: 700
       - type: document
@@ -330,11 +330,11 @@ nodes:
       - type: text
         sender: business
         text: |
-          Seat {{seat}} · {{cabin}} Class · Group 3
+          Seat **{{seat}}** · {{cabin}} Class · Group 3
 
-          Gate {{gate}} · Boarding {{boardingTime}}
+          Gate **{{gate}}** · Boarding **{{boardingTime}}**
 
-          Booking ref {{bookingReference}}
+          Booking ref **{{bookingReference}}**
       - type: suggested_replies
         sender: business
         options:
@@ -357,7 +357,7 @@ nodes:
       - type: text
         sender: business
         text: |
-          Your boarding pass has been saved to your device.
+          _Your boarding pass has been saved to your device._
       - type: suggested_replies
         sender: business
         options:
@@ -380,7 +380,7 @@ nodes:
       - type: text
         sender: business
         text: |
-          Your boarding pass has been added to your wallet.
+          _Your boarding pass has been added to your wallet._
       - type: suggested_replies
         sender: business
         options:
@@ -398,9 +398,9 @@ nodes:
         sender: business
         title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
-          {{departureDate}} · Departs {{departureTime}}, arrives {{arrivalTime}}
+          {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
 
-          Terminal {{terminal}} · Gate {{gate}} · Checked in
+          Terminal **{{terminal}}** · Gate **{{gate}}** · _Checked in_
       - type: text
         sender: business
         text: "Anything else?"
@@ -426,9 +426,9 @@ nodes:
       - type: text
         sender: business
         text: |
-          Seat {{seat}} · {{cabin}} Class · Group 3
+          Seat **{{seat}}** · {{cabin}} Class · Group 3
 
-          Gate {{gate}} · Boarding {{boardingTime}}
+          Gate **{{gate}}** · Boarding **{{boardingTime}}**
       - type: suggested_replies
         sender: business
         options:
@@ -449,7 +449,7 @@ nodes:
         text: |
           You're all set, {{customerName}}.
 
-          We'll let you know here if there are any changes to your flight or gate.
+          _We'll let you know here if there are any changes to your flight or gate._
 
           Have a pleasant flight to {{destinationCity}} ✈️
     end: true

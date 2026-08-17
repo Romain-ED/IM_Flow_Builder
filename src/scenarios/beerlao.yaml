@@ -37,7 +37,7 @@ nodes:
   - id: otp_delivery
     messages:
       - type: text
-        text: "Your Beerlao verification code is {{otpCode}}. Enter it below to log in to your account. It expires in {{otpExpiry}}. If you did not request this code, you can safely ignore this message."
+        text: "Your Beerlao verification code is **{{otpCode}}**. Enter it below to log in to your account. _It expires in {{otpExpiry}}._ If you did not request this code, you can safely ignore this message."
     next: otp_entry
 
   # `input` (not `otp`) on purpose — WhatsApp has no real message that
@@ -90,8 +90,8 @@ nodes:
       - type: rich_card
         image: "/assets/event-boun-souang-heua-promo.png"
         title: "Celebrate {{eventName}} with Beerlao"
-        description: "Enjoy {{discount}} OFF your next order of {{productName}}. Use code {{promoCode}}. Offer valid {{eventDate}} only. Don't miss the wave! 🌊"
-        footer: "Drink responsibly. 18+."
+        description: "Enjoy **{{discount}} OFF** your next order of {{productName}}. Use code **{{promoCode}}**. _Offer valid {{eventDate}} only._ Don't miss the wave! 🌊"
+        footer: "_Drink responsibly. 18+._"
         actions:
           - type: open_url
             label: "Order now"
@@ -106,7 +106,7 @@ nodes:
   - id: event_details
     messages:
       - type: text
-        text: "Join the {{eventName}} boat racing celebrations in {{eventLocation}}! 🛶🍺 Enjoy {{discount}} off {{productName}} from {{eventDate}}. Use code {{promoCode}} at checkout."
+        text: "Join the {{eventName}} boat racing celebrations in {{eventLocation}}! 🛶🍺 Enjoy **{{discount}} off** {{productName}} from {{eventDate}}. Use code **{{promoCode}}** at checkout."
       - type: suggested_actions
         actions:
           - type: open_url
@@ -122,7 +122,7 @@ nodes:
   - id: interested
     messages:
       - type: text
-        text: "See you at the races, {{customerName}}! 🍺🛶 Remember your code: {{promoCode}} for {{discount}} off."
+        text: "See you at the races, {{customerName}}! 🍺🛶 Remember your code: **{{promoCode}}** for **{{discount}} off**."
     end: true
 
   - id: dismissed

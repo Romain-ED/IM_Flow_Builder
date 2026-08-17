@@ -2,6 +2,7 @@ import { ListIcon } from 'lucide-react'
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { MessageShell } from '../components/phone/MessageShell'
+import { FormattedText } from '../components/common/FormattedText'
 import { channelThemes } from '../channels/theme'
 import { useSimulatorStore } from '../store/simulatorStore'
 
@@ -33,9 +34,15 @@ export function ListMessage({ message, channel, interactive, timestampLabel }: L
             <p className="text-[11.5px] font-semibold text-slate-500 m-0 mb-1">{header}</p>
           )}
           <h4 className="text-[14px] font-semibold text-slate-900 m-0">{title}</h4>
-          {description && <p className="text-[12.5px] text-slate-500 mt-0.5 mb-0">{description}</p>}
+          {description && (
+            <p className="text-[12.5px] text-slate-500 mt-0.5 mb-0">
+              <FormattedText text={description} />
+            </p>
+          )}
           {showWhatsAppFields && footer && (
-            <p className="text-[11.5px] text-slate-400 mt-1 mb-0">{footer}</p>
+            <p className="text-[11.5px] text-slate-400 mt-1 mb-0">
+              <FormattedText text={footer} />
+            </p>
           )}
         </div>
       </div>

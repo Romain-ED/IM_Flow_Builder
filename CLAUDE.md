@@ -583,6 +583,50 @@ expected, don't — that clarity is exactly what a real WhatsApp/RCS
 composer doesn't provide either, and this component's entire job is to
 not claim more than a real platform does.
 
+## Shared `**bold**`/`_italic_` formatting (0.16.0) — beyond just `text`
+
+`TextMessage.tsx` always had a tiny inline formatter (bold/italic/URL
+auto-link, regex-based, no markdown lib, no HTML injection risk). The user
+asked for more use of it across the built-ins, which surfaced that it was
+private to `TextMessage` — `RichCard`, `ListMessage`, `Carousel`, `Image`/
+`VideoMessage` all rendered their `description`/`subtitle`/`caption`
+fields as raw strings. Extracted the renderer into
+`src/components/common/FormattedText.tsx` (a `<FormattedText text={...}/>`
+component) and wired it into those five components' prose fields.
+
+**Deliberately scoped to prose fields, not every string field.** Titles,
+headers, footers were initially considered too, but:
+- `title`/`header` on `rich_card`/`list` — real WhatsApp/RCS header/title
+  fields are short unformatted labels; formatting them would be inventing
+  behavior neither platform has, exactly the thing this codebase's
+  established rigor (see "Official vs. invented message types" above)
+  exists to prevent. **Footer got formatting though** — a footer is
+  small/muted disclaimer-style prose (see the `_Drink responsibly. 18+._`
+  and `_Offer applies to this order only._` examples in the built-ins),
+  not a structural label like a title.
+- Button/chip labels — never formatted on the real platforms either.
+- `document` title/description — deliberately skipped, not because the
+  real platform doesn't format them, but because this component's
+  description renders inside a `truncate` (single-line, `white-space:
+  nowrap`) span; `FormattedText` always wraps output in at least one
+  block-level `<span>` per line, which would break that truncation
+  layout. If you need formatting there later, restyle the row first.
+- `list` row titles/descriptions and `product_catalog` fields — left
+  unformatted for now, simply not requested; revisit if asked.
+
+**Don't nest `**_like this_**`.** `InlineFormatting`'s token regex
+(`\*\*[^*]+\*\*|_[^_]+_`) matches one marker type per pass and does not
+recursively re-parse a captured token's contents, so nested markers render
+as literal asterisks/underscores inside the outer style, not as both
+stylings applied. Keep bold and italic spans separate/sequential in
+authored copy, never overlapping.
+
+All five built-in scenarios got real content passes using this — bold for
+codes/prices/order numbers/key values, italic for secondary
+disclaimers/status notes — not just the user's literal OTP example.
+`beerlao.yaml`'s and `progadget-laos.yaml`'s OTP delivery messages are the
+canonical example (`**{{otpCode}}**` / `_Expires in {{otpExpiry}}._`).
+
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number

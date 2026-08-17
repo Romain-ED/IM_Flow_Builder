@@ -47,11 +47,11 @@ nodes:
   - id: shipped_notice
     messages:
       - type: text
-        text: "Hi {{customerName}}! Your order {{orderNumber}} ({{itemName}}) has shipped via {{carrier}}."
+        text: "Hi {{customerName}}! Your order **{{orderNumber}}** ({{itemName}}) has shipped via {{carrier}}."
       - type: rich_card
         image: "/assets/package.svg"
         title: "On its way"
-        description: "Estimated arrival: {{eta}}"
+        description: "Estimated arrival: **{{eta}}**"
         actions:
           - type: reply
             label: Track package
@@ -65,7 +65,7 @@ nodes:
         description: "{{itemName}} — {{orderNumber}}"
         fileType: PDF
       - type: text
-        text: "Tracking number: {{trackingNumber}}\nDelivering to: {{deliveryAddress}}"
+        text: "Tracking number: **{{trackingNumber}}**\nDelivering to: {{deliveryAddress}}"
     actions:
       - label: Change delivery options
         next: delivery_options
@@ -101,8 +101,8 @@ nodes:
       - type: rich_card
         header: "Limited-time offer"
         title: Priority delivery upgrade — $6.99
-        description: "Get {{itemName}} delivered today instead of {{eta}}."
-        footer: "Offer applies to this order only."
+        description: "Get {{itemName}} delivered **today** instead of {{eta}}."
+        footer: "_Offer applies to this order only._"
         actions:
           - type: open_url
             label: Pay now
@@ -121,7 +121,7 @@ nodes:
       deliverySlot: "the selected time window"
     messages:
       - type: text
-        text: "Got it — we'll deliver during {{deliverySlot}}."
+        text: "Got it — we'll deliver during **{{deliverySlot}}**."
     next: confirmed
 
   - id: confirmed
@@ -180,5 +180,5 @@ nodes:
   - id: done
     messages:
       - type: text
-        text: "Thanks for shopping with Northwind, {{customerName}}! We'll notify you when {{itemName}} is delivered."
+        text: "Thanks for shopping with Northwind, {{customerName}}! We'll notify you when **{{itemName}}** is delivered."
     end: true

@@ -210,7 +210,7 @@ Every type below renders on both channels — a type a channel doesn't natively 
 
 | type | notes | official on |
 |---|---|---|
-| `text` | multiline, basic URL auto-linking, `**bold**` / `_italic_` | WhatsApp, RCS |
+| `text` | multiline, basic URL auto-linking, `**bold**` / `_italic_` (same formatting also renders in `rich_card`/`carousel`/`list` description-style fields and image/video captions — see below) | WhatsApp, RCS |
 | `image` / `video` / `document` | graceful broken-asset fallback; document taps simulate a download | WhatsApp, RCS |
 | `rich_card` | optional text `header` (or media `image`, not both) + title/description + optional `footer` + up to a few buttons | WhatsApp (interactive message: header/body/footer/buttons), RCS (rich card — no header/footer fields, so those only render on WhatsApp) |
 | `carousel` | horizontally scrollable cards, each with its own buttons | WhatsApp (Carousel Template, Meta-approved, 10 cards / 2 buttons each), RCS (2–10 cards / 4 buttons each) |
@@ -230,6 +230,10 @@ Every type below renders on both channels — a type a channel doesn't natively 
 | `delay` / `typing` | pseudo-messages: pause, or show the typing indicator for `duration` ms — neither is ever stored in history | *not messages* |
 
 Messages can be authored with `"sender": "user"` for scripted autoplay lines, in addition to the normal `"sender": "business"` (the default).
+
+### Text formatting (`**bold**` / `_italic_`)
+
+A small, safe (no HTML injection, no markdown library) formatter — `src/components/common/FormattedText.tsx` — handles `**bold**`, `_italic_`, and auto-linked `https://` URLs. It renders in every field that's genuinely prose: `text` messages, `rich_card`/`list` `description`/`footer`, carousel card `subtitle`/`description`, and image/video `caption`. It's deliberately **not** applied to short-label fields that real WhatsApp/RCS messages don't format — `title`/`header` on cards and lists, button/chip labels, and document titles/descriptions (kept plain to avoid breaking single-line truncation in that compact layout).
 
 ### Official vs. simulator-only types
 

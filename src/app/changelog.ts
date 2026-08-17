@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.16.0',
+    date: '2026-08-17',
+    changes: [
+      'New: `**bold**`/`_italic_` text formatting, previously only available in `text` messages, now also renders in `rich_card`/`list` description/footer, carousel card subtitle/description, and image/video captions — extracted into a shared `FormattedText` component. Titles, headers, and button/chip labels intentionally stay plain, matching how those short-label fields render on the real platforms.',
+      'All five built-in scenarios got a content pass using this: bold for codes, prices, order numbers and other key values; italic for secondary disclaimers and status notes — e.g. Beerlao and Pro Gadget Laos\'s OTP messages now read "Your code is **1234**. _It expires in 10 minutes._"',
+    ],
+  },
+  {
     version: '0.15.1',
     date: '2026-08-17',
     changes: [

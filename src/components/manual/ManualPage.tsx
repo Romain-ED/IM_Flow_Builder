@@ -157,6 +157,14 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
             variables, recursively applied to every string field in a message. There is no expression language and
             nothing is ever evaluated as code.
           </P>
+          <P>
+            <code>**bold**</code> and <code>_italic_</code> (plus auto-linked <code>https://</code> URLs) render in
+            any prose field — <code>text</code> messages, <code>rich_card</code>/<code>list</code>{' '}
+            <code>description</code>/<code>footer</code>, carousel card <code>subtitle</code>/
+            <code>description</code>, and image/video <code>caption</code>. Short-label fields (
+            <code>title</code>/<code>header</code>, button/chip labels, document title/description) stay plain, same
+            as those fields render on the real platforms.
+          </P>
 
           <h3 className="text-[13.5px] font-semibold text-slate-800 mt-4 mb-1">Real platform limits</h3>
           <P>

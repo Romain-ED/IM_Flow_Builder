@@ -50,7 +50,7 @@ nodes:
   - id: otp_delivery
     messages:
       - type: text
-        text: "Pro Gadget Laos — code: {{otpCode}}. Expires in {{otpExpiry}}."
+        text: "Pro Gadget Laos — code: **{{otpCode}}**. _Expires in {{otpExpiry}}._"
     next: otp_entry
 
   # `input` (not `otp`) on purpose — WhatsApp has no real message that
@@ -92,8 +92,8 @@ nodes:
       - type: rich_card
         image: "/assets/whoop-peak.svg"
         title: "{{productName}} x{{quantity}}"
-        description: "Order {{orderNumber}} · {{orderTotal}}. We'll text you at every step — payment, shipping, and delivery."
-        footer: "Track anytime using the link below."
+        description: "Order **{{orderNumber}}** · **{{orderTotal}}**. We'll text you at every step — payment, shipping, and delivery."
+        footer: "_Track anytime using the link below._"
         actions:
           - type: open_url
             label: "Track my order"
@@ -103,7 +103,7 @@ nodes:
   - id: order_shipped
     messages:
       - type: text
-        text: "Pro Gadget Laos\n{{orderNumber}} updated · Shipped, on the way.\n{{trackUrl}}"
+        text: "Pro Gadget Laos\n**{{orderNumber}}** updated · Shipped, on the way.\n{{trackUrl}}"
     next: order_delivered
 
   - id: order_delivered
@@ -119,7 +119,7 @@ nodes:
       - type: rich_card
         image: "/assets/whoop-life.svg"
         title: "Introducing {{newProductName}}"
-        description: "The next generation is here. Pre-order now and get {{discount}} off with code {{promoCode}}."
+        description: "The next generation is here. Pre-order now and get **{{discount}} off** with code **{{promoCode}}**."
         actions:
           - type: open_url
             label: "View {{newProductName}}"
@@ -134,7 +134,7 @@ nodes:
   - id: notify_confirmed
     messages:
       - type: text
-        text: "You're on the list, {{customerName}}! We'll message you the moment {{newProductName}} lands. Remember your code: {{promoCode}} for {{discount}} off."
+        text: "You're on the list, {{customerName}}! We'll message you the moment {{newProductName}} lands. Remember your code: **{{promoCode}}** for **{{discount}} off**."
     end: true
 
   - id: dismissed
