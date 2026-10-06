@@ -13,21 +13,22 @@ export function PlaybackControls() {
   const isPlaying = useSimulatorStore((s) => s.isPlaying)
   const snapshotCount = useSimulatorStore((s) => s.snapshots.length)
   const flow = useSimulatorStore((s) => s.flow)
+  const liveSessionActive = useSimulatorStore((s) => s.liveSessionActive)
 
   return (
     <div className="flex flex-col gap-1.5">
       <SectionHeading accent={sectionAccents.playback}>Playback</SectionHeading>
       <div className="grid grid-cols-2 gap-1.5">
-        <ControlButton icon={RotateCcw} label="Restart" onClick={restart} disabled={!flow} variant="primary" />
-        <ControlButton icon={Undo2} label="Back" onClick={back} disabled={snapshotCount === 0} variant="neutral" />
+        <ControlButton icon={RotateCcw} label="Restart" onClick={restart} disabled={!flow || liveSessionActive} variant="primary" />
+        <ControlButton icon={Undo2} label="Back" onClick={back} disabled={snapshotCount === 0 || liveSessionActive} variant="neutral" />
         <ControlButton
           icon={isPaused ? Play : Pause}
           label={isPaused ? 'Resume' : 'Pause'}
           onClick={togglePause}
-          disabled={!isPlaying && !isPaused}
+          disabled={liveSessionActive || (!isPlaying && !isPaused)}
           variant="amber"
         />
-        <ControlButton icon={Eraser} label="Clear" onClick={restart} disabled={!flow} variant="rose" />
+        <ControlButton icon={Eraser} label="Clear" onClick={restart} disabled={!flow || liveSessionActive} variant="rose" />
       </div>
     </div>
   )

@@ -1,0 +1,432 @@
+# Business Messaging Flow Simulator — LTC Lao Telecom Utility Scenario
+# Utility notifications for mobile subscribers: data usage alerts,
+# prepaid balance alerts, and bill payment reminders over WhatsApp/RCS.
+version: "1.0"
+
+metadata:
+  id: ltc-lao-telecom-utility
+  name: "Lao Telecom — Utility notifications"
+  description: "Data usage alert → prepaid balance warning → bill payment reminder for mobile subscribers."
+  channel: whatsapp
+  tags: [telecom, utility, notifications, laos, ltc]
+
+brand:
+  name: "Lao Telecom"
+  shortName: "LaoTel"
+  avatar: "/assets/brand-avatar-lao-telecom.svg"
+  description: "Account notifications"
+  verified: true
+
+defaults:
+  messageDelayMs: 600
+  typingDurationMs: 900
+  showTimestamps: true
+
+variables:
+  customerName: Somsak
+  phoneNumber: "+856 20 5178 9012"
+  planName: "5G Unlimited Plus"
+  dataUsedGB: "18.4"
+  dataLimitGB: "20"
+  dataUsedPercent: "92%"
+  remainingDataGB: "1.6"
+  balanceKIP: "12,500"
+  lowBalanceThresholdKIP: "15,000"
+  topUpAmountKIP: "50,000"
+  billAmountKIP: "185,000"
+  billDueDate: "25 September 2026"
+  billMonth: "August 2026"
+  paymentMethod: "M-Money wallet"
+  supportPhone: "+856 20 5153 5555"
+
+triggers:
+  - keywords: ["help", "support", "agent"]
+    next: help
+  - keywords: ["menu", "home"]
+    next: welcome
+
+start: welcome
+
+nodes:
+  # ─────────────────────────────────────────────────────────────────────
+  # ENTRY POINT — welcome message with scenario navigation
+  # ─────────────────────────────────────────────────────────────────────
+  - id: welcome
+    messages:
+      - type: text
+        text: "ສະບາຍດີ {{customerName}}! 👋\nWelcome to Lao Telecom notifications.\n\nYour number: {{phoneNumber}}\nPlan: *{{planName}}*"
+      - type: text
+        text: "Here's what's happening with your account today:"
+      - type: suggested_replies
+        options:
+          - label: "📊 Data usage"
+            next: data_usage_alert
+          - label: "💰 Balance"
+            next: balance_alert
+
+  # ─────────────────────────────────────────────────────────────────────
+  # SCENARIO 1: Data Usage Alert (Utility)
+  # ─────────────────────────────────────────────────────────────────────
+  - id: data_usage_alert
+    messages:
+      - type: image
+        url: "/assets/ltc-data-usage-chart.svg"
+        alt: "Data usage chart showing 92% consumed"
+        caption: "Your data usage this billing cycle"
+      - type: rich_card
+        image: "/assets/ltc-data-usage-warning.svg"
+        title: "⚠️ Data usage at {{dataUsedPercent}}"
+        description: "You've used *{{dataUsedGB}} GB* out of your *{{dataLimitGB}} GB* plan.\n\nRemaining: {{remainingDataGB}} GB\nPlan: {{planName}}\n\nAt this rate, you may run out before your cycle resets."
+        actions:
+          - type: reply
+            label: "Top up data"
+            next: data_topup_options
+          - type: reply
+            label: "View details"
+            next: data_usage_details
+
+  - id: data_usage_details
+    messages:
+      - type: text
+        text: "📊 *Data usage breakdown — {{planName}}*\n\n• Social media: 7.2 GB\n• Streaming: 5.8 GB\n• Browsing: 3.1 GB\n• Apps & updates: 2.3 GB\n\n_Total: {{dataUsedGB}} GB / {{dataLimitGB}} GB_"
+      - type: text
+        text: "💡 *Tip:* Connect to Wi-Fi for large downloads and streaming to conserve your mobile data."
+      - type: suggested_replies
+        options:
+          - label: "Top up data"
+            next: data_topup_options
+          - label: "Upgrade plan"
+            next: plan_upgrade
+          - label: "OK, thanks"
+            next: data_acknowledged
+
+  - id: data_topup_options
+    messages:
+      - type: text
+        text: "Choose a data add-on for instant activation:"
+      - type: carousel
+        cards:
+          - id: addon-2gb
+            image: "/assets/ltc-data-addon-small.svg"
+            title: "2 GB Add-on"
+            subtitle: "Valid for 7 days"
+            price: "15,000 KIP"
+            actions:
+              - type: reply
+                label: "Buy 2 GB"
+                next: data_topup_confirm
+                set: { selectedAddon: "2 GB (15,000 KIP)" }
+          - id: addon-5gb
+            image: "/assets/ltc-data-addon-medium.svg"
+            title: "5 GB Add-on"
+            subtitle: "Valid for 14 days"
+            price: "30,000 KIP"
+            badges: ["Popular"]
+            actions:
+              - type: reply
+                label: "Buy 5 GB"
+                next: data_topup_confirm
+                set: { selectedAddon: "5 GB (30,000 KIP)" }
+          - id: addon-10gb
+            image: "/assets/ltc-data-addon-large.svg"
+            title: "10 GB Add-on"
+            subtitle: "Valid for 30 days"
+            price: "50,000 KIP"
+            badges: ["Best value"]
+            actions:
+              - type: reply
+                label: "Buy 10 GB"
+                next: data_topup_confirm
+                set: { selectedAddon: "10 GB (50,000 KIP)" }
+
+  - id: data_topup_confirm
+    messages:
+      - type: rich_card
+        title: "Confirm data add-on"
+        description: "Add-on: *{{selectedAddon}}*\nPayment: {{paymentMethod}}\nActivation: Immediate"
+        footer: "Charges will be deducted from your balance."
+        actions:
+          - type: reply
+            label: "✓ Confirm"
+            next: data_topup_success
+          - type: reply
+            label: "Cancel"
+            next: data_acknowledged
+
+  - id: data_topup_success
+    messages:
+      - type: text
+        text: "✅ *Data add-on activated!*\n\n{{selectedAddon}} has been added to your plan. Your updated data balance will reflect shortly.\n\nThank you for choosing Lao Telecom! 🙏"
+    next: post_action_menu
+
+  - id: data_acknowledged
+    messages:
+      - type: text
+        text: "No problem, {{customerName}}. We'll notify you again if you reach {{dataLimitGB}} GB. Stay connected! 📱"
+    next: post_action_menu
+
+  - id: plan_upgrade
+    messages:
+      - type: rich_card
+        image: "/assets/ltc-5g-upgrade.svg"
+        title: "Upgrade to 5G Unlimited Max"
+        description: "Get *unlimited data* with 5G speeds! 🚀\n\n• Unlimited high-speed data\n• Free 100 min international calls\n• Priority network access\n\nOnly *250,000 KIP/month* (current plan: 185,000 KIP/month)"
+        footer: "Minimum 6-month commitment"
+        actions:
+          - type: open_url
+            label: "Learn more"
+            url: "https://www.laotel.com/plans/5g-max"
+          - type: reply
+            label: "Not now"
+            next: data_acknowledged
+
+  # ─────────────────────────────────────────────────────────────────────
+  # SCENARIO 2: Prepaid Balance Alert (Utility)
+  # ─────────────────────────────────────────────────────────────────────
+  - id: balance_alert
+    messages:
+      - type: rich_card
+        image: "/assets/ltc-low-balance.svg"
+        title: "💰 Low balance alert"
+        description: "Your prepaid balance is *{{balanceKIP}} KIP*, which is below your threshold of {{lowBalanceThresholdKIP}} KIP.\n\nTop up now to keep your services active and avoid interruptions."
+        actions:
+          - type: reply
+            label: "Top up now"
+            next: balance_topup_options
+          - type: reply
+            label: "View usage"
+            next: balance_usage_summary
+
+  - id: balance_usage_summary
+    messages:
+      - type: text
+        text: "💸 *Recent charges — last 7 days*\n\n• Data usage: 45,000 KIP\n• Voice calls: 22,500 KIP\n• SMS: 3,000 KIP\n• Subscriptions: 15,000 KIP\n\n_Total spent: 85,500 KIP_"
+      - type: text
+        text: "Current balance: *{{balanceKIP}} KIP*"
+      - type: suggested_replies
+        options:
+          - label: "Top up"
+            next: balance_topup_options
+          - label: "OK"
+            next: balance_acknowledged
+
+  - id: balance_topup_options
+    messages:
+      - type: text
+        text: "Choose a top-up amount:"
+      - type: list
+        title: "Select top-up amount"
+        buttonLabel: "View amounts"
+        header: "Top-up options"
+        sections:
+          - title: "Standard"
+            rows:
+              - id: topup-20k
+                title: "20,000 KIP"
+                description: "Basic top-up"
+                next: balance_topup_method
+                set: { topUpSelected: "20,000 KIP" }
+              - id: topup-50k
+                title: "50,000 KIP"
+                description: "Most popular"
+                next: balance_topup_method
+                set: { topUpSelected: "50,000 KIP" }
+              - id: topup-100k
+                title: "100,000 KIP"
+                description: "Best value"
+                next: balance_topup_method
+                set: { topUpSelected: "100,000 KIP" }
+          - title: "Premium"
+            rows:
+              - id: topup-200k
+                title: "200,000 KIP"
+                description: "Includes 2 GB bonus data"
+                next: balance_topup_method
+                set: { topUpSelected: "200,000 KIP + 2 GB bonus" }
+              - id: topup-500k
+                title: "500,000 KIP"
+                description: "Includes 5 GB bonus + free calls"
+                next: balance_topup_method
+                set: { topUpSelected: "500,000 KIP + 5 GB bonus" }
+
+  - id: balance_topup_method
+    messages:
+      - type: text
+        text: "Top-up: *{{topUpSelected}}*\n\nHow would you like to pay?"
+      - type: suggested_replies
+        options:
+          - label: "M-Money"
+            next: balance_topup_processing
+            set: { paymentChoice: "M-Money wallet" }
+          - label: "BCEL One"
+            next: balance_topup_processing
+            set: { paymentChoice: "BCEL One" }
+          - label: "Pay online"
+            next: balance_topup_online
+
+  - id: balance_topup_online
+    messages:
+      - type: text
+        text: "Complete your top-up securely online:"
+      - type: suggested_actions
+        actions:
+          - type: open_url
+            label: "Pay online"
+            url: "https://www.laotel.com/topup"
+          - type: reply
+            label: "Back"
+            next: balance_topup_options
+
+  - id: balance_topup_processing
+    messages:
+      - type: typing
+        duration: 2000
+      - type: text
+        text: "✅ *Top-up successful!*\n\nAmount: {{topUpSelected}}\nPayment: {{paymentChoice}}\nNew balance: 62,500 KIP\n\nReceipt sent to your registered email.\nThank you, {{customerName}}! 🙏"
+    next: post_action_menu
+
+  - id: balance_acknowledged
+    messages:
+      - type: text
+        text: "Got it. We'll remind you again if your balance drops further. 👍"
+    next: post_action_menu
+
+  # ─────────────────────────────────────────────────────────────────────
+  # SCENARIO 3: Bill Payment Reminder (Utility)
+  # ─────────────────────────────────────────────────────────────────────
+  - id: bill_reminder
+    messages:
+      - type: image
+        url: "/assets/ltc-bill-reminder.svg"
+        alt: "Bill payment reminder for August 2026"
+        caption: "Your monthly bill is ready"
+      - type: rich_card
+        title: "📋 Bill ready — {{billMonth}}"
+        description: "Amount due: *{{billAmountKIP}} KIP*\nDue date: *{{billDueDate}}*\nPlan: {{planName}}\n\nPay before the due date to avoid service interruptions."
+        footer: "Auto-pay is available in account settings."
+        actions:
+          - type: reply
+            label: "Pay now"
+            next: bill_payment_method
+          - type: reply
+            label: "View bill"
+            next: bill_details
+          - type: reply
+            label: "Set reminder"
+            next: bill_reminder_set
+
+  - id: bill_details
+    messages:
+      - type: text
+        text: "🧾 *Bill summary — {{billMonth}}*\n\n• Plan ({{planName}}): 150,000 KIP\n• Data add-ons: 15,000 KIP\n• International calls: 12,000 KIP\n• VAT (10%): 8,000 KIP\n\n*Total: {{billAmountKIP}} KIP*\n_Due: {{billDueDate}}_"
+      - type: document
+        filename: "LaoTelecom-Bill-{{billMonth}}.pdf"
+        title: "Detailed bill — {{billMonth}}"
+        description: "Full itemized bill for your records"
+        fileType: PDF
+      - type: text
+        text: "Would you like to pay now?"
+      - type: suggested_replies
+        options:
+          - label: "Pay now"
+            next: bill_payment_method
+          - label: "Later"
+            next: bill_later
+
+  - id: bill_payment_method
+    messages:
+      - type: text
+        text: "Amount: *{{billAmountKIP}} KIP*\n\nSelect your payment method:"
+      - type: suggested_replies
+        options:
+          - label: "M-Money"
+            next: bill_payment_confirm
+            set: { billPaymentMethod: "M-Money wallet" }
+          - label: "BCEL One"
+            next: bill_payment_confirm
+            set: { billPaymentMethod: "BCEL One" }
+          - label: "Pay online"
+            next: bill_pay_online
+
+  - id: bill_pay_online
+    messages:
+      - type: text
+        text: "Pay your bill securely through our online portal:"
+      - type: suggested_actions
+        actions:
+          - type: open_url
+            label: "Pay bill online"
+            url: "https://www.laotel.com/billpay"
+          - type: reply
+            label: "Back"
+            next: bill_payment_method
+
+  - id: bill_payment_confirm
+    messages:
+      - type: rich_card
+        title: "Confirm payment"
+        description: "Bill: {{billMonth}}\nAmount: *{{billAmountKIP}} KIP*\nPayment: {{billPaymentMethod}}\n\nProceed with payment?"
+        footer: "A receipt will be sent after payment."
+        actions:
+          - type: reply
+            label: "✓ Pay now"
+            next: bill_payment_success
+          - type: reply
+            label: "Cancel"
+            next: bill_later
+
+  - id: bill_payment_success
+    messages:
+      - type: typing
+        duration: 2500
+      - type: text
+        text: "✅ *Payment successful!*\n\n🧾 Amount: {{billAmountKIP}} KIP\n📅 Bill: {{billMonth}}\n💳 Paid via: {{billPaymentMethod}}\n🔖 Ref: LTC-PAY-2026-08-4521\n\nThank you, {{customerName}}! Your next bill cycle begins automatically. 🙏"
+      - type: system_action
+        action: download
+        title: "Payment receipt"
+        description: "Receipt-{{billMonth}}.pdf downloaded"
+    next: post_action_menu
+
+  - id: bill_reminder_set
+    messages:
+      - type: text
+        text: "⏰ Reminder set! We'll send you a notification 3 days before your due date ({{billDueDate}}).\n\n💡 *Tip:* Set up auto-pay in your account settings to never miss a payment."
+    next: post_action_menu
+
+  - id: bill_later
+    messages:
+      - type: text
+        text: "No problem. Remember, your bill of *{{billAmountKIP}} KIP* is due by *{{billDueDate}}*. We'll send another reminder closer to the date."
+    next: post_action_menu
+
+  # ─────────────────────────────────────────────────────────────────────
+  # SHARED — Post-action menu & help
+  # ─────────────────────────────────────────────────────────────────────
+  - id: post_action_menu
+    messages:
+      - type: text
+        text: "Is there anything else I can help you with?"
+      - type: suggested_replies
+        options:
+          - label: "📊 Data usage"
+            next: data_usage_alert
+          - label: "💰 Balance"
+            next: balance_alert
+          - label: "📋 Pay bill"
+            next: bill_reminder
+
+  - id: help
+    messages:
+      - type: text
+        text: "Need assistance? Our team is here to help! 🙏\n\nYou can reach us by phone or visit our support center online."
+      - type: suggested_actions
+        actions:
+          - type: call
+            label: "Call 155 (free)"
+            phoneNumber: "155"
+          - type: open_url
+            label: "Support center"
+            url: "https://www.laotel.com/support"
+    actions:
+      - label: "Back to menu"
+        next: post_action_menu

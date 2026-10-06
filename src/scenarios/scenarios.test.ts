@@ -6,6 +6,7 @@ import { isMessageTypeSupported } from '../channels/capabilities'
 import { whatsappCapabilities } from '../channels/whatsapp/capabilities'
 import { rcsCapabilities } from '../channels/rcs/capabilities'
 import { flowDefinitionSchema, type MessageType } from '../schema/flow'
+import { preflightLiveRcsFlow } from '../live/rcsPreflight'
 
 describe('built-in scenarios', () => {
   for (const scenario of BUILT_IN_SCENARIOS) {
@@ -61,6 +62,25 @@ describe('built-in scenarios use only officially-supported message types', () =>
           }
         }
       }
+    })
+  }
+})
+
+
+describe('RCS built-ins are ready for Live RCS transport', () => {
+  for (const scenario of BUILT_IN_SCENARIOS) {
+    it(`${scenario.id} compiles when its authored channel is RCS`, () => {
+      const parsed = parseFlowSource(scenario.source, 'yaml')
+      expect(parsed.success).toBe(true)
+      if (!parsed.success) return
+      const flow = flowDefinitionSchema.parse(parsed.data)
+      if (flow.metadata.channel !== 'rcs') return
+
+      const result = preflightLiveRcsFlow(flow, { publicBaseUrl: 'https://demo.example' })
+      if (!result.success) {
+        throw new Error(`${scenario.id} failed Live RCS preflight:\n${result.errors.map((error) => error.message).join('\n')}`)
+      }
+      expect(result.success).toBe(true)
     })
   }
 })

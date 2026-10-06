@@ -4,6 +4,7 @@ import { BrandEditor } from '../controls/BrandEditor'
 import { VariablesEditor } from '../controls/VariablesEditor'
 import { DebugOptions } from '../controls/DebugOptions'
 import { PlaybackControls } from '../controls/PlaybackControls'
+import { LiveRcsControls } from '../controls/LiveRcsControls'
 
 export function Sidebar({ onOpenEditor }: { onOpenEditor: () => void }) {
   return (
@@ -15,6 +16,8 @@ export function Sidebar({ onOpenEditor }: { onOpenEditor: () => void }) {
       <BrandEditor />
       <Divider />
       <VariablesEditor />
+      <Divider />
+      <LiveRcsControls />
       <Divider />
       <DebugOptions />
       <Divider />

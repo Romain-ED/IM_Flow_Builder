@@ -4,13 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => {
-  // GitHub Pages serves this as a project site under /IM_Flow_Builder/, not
-  // at the domain root, so production builds need every asset URL prefixed
-  // with that sub-path. The dev server keeps base "/" so `npm run dev`
-  // behaves exactly as before. See src/utils/assetUrl.ts for how
-  // scenario-authored "/assets/..." paths pick this up at runtime.
-  const base = command === 'build' ? '/IM_Flow_Builder/' : '/'
+export default defineConfig(() => {
+  // VCR serves the application at the domain root. Keep this configurable so
+  // an alternate host can still provide a sub-path when building locally.
+  // See src/utils/assetUrl.ts for scenario-authored "/assets/..." paths.
+  const base = process.env.VITE_BASE_PATH || '/'
 
   return {
     base,

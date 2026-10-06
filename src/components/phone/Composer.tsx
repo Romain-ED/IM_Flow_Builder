@@ -23,6 +23,7 @@ export function Composer() {
   const activeInput = findActiveInput(history, currentNodeId)
   const inputMessage = activeInput?.message.type === 'input' ? activeInput.message : null
   const handleFreeText = useSimulatorStore((s) => s.handleFreeText)
+  const liveSessionActive = useSimulatorStore((s) => s.liveSessionActive)
   const theme = channelThemes[channel]
   const placeholder = inputMessage?.placeholder ?? 'Type a message'
 
@@ -31,7 +32,7 @@ export function Composer() {
   }, [inputMessage?.variable, currentNodeId])
 
   function submit() {
-    if (!value.trim()) return
+    if (liveSessionActive || !value.trim()) return
     handleFreeText(value.trim())
     setValue('')
   }
@@ -41,7 +42,9 @@ export function Composer() {
 
   return (
     <div className="shrink-0 bg-white border-t border-slate-200 px-3 py-2.5">
-      {ended ? (
+      {liveSessionActive ? (
+        <p className="text-center text-[12px] text-indigo-500 py-1.5 m-0">Live RCS is active · reply from the test phone</p>
+      ) : ended ? (
         <p className="text-center text-[12px] text-slate-400 py-1.5 m-0">Conversation ended · use Restart to play again</p>
       ) : errored ? (
         <p className="text-center text-[12px] text-rose-500 py-1.5 m-0">

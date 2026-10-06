@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.17.0',
+    date: '2026-10-06',
+    changes: [
+      'New: opt-in Live RCS demo mode for RCS-authored flows. The sidebar runs strict transport preflight, requires a non-persisted operator token, starts an allowlisted fixed-recipient session, and mirrors inbound/status events while the real phone owns the next reply.',
+      'New: VCR Node API/webhook foundation with server-only configuration, recipient and flow allowlists, body limits, signed-webhook verification, callback idempotency, file-backed development sessions, fake transport, and safe configuration diagnostics. Live delivery remains disabled until VCR environment configuration is supplied.',
+      'New: the Singapore Airlines RCS demo is live-safe: it uses public PDF boarding-pass media and normal RCS messages instead of simulator-only wallet/download system actions. See docs/LIVE_RCS_DEMO.md for VCR setup, flow restrictions, gateway readiness, and operations.',
+    ],
+  },
+  {
     version: '0.16.3',
     date: '2026-08-17',
     changes: [

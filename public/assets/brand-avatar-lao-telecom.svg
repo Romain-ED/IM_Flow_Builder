@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background circle - Lao Telecom brand blue -->
+  <circle cx="32" cy="32" r="32" fill="#003DA5"/>
+  <!-- Signal waves representing telecom connectivity -->
+  <path d="M32 20 Q32 20 32 20" stroke="#ffffff" stroke-width="0" fill="none"/>
+  <path d="M24 36 A12 12 0 0 1 40 36" stroke="#ffffff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M20 40 A16 16 0 0 1 44 40" stroke="#ffffff" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M16 44 A20 20 0 0 1 48 44" stroke="#ffffff" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.4"/>
+  <!-- Central signal dot -->
+  <circle cx="32" cy="32" r="3.5" fill="#ffffff"/>
+  <!-- LT text abbreviation -->
+  <text x="32" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#ffffff" opacity="0.9">LTC</text>
+</svg>

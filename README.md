@@ -1,8 +1,8 @@
 # Business Messaging Flow Simulator
 
-An interactive, browser-only prototyping tool for conversational business messaging journeys on RCS Business Messaging and WhatsApp Business. Load a flow written in JSON or YAML and immediately walk through it as if you were the customer, inside a realistic phone-shaped chat UI.
+An interactive simulator and **opt-in Live RCS demo** platform for conversational business messaging journeys on RCS Business Messaging and WhatsApp Business. Load a flow written in JSON or YAML and immediately walk through it in a realistic phone-shaped chat UI, then—when the VCR server is explicitly configured—run a strict, allowlisted RCS flow against one real test phone.
 
-It is **not connected to any real messaging API**. It's built for demos, customer workshops, sales engineering, solution-architecture walkthroughs, and conversational UX design — a place to iterate on a flow definition and see it rendered and interacted with instantly, in whichever channel's visual language you pick.
+It defaults to a **local simulator** for demos, customer workshops, sales engineering, solution-architecture walkthroughs, and conversational UX design. Live RCS is disabled by default and uses server-only configuration, a fixed test recipient, strict transport preflight, and authenticated webhooks—see [Live RCS demo operations](docs/LIVE_RCS_DEMO.md).
 
 ## What it does
 
@@ -28,19 +28,21 @@ npm test           # run the Vitest unit test suite once
 npm run test:watch # run tests in watch mode
 ```
 
-Everything runs entirely in the browser — there is no backend. User preferences (channel, fast mode, presenter mode, debug-warning visibility) and the last-loaded scenario (including any edited variables) are persisted to `localStorage`, so a reload picks up where you left off.
+The simulator UI remains browser-first: preferences, editable scenarios, and local simulation history stay in `localStorage`. The VCR Node server is used only for the opt-in Live RCS API, webhook verification, server-only credentials, and live-session persistence; it is not involved in normal simulation.
 
-## Deployment (GitHub Pages)
+## Deployment (Vonage Cloud Runtime)
 
-Every push to `main` builds and deploys the app to GitHub Pages via `.github/workflows/deploy-pages.yml`, publishing it at:
+Vonage Cloud Runtime (VCR) is the primary deployment target. The project uses the dedicated `im-flow-builder` Vonage application and serves the production Vite build through `server/index.js`.
 
+The VCR manifest is in `vcr.yml`. Its build step runs `build.sh`, which produces `dist/`; VCR then starts the Node server with the injected `VCR_PORT` and checks `GET /_/health` before routing traffic to the app. In addition to static assets and SPA routing, the server exposes the opt-in Live RCS API and Vonage webhook routes. See [Live RCS demo operations](docs/LIVE_RCS_DEMO.md) before enabling them.
+
+```bash
+npm run build       # type-check and create dist/
+npm start           # serve dist locally on VCR-compatible port handling
+npm run deploy      # build and deploy with the VCR CLI
 ```
-https://romain-ed.github.io/IM_Flow_Builder/
-```
 
-One-time setup (repo admin only, done once): in **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**. After that, deploys are fully automatic — no manual step is needed per release. (GitHub Pages also requires either a public repo or a paid plan on a private one.)
-
-Because GitHub Pages serves this as a project site under a sub-path rather than a domain root, production builds set Vite's `base` to `/IM_Flow_Builder/` (see `vite.config.ts`); the dev server keeps `base: '/'` so local development is unaffected. Scenario-authored asset paths (`"/assets/logo.svg"` etc.) are resolved against that base at runtime by `src/utils/assetUrl.ts`, used by the two components that ever render an `<img>` (`Avatar`, `ImageWithFallback`) — so custom scenarios you author or import keep working under either a root or a sub-path deployment without any changes.
+VCR serves the application at the domain root, so Vite uses `base: '/'` by default. To build for another host or sub-path, set `VITE_BASE_PATH` before running the build. Scenario-authored asset paths (`"/assets/logo.svg"` etc.) continue to resolve against the configured base through `src/utils/assetUrl.ts`. VCR deployment excludes local-only files through `.vcrignore`.
 
 ## Architecture
 

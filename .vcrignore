@@ -1,0 +1,29 @@
+# Dependencies and local artifacts
+node_modules/
+logs/
+*.log
+
+# Git and local configuration
+.git/
+.gitignore
+.env
+.env.*
+.DS_Store
+
+# Editor and workspace metadata
+.vscode/
+.idea/
+.kiro/
+
+# Documentation is included because the app imports the authoring guide at build time
+
+# Repository-only automation
+.github/
+
+# VCR manifest is used by the CLI but is not needed by the runtime
+vcr.yml
+.vcrignore
+
+# Runtime session data must be supplied from a durable VCR volume, never deployed from source.
+.live-rcs-sessions.json
+.live-rcs-sessions.json.*

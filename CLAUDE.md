@@ -7,12 +7,7 @@ conventions that aren't obvious from reading the code**.
 
 ## What this is
 
-"Business Messaging Flow Simulator" — a client-only React/TS/Vite app that
-plays back JSON/YAML-authored conversation flows as a realistic phone UI,
-rendered per-channel (RCS / WhatsApp). No backend, no real message
-delivery. Built entirely in Claude Code sessions; see the Manual's
-Changelog tab (`src/app/changelog.ts`) for the full feature history —
-that's more current than anything written here.
+"Business Messaging Flow Simulator" — a React/TS/Vite simulator with an opt-in VCR Node service for Live RCS. It plays back JSON/YAML-authored flows in an RCS/WhatsApp phone UI by default; Live RCS is disabled unless server-only configuration enables one allowlisted test-recipient session. See `docs/LIVE_RCS_DEMO.md` for the operation and safety contract.
 
 A third "Generic" channel existed through 0.7.0 and was removed in 0.8.0
 at the user's explicit request, once the goal shifted to matching the
@@ -349,13 +344,7 @@ into the app verbatim via Vite's `?raw` suffix
 in-app system prompt and the "copy this into any AI tool" text can never
 drift apart; there is exactly one copy of this spec.
 
-**Why BYO-API-key, client-side, no backend**: this app is explicitly
-static-hosted (GitHub Pages) with zero server-side code, and that's not
-changing for this feature — a real backend proxy would be a materially
-different, bigger project (hosting, cost, abuse-prevention). Anthropic's
-API supports direct browser calls via the
-`anthropic-dangerous-direct-browser-access` header specifically for
-tools like this one. `src/utils/aiScenarioGenerator.ts` calls it with a
+**Why BYO-API-key, client-side, no Anthropic proxy**: although Live RCS now has a small VCR server, it must never receive or proxy an author's Anthropic API key. Anthropic's API supports direct browser calls via the `anthropic-dangerous-direct-browser-access` header specifically for tools like this one. `src/utils/aiScenarioGenerator.ts` calls it with a
 key the user pastes in and `store/persistence.ts` stores client-side
 (`loadAiApiKey`/`saveAiApiKey`/`clearAiApiKey`, same pattern as
 `loadPreferences`) — sent only to Anthropic, never to any server of
@@ -722,26 +711,17 @@ product's info first, not an invented name.
   dev branch) and `main` (kept fast-forwarded to match it after every
   push: `git branch -f main claude/messaging-flow-simulator-wboec4 && git
   push origin main`).
-- **The GitHub Pages deploy workflow (`.github/workflows/deploy-pages.yml`)
-  only triggers on push to `claude/messaging-flow-simulator-wboec4`, not
-  `main`.** This is because the repo's Pages environment only allows
-  deployments from the repository's actual **default branch**, which is
-  still that feature branch (it was never changed to `main` when the repo
-  was set up). Always push the feature branch — that's what actually
-  deploys. If the default branch is ever changed in GitHub settings, this
-  workflow's trigger needs to move to match it (or better, `main`, if it
-  ever gets promoted to default).
-- The repo was renamed `Vonage_test` → `IM_Flow_Builder` mid-session and
-  made **public** (GitHub Pages requires a public repo on the free plan —
-  it silently shows an "Upgrade or make public" message otherwise, easy
-  to miss). If the repo is renamed again, update together: `vite.config.ts`
-  (`base: '/IM_Flow_Builder/'`), `src/utils/assetUrl.ts` (comment only),
-  README's Pages URL, and the git remote (`git remote set-url origin ...`
-  — though GitHub's redirect makes pushes to the old URL keep working for
-  a while, don't rely on that long-term).
-- Live URL: `https://romain-ed.github.io/IM_Flow_Builder/`.
+- **Vonage Cloud Runtime (VCR) is the primary deployment target.** Run
+  `npm run deploy` from this project to invoke the VCR CLI. The manifest is
+  `vcr.yml`, the build step is `build.sh`, and the deployed application ID is
+  `0ba99fd4-3f1f-45f9-b8a3-8a76ecf9ebe2`.
+- VCR serves the app at the domain root, so `vite.config.ts` defaults to
+  `base: '/'`. The VCR server entrypoint is `server/index.js`; it must keep
+  listening on `VCR_PORT` and serving `GET /_/health`.
+- `.vcrignore` excludes local-only files from the deployment package. Do not
+  add secrets, `.env` files, or `node_modules` to the VCR package.
 - If a GitHub MCP tool 403s on push after a rename, the session's git
-  proxy has cached authorization under the old repo identity — call
+  proxy may have cached authorization under the old repo identity — call
   `add_repo` (Claude_Code_Remote MCP) for the new owner/repo to
   re-authorize; no need to actually clone anywhere, just re-push from the
   existing local checkout afterward.
@@ -829,3 +809,10 @@ before wiring it in or removing it if you're picking this up later.
   organized by feature area with comments).
 - Tests: colocated `*.test.ts` next to the thing they test; run all with
   `npm test`.
+
+
+## Live RCS guardrails (0.14.0)
+
+The VCR Node server is now part of the production deployment. It must continue to serve `GET /_/health`, static assets, and SPA fallback while preserving the isolated Live RCS namespaces: `GET /api/live/diagnostics`, authenticated `/api/live/*`, and `POST /webhooks/vonage/*`.
+
+Live delivery is **off by default**. Never expose or persist Vonage JWTs, webhook secrets, RCS sender IDs, test recipient numbers, or `LIVE_RCS_OPERATOR_TOKEN` in the client/source/scenario/localStorage. The recipient and flow allowlist are server-side. `server/liveDemo.js` deliberately fails closed for unverified Vonage rich-content payloads; do not replace that guard with guessed card/carousel JSON. Add a reviewed provider mapping plus redacted fixtures only after consulting the authenticated application reference. Keep `docs/LIVE_RCS_DEMO.md`, README, and the in-app changelog current when this operational contract changes.

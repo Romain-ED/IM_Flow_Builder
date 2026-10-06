@@ -1,0 +1,19 @@
+project:
+  name: im-flow-builder
+instance:
+  name: prod
+  runtime: nodejs22
+  region: aws.apse1
+  application-id: 0ba99fd4-3f1f-45f9-b8a3-8a76ecf9ebe2
+  build-script: ./build.sh
+  entrypoint:
+    - node
+    - server/index.js
+  security:
+    access: public
+debug:
+  application-id: 0ba99fd4-3f1f-45f9-b8a3-8a76ecf9ebe2
+  entrypoint:
+    - node
+    - --inspect
+    - server/index.js

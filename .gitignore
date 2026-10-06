@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Live RCS session store (contains test-recipient transcript data)
+.live-rcs-sessions.json
+.live-rcs-sessions.json.*

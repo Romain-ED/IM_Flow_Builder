@@ -1,11 +1,14 @@
 {
   "name": "business-messaging-flow-simulator",
   "private": true,
-  "version": "0.16.3",
+  "version": "0.17.0",
+  "main": "server/index.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "start": "node server/index.js",
+    "deploy": "vcr deploy",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",

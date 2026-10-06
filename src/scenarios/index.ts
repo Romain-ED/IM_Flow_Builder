@@ -3,6 +3,7 @@ import ecommerceSource from './ecommerce.yaml?raw'
 import restaurantSource from './restaurant.yaml?raw'
 import beerlaoSource from './beerlao.yaml?raw'
 import progadgetLaosSource from './progadget-laos.yaml?raw'
+import ltcLaoTelecomSource from './ltc-lao-telecom.yaml?raw'
 
 export interface BuiltInScenario {
   id: string
@@ -41,6 +42,12 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
     name: 'Pro Gadget Laos pre-order & launch',
     description: 'Phone-verified pre-order (OTP) → order/shipping updates → WhatsApp promo broadcast.',
     source: progadgetLaosSource,
+  },
+  {
+    id: 'ltc-lao-telecom',
+    name: 'Lao Telecom — Utility notifications',
+    description: 'Data usage alert → prepaid balance warning → bill payment reminder.',
+    source: ltcLaoTelecomSource,
   },
 ]
 

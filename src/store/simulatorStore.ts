@@ -76,6 +76,8 @@ export interface SimulatorState {
   debugPanelOpen: boolean
   debugWarningsEnabled: boolean
   compareMode: boolean
+  /** True while the real device, rather than the browser simulator, owns the next interaction. */
+  liveSessionActive: boolean
 
   configuredVariables: VariableMap
   configuredBrand: BrandDefinition
@@ -153,6 +155,7 @@ export interface SimulatorState {
   toggleCompareMode: () => void
   setChannel: (channel: ChannelId) => void
   setStartNodeOverride: (nodeId: string | null) => void
+  setLiveSessionActive: (active: boolean) => void
   updateConfiguredVariable: (key: string, value: string | number | boolean) => void
   resetConfiguredVariables: () => void
   updateConfiguredBrand: (patch: Partial<BrandDefinition>) => void
@@ -193,6 +196,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
   }
 
   function applyInteractionResult(result: InteractionResult) {
+    if (get().liveSessionActive) return
     const s = get()
     const nodeId = s.currentNodeId
     if (!nodeId) return
@@ -255,6 +259,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     debugPanelOpen: false,
     compareMode: false,
     debugWarningsEnabled: true,
+    liveSessionActive: false,
 
     configuredVariables: {},
     configuredBrand: { name: '' },
@@ -435,6 +440,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     goToNode: async (nodeId, hops = 0) => {
       const state = get()
+      if (state.liveSessionActive) return
       if (!state.flow) return
       const token = state.playToken + 1
       set({ playToken: token, isPlaying: true, pendingOutcome: null, isTyping: false })
@@ -522,6 +528,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     restart: () => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow) return
       const token = s.playToken + 1
       set({
@@ -546,6 +553,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     back: () => {
       const s = get()
+      if (s.liveSessionActive) return
       if (s.snapshots.length === 0) return
       const last = s.snapshots[s.snapshots.length - 1]
       set({
@@ -582,6 +590,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleAction: (action) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       if (action.type !== 'reply') {
         set((state) => ({
@@ -638,6 +647,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     simulateCardAction: (toastMessage, next, set) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       get().showToast(toastMessage)
       if (next || set) {
@@ -648,6 +658,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleBoardingPassAction: (action, message) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       if (message.message.type !== 'boarding_pass') return
       const bp = message.message
@@ -721,6 +732,10 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         return { channel }
       }),
     setStartNodeOverride: (nodeId) => set({ startNodeOverride: nodeId }),
+    setLiveSessionActive: (active) =>
+      set((s) => active
+        ? { liveSessionActive: true, playToken: s.playToken + 1, isPlaying: false, isTyping: false, isPaused: false }
+        : { liveSessionActive: false }),
 
     updateConfiguredVariable: (key, value) => {
       set((s) => ({ configuredVariables: { ...s.configuredVariables, [key]: value } }))

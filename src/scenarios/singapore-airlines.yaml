@@ -327,6 +327,7 @@ nodes:
         title: Your boarding pass
         description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
         fileType: PDF
+        url: /assets/boarding-pass-demo.pdf
       - type: text
         sender: business
         text: |
@@ -350,10 +351,6 @@ nodes:
   # --------------------------------------------------
   - id: boarding_pass_downloaded
     messages:
-      - type: system_action
-        action: download
-        title: Boarding pass downloaded
-        description: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
       - type: text
         sender: business
         text: |
@@ -373,10 +370,6 @@ nodes:
   # --------------------------------------------------
   - id: wallet_added
     messages:
-      - type: system_action
-        action: wallet
-        title: Added to wallet
-        description: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
       - type: text
         sender: business
         text: |
@@ -423,6 +416,7 @@ nodes:
         title: Your boarding pass
         description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
         fileType: PDF
+        url: /assets/boarding-pass-demo.pdf
       - type: text
         sender: business
         text: |
