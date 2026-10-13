@@ -15,6 +15,40 @@ export function DocumentMessage({ message, channel, timestampLabel, interactive 
   const showToast = useSimulatorStore((s) => s.showToast)
   if (message.message.type !== 'document') return null
   const { sender, filename, title, description, fileType } = message.message
+  if (channel === 'rcs') {
+    // Google Messages file preview (no thumbnail): grey preview area, a red
+    // file-type badge with the file name, then title/description on the tint.
+    const label = (fileType ?? 'FILE').toUpperCase()
+    return (
+      <MessageShell sender={sender ?? 'business'} channel={channel} chrome="card" timestampLabel={timestampLabel} tinted>
+        <button
+          type="button"
+          className="block w-full bg-[#f1f0f0] px-4 pb-3 pt-4 text-left cursor-pointer disabled:cursor-not-allowed"
+          onClick={interactive ? () => showToast(`${filename} downloaded`) : undefined}
+          disabled={!interactive}
+        >
+          <span className="mb-3 flex justify-center text-slate-300">
+            <FileText size={26} aria-hidden="true" />
+          </span>
+          <span className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e0352b] text-[11px] font-bold text-white">
+              {label.slice(0, 4)}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[14px] font-medium text-slate-900">{filename}</span>
+              <span className="block text-[12.5px] text-slate-600">{label}</span>
+            </span>
+          </span>
+        </button>
+        {(title || description) && (
+          <div className="px-4 pb-4 pt-3">
+            {title && <p className="m-0 text-[15px] font-semibold leading-snug text-slate-900">{title}</p>}
+            {description && <p className="m-0 mt-1 text-[13.5px] leading-relaxed text-slate-600">{description}</p>}
+          </div>
+        )}
+      </MessageShell>
+    )
+  }
 
   return (
     <MessageShell sender={sender ?? 'business'} channel={channel} chrome="card" timestampLabel={timestampLabel}>

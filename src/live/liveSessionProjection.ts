@@ -12,7 +12,7 @@ const liveActionSchema = z.object({
 const liveMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('text'), sender: z.enum(['business', 'user']).optional(), text: z.string() }),
   z.object({ type: z.literal('image'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), caption: z.string().optional() }),
-  z.object({ type: z.literal('video'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), caption: z.string().optional() }),
+  z.object({ type: z.literal('video'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), thumbnailUrl: z.string().max(1000).optional(), caption: z.string().optional(), durationLabel: z.string().max(64).optional() }),
   z.object({ type: z.literal('file'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), filename: z.string(), title: z.string().optional(), description: z.string().optional() }),
   z.object({ type: z.literal('document'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), filename: z.string(), title: z.string().optional(), description: z.string().optional() }),
   z.object({ type: z.literal('card'), sender: z.enum(['business', 'user']).optional(), image: z.string().optional(), url: z.string().optional(), title: z.string(), description: z.string().optional(), actions: z.array(liveActionSchema).optional() }),
@@ -81,7 +81,7 @@ function mapMessage(message: z.infer<typeof liveMessageSchema>, sender: 'busines
   switch (message.type) {
     case 'text': return { type: 'text', ...common, text: message.text }
     case 'image': return { type: 'image', ...common, url: message.url ?? '', ...(message.caption ? { caption: message.caption } : {}) }
-    case 'video': return { type: 'video', ...common, url: message.url, ...(message.caption ? { caption: message.caption } : {}) }
+    case 'video': return { type: 'video', ...common, url: message.url, ...(message.thumbnailUrl ? { thumbnailUrl: message.thumbnailUrl } : {}), ...(message.caption ? { caption: message.caption } : {}), ...(message.durationLabel ? { durationLabel: message.durationLabel } : {}) }
     case 'file':
     case 'document': return { type: 'document', ...common, filename: message.filename, url: message.url, ...(message.title ? { title: message.title } : {}), ...(message.description ? { description: message.description } : {}) }
     case 'card': return {

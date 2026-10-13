@@ -1,6 +1,7 @@
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
+import { darkField, darkSurface } from '../../utils/darkChrome'
 
 export function DebugOptions() {
   const fastMode = useSimulatorStore((s) => s.fastMode)
@@ -15,7 +16,7 @@ export function DebugOptions() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <SectionHeading accent={sectionAccents.debug}>Debug options</SectionHeading>
+      <SectionHeading accent={sectionAccents.debug} tone="dark">Debug options</SectionHeading>
       <ToggleRow label="Fast demo mode" checked={fastMode} onChange={toggleFastMode} trackClass="peer-checked:bg-emerald-500" />
       <ToggleRow
         label="Show capability warnings"
@@ -31,11 +32,11 @@ export function DebugOptions() {
       />
       {flow && (
         <label className="flex flex-col gap-0.5">
-          <span className="text-[11.5px] text-slate-500">Start node (on Restart)</span>
+          <span className={`text-[11.5px] ${darkSurface.muted}`}>Start node (on Restart)</span>
           <select
             value={startNodeOverride ?? flow.start}
             onChange={(e) => setStartNodeOverride(e.target.value === flow.start ? null : e.target.value)}
-            className="rounded-md border border-amber-200 px-2 py-1.5 text-[12.5px] bg-white focus:outline-none focus:ring-2 focus:ring-amber-200"
+            className={darkField}
           >
             {flow.nodes.map((node) => (
               <option key={node.id} value={node.id}>
@@ -62,10 +63,12 @@ function ToggleRow({
 }) {
   return (
     <label className="flex items-center justify-between cursor-pointer select-none">
-      <span className="text-[12.5px] text-slate-700">{label}</span>
+      <span className={`text-[12.5px] ${darkSurface.body}`}>{label}</span>
       <span className="relative inline-flex h-5 w-9 items-center">
         <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
-        <span className={`absolute inset-0 rounded-full bg-slate-200 transition-colors ${trackClass}`} />
+        <span
+          className={`absolute inset-0 rounded-full bg-slate-500 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo-300 ${trackClass}`}
+        />
         <span className="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
       </span>
     </label>

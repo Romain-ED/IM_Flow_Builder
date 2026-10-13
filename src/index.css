@@ -59,6 +59,23 @@ body {
   background: transparent;
 }
 
+/* Scrollbar for the dark sidebar */
+.thin-scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(71 85 105) transparent;
+}
+.thin-scrollbar-dark::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scrollbar-dark::-webkit-scrollbar-thumb {
+  background-color: rgb(71 85 105);
+  border-radius: 999px;
+}
+.thin-scrollbar-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Hide scrollbar but keep scrolling for carousels */
 .no-scrollbar {
   scrollbar-width: none;
@@ -242,7 +259,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  color: #68458f;
+  color: #0b57d0;
   font-size: 10px;
 }
 .rcs-profile-action > span {
@@ -252,7 +269,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: #e8ddf5;
+  background: #f0f4f9;
 }
 .rcs-profile-action strong {
   font-size: 10px;

@@ -15,26 +15,18 @@ interface TextMessageProps {
 export function TextMessage({ message, channel, timestampLabel, deliveryState, trailingActions }: TextMessageProps) {
   if (message.message.type !== 'text') return null
   const { sender, text } = message.message
-  const isRcsMoreOptions = channel === 'rcs' && text.trim() === 'More options:'
   return (
     <MessageShell
       sender={sender ?? 'business'}
       channel={channel}
-      chrome={isRcsMoreOptions ? 'none' : 'bubble'}
+      chrome="bubble"
       timestampLabel={timestampLabel}
       deliveryState={deliveryState}
       trailingActions={trailingActions}
-      className={isRcsMoreOptions ? 'py-0.5' : ''}
     >
-      {isRcsMoreOptions ? (
-        <span className="inline-flex items-center rounded-full border border-[#cdb8e3] bg-[#eee5fa] px-3.5 py-1.5 text-[12px] font-medium text-[#68458f] shadow-sm">
-          More options:
-        </span>
-      ) : (
-        <p className="m-0 whitespace-pre-wrap break-words text-[14.5px] leading-relaxed">
-          <FormattedText text={text} />
-        </p>
-      )}
+      <p className="m-0 whitespace-pre-wrap break-words text-[14.5px] leading-relaxed">
+        <FormattedText text={text} />
+      </p>
     </MessageShell>
   )
 }

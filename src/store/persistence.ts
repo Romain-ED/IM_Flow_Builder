@@ -38,6 +38,18 @@ export interface CustomScenario {
   updatedAt: number
 }
 
+/**
+ * Read-only share-link viewers must never write to the visitor's (or the
+ * owner's) localStorage. Once locked, every `save*`/`clear*` below is a
+ * no-op for the rest of the page load — a storage-level guarantee that holds
+ * even if some UI or store path were to call a persist helper by mistake.
+ */
+let writesLocked = false
+
+export function lockStorageWrites(): void {
+  writesLocked = true
+}
+
 function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
@@ -53,7 +65,7 @@ export function loadPreferences(): Partial<StoredPreferences> | null {
 }
 
 export function savePreferences(preferences: StoredPreferences): void {
-  if (!isBrowser()) return
+  if (writesLocked || !isBrowser()) return
   try {
     window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences))
   } catch {
@@ -72,7 +84,7 @@ export function loadLastScenario(): StoredScenario | null {
 }
 
 export function saveLastScenario(scenario: StoredScenario): void {
-  if (!isBrowser()) return
+  if (writesLocked || !isBrowser()) return
   try {
     window.localStorage.setItem(SCENARIO_KEY, JSON.stringify(scenario))
   } catch {
@@ -91,7 +103,7 @@ export function loadCustomScenarios(): CustomScenario[] {
 }
 
 export function saveCustomScenarios(scenarios: CustomScenario[]): void {
-  if (!isBrowser()) return
+  if (writesLocked || !isBrowser()) return
   try {
     window.localStorage.setItem(CUSTOM_SCENARIOS_KEY, JSON.stringify(scenarios))
   } catch {
@@ -115,7 +127,7 @@ export function loadAiApiKey(): string | null {
 }
 
 export function saveAiApiKey(key: string): void {
-  if (!isBrowser()) return
+  if (writesLocked || !isBrowser()) return
   try {
     window.localStorage.setItem(AI_API_KEY_KEY, key)
   } catch {
@@ -124,7 +136,7 @@ export function saveAiApiKey(key: string): void {
 }
 
 export function clearAiApiKey(): void {
-  if (!isBrowser()) return
+  if (writesLocked || !isBrowser()) return
   try {
     window.localStorage.removeItem(AI_API_KEY_KEY)
   } catch {

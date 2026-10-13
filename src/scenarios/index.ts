@@ -4,7 +4,6 @@ import restaurantSource from './restaurant.yaml?raw'
 import beerlaoSource from './beerlao.yaml?raw'
 import progadgetLaosSource from './progadget-laos.yaml?raw'
 import ltcLaoTelecomSource from './ltc-lao-telecom.yaml?raw'
-import dominosRcsVideoCampaignSource from './dominos-rcs-video-campaign.yaml?raw'
 import dominosSingaporeRcsDemoSource from './dominos-singapore-rcs-demo.yaml?raw'
 
 export interface BuiltInScenario {
@@ -52,17 +51,17 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
     source: ltcLaoTelecomSource,
   },
   {
-    id: 'dominos-rcs-video-campaign',
-    name: "Domino's Video & Deals",
-    description: 'Personalized pizza-night video promotion with deals, vouchers, and menu discovery.',
-    source: dominosRcsVideoCampaignSource,
-  },
-  {
     id: 'dominos-singapore-rcs-demo',
     name: "Domino's Pizza Singapore — RCS Demo Flow",
     description: 'Promotions → menu browsing → order builder → store finder → checkout, tracking, and customer care.',
     source: dominosSingaporeRcsDemoSource,
   },
 ]
+
+/**
+ * Built-in scenario ids that were removed. A browser that persisted one of these
+ * (the last-loaded flow is stored as full source) falls back to the default scenario.
+ */
+export const REMOVED_SCENARIO_IDS: readonly string[] = ['dominos-rcs-video-campaign']
 
 export const DEFAULT_SCENARIO = BUILT_IN_SCENARIOS[0]

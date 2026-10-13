@@ -5,6 +5,7 @@ import { useSimulatorStore } from '../../store/simulatorStore'
 import type { LiveProjection, LiveSnapshot } from '../../live/liveSessionProjection'
 import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
+import { darkField, darkFocusRing, darkNotices, darkSolids, darkSurface, darkTints } from '../../utils/darkChrome'
 
 interface LiveDiagnostics {
   mode: 'disabled' | 'fake' | 'vonage'
@@ -158,9 +159,9 @@ export function LiveRcsControls() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <SectionHeading accent={sectionAccents.inspector}>Live RCS demo</SectionHeading>
+      <SectionHeading accent={sectionAccents.inspector} tone="dark">Live RCS demo</SectionHeading>
       {offline && <Notice icon={WifiOff} tone="amber">Live mode requires a network connection.</Notice>}
-      {!diagnostics && !error && <p className="text-[12px] text-slate-500 m-0">Checking server readiness…</p>}
+      {!diagnostics && !error && <p className={`text-[12px] m-0 ${darkSurface.muted}`}>Checking server readiness…</p>}
       {diagnostics && !diagnostics.ready && (
         <Notice icon={CircleAlert} tone="amber">
           Live RCS is disabled. {diagnostics.errors[0] ?? 'Configure the VCR server environment first.'}
@@ -168,8 +169,8 @@ export function LiveRcsControls() {
       )}
       {diagnostics?.ready && (
         <>
-          <p className="text-[12px] leading-4 text-slate-600 m-0">
-            <span className="font-medium text-slate-800">{diagnostics.mode === 'fake' ? 'Fake transport' : 'Fixed test phone'}:</span>{' '}
+          <p className={`text-[12px] leading-4 m-0 ${darkSurface.body}`}>
+            <span className="font-medium text-white">{diagnostics.mode === 'fake' ? 'Fake transport' : 'Fixed test phone'}:</span>{' '}
             {diagnostics.recipient} · {diagnostics.storage}
           </p>
           {needsRcsScenario && <Notice icon={CircleAlert} tone="amber">Load an RCS-authored scenario before starting Live RCS.</Notice>}
@@ -182,34 +183,34 @@ export function LiveRcsControls() {
           {preflight?.success && !session && <Notice icon={CircleCheck} tone="emerald">Flow passes strict Live RCS preflight.</Notice>}
           {!session && (
             <label className="flex flex-col gap-1">
-              <span className="text-[11.5px] text-slate-500">Operator access token (not stored)</span>
+              <span className={`text-[11.5px] ${darkSurface.muted}`}>Operator access token (not stored)</span>
               <input
                 type="password"
                 autoComplete="off"
                 value={operatorToken}
                 onChange={(event) => setOperatorToken(event.target.value)}
                 placeholder="Paste access token"
-                className="rounded-md border border-slate-200 px-2 py-1.5 text-[12px] bg-white focus:outline-none focus:ring-2 focus:ring-teal-200"
+                className={darkField}
               />
             </label>
           )}
           {session ? (
             <>
-              <div className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-2 text-[12px] text-indigo-800">
+              <div className={`rounded-md border px-2.5 py-2 text-[12px] ${darkNotices.indigo}`}>
                 <div className="flex items-center justify-between gap-2"><span className="font-medium">{liveProjection?.status?.replaceAll('_', ' ') ?? session.status.replaceAll('_', ' ')}</span><span className="font-mono text-[10px]">{session.id.slice(0, 8)}</span></div>
                 <p className="mt-1 m-0">Node: {nodeLabel ? `${nodeLabel} · ` : ''}<span className="font-mono">{liveProjection?.currentNodeId ?? 'unavailable'}</span></p>
                 <p className="mt-1 m-0 truncate">Inbound: {activityLabel(liveProjection?.activity.latestInbound ?? null)}</p>
                 <p className="mt-1 m-0 truncate">Outbound: {activityLabel(liveProjection?.activity.latestOutbound ?? null)}</p>
                 {liveProjection?.activity.latestProvider && <p className="mt-1 m-0 truncate">Provider: {activityLabel(liveProjection.activity.latestProvider)}</p>}
-                {liveSyncState === 'stale' && <p className="mt-1 m-0 text-amber-700">Live view is stale; retaining the last valid snapshot.</p>}
-                {liveSyncState === 'error' && <p className="mt-1 m-0 text-rose-700">Live view is unavailable until a valid snapshot arrives.</p>}
+                {liveSyncState === 'stale' && <p className="mt-1 m-0 text-amber-300">Live view is stale; retaining the last valid snapshot.</p>}
+                {liveSyncState === 'error' && <p className="mt-1 m-0 text-rose-300">Live view is unavailable until a valid snapshot arrives.</p>}
               </div>
-              <button type="button" onClick={() => void stop()} disabled={isLoading} className="flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 disabled:opacity-40 cursor-pointer">
+              <button type="button" onClick={() => void stop()} disabled={isLoading} className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium ${darkTints.rose} ${darkFocusRing} disabled:opacity-40 cursor-pointer`}>
                 <Square size={12} fill="currentColor" /> Stop live session
               </button>
             </>
           ) : (
-            <button type="button" onClick={() => void start()} disabled={!canStart || isLoading} className="flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+            <button type="button" onClick={() => void start()} disabled={!canStart || isLoading} className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium ${darkSolids.teal} ${darkFocusRing} disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}>
               {isLoading ? <LoaderCircle size={13} className="animate-spin" /> : <Radio size={13} />} Start live RCS
             </button>
           )}
@@ -221,6 +222,6 @@ export function LiveRcsControls() {
 }
 
 function Notice({ icon: Icon, tone, children }: { icon: typeof CircleAlert; tone: 'amber' | 'rose' | 'emerald'; children: ReactNode }) {
-  const classes = tone === 'emerald' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : tone === 'rose' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-amber-200 bg-amber-50 text-amber-700'
+  const classes = darkNotices[tone]
   return <p className={`flex items-start gap-1.5 rounded-md border px-2 py-1.5 text-[11.5px] leading-4 m-0 ${classes}`}><Icon size={13} className="mt-0.5 shrink-0" />{children}</p>
 }

@@ -37,6 +37,11 @@ interface MessageShellProps {
    * as their own message" concept on the real platform.
    */
   trailingActions?: TrailingActionItem[]
+  /**
+   * RCS card look (Google Messages): a tinted body panel with no border or
+   * shadow, inside which white action rows sit. Ignored on WhatsApp.
+   */
+  tinted?: boolean
 }
 
 export function MessageShell({
@@ -49,6 +54,7 @@ export function MessageShell({
   children,
   className = '',
   trailingActions,
+  tinted = false,
 }: MessageShellProps) {
   const theme = channelThemes[channel]
   const isUser = sender === 'user'
@@ -58,7 +64,9 @@ export function MessageShell({
     chrome === 'bubble'
       ? `${theme.bubbleRadius} overflow-hidden ${isUser ? theme.userBubble : theme.businessBubble}`
       : chrome === 'card'
-        ? `${theme.cardRadius} overflow-hidden bg-white border border-slate-200 shadow-sm`
+        ? tinted && channel === 'rcs'
+          ? `${theme.cardRadius} overflow-hidden bg-[#f0f4f9]`
+          : `${theme.cardRadius} overflow-hidden bg-white border border-slate-200 shadow-sm`
         : ''
   // When chrome is 'bubble', padding used to live directly on the bubble div
   // (it had nothing else to share space with). Trailing actions need their
@@ -71,7 +79,16 @@ export function MessageShell({
   // definite width, whereas a percentage on a plain block child resolves
   // against its parent's — here indeterminate — width and silently fails to
   // constrain anything, letting long messages overflow the phone frame.
-  const wrapperMaxWidth = chrome === 'bubble' ? 'max-w-[82%]' : chrome === 'card' ? 'max-w-[86%]' : 'max-w-full'
+  // Tinted RCS cards use a fixed share of the row so their width doesn't depend
+  // on the media's intrinsic size or the title length.
+  const wrapperMaxWidth =
+    chrome === 'bubble'
+      ? 'max-w-[82%]'
+      : chrome === 'card'
+        ? tinted && channel === 'rcs'
+          ? 'w-[86%]'
+          : 'max-w-[86%]'
+        : 'max-w-full'
 
   return (
     <div

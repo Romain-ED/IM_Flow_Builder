@@ -8,6 +8,7 @@ import { FormattedText } from '../components/common/FormattedText'
 import { ActionButton } from '../components/phone/ActionButton'
 import { channelThemes } from '../channels/theme'
 import { assetUrl } from '../utils/assetUrl'
+import { RCS_ACTION_STACK } from '../channels/rcs/cardStyles'
 
 interface CarouselProps {
   message: NormalizedMessage
@@ -97,11 +98,13 @@ function CarouselCardView({
   radiusClass: string
   onImageClick: () => void
 }) {
+  const isRcs = channel === 'rcs'
+
   return (
     <div
       role="listitem"
-      className={`relative shrink-0 snap-start overflow-hidden border border-slate-200 bg-white shadow-sm ${radiusClass} flex flex-col ${!interactive ? 'opacity-60' : ''}`}
-      style={{ width: channel === 'rcs' ? 'min(calc(100% - 56px), 260px)' : '200px' }}
+      className={`relative shrink-0 snap-start overflow-hidden ${isRcs ? 'bg-[#f0f4f9]' : 'border border-slate-200 bg-white shadow-sm'} ${radiusClass} flex flex-col ${!interactive ? 'opacity-60' : ''}`}
+      style={{ width: isRcs ? 'min(calc(100% - 40px), 296px)' : '200px' }}
     >
       {card.image && (
         <button
@@ -110,10 +113,10 @@ function CarouselCardView({
           onClick={channel === 'rcs' ? onImageClick : undefined}
           className={`block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#7350a3] ${channel === 'rcs' ? 'cursor-zoom-in' : ''}`}
         >
-          <ImageWithFallback src={card.image} alt={card.title} className="block h-28 w-full object-cover" />
+          <ImageWithFallback src={card.image} alt={card.title} className={`block ${isRcs ? 'h-[112px]' : 'h-28'} w-full object-cover`} />
         </button>
       )}
-      <div className="flex flex-1 flex-col gap-1 p-3">
+      <div className={`flex flex-1 flex-col ${isRcs ? 'gap-1 px-4 pb-2 pt-4' : 'gap-1 p-3'}`}>
         {card.badges && card.badges.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {card.badges.map((badge) => (
@@ -123,13 +126,13 @@ function CarouselCardView({
             ))}
           </div>
         )}
-        <h5 className="m-0 text-[13.5px] font-semibold leading-snug text-slate-900">{card.title}</h5>
+        <h5 className={`m-0 ${isRcs ? 'text-[14.5px]' : 'text-[13.5px]'} font-semibold leading-snug text-slate-900`}>{card.title}</h5>
         {card.subtitle && <p className="m-0 text-[12px] text-slate-500"><FormattedText text={card.subtitle} /></p>}
-        {card.description && <p className="m-0 text-[12px] leading-snug text-slate-600"><FormattedText text={card.description} /></p>}
+        {card.description && <p className={`m-0 leading-snug text-slate-600 ${isRcs ? 'text-[13px]' : 'text-[12px]'}`}><FormattedText text={card.description} /></p>}
         {card.price && <p className="m-0 mt-0.5 text-[13px] font-semibold text-slate-900">{card.price}</p>}
       </div>
       {card.actions && card.actions.length > 0 && (
-        <div className="flex flex-col border-t border-slate-100">
+        <div className={isRcs ? `${RCS_ACTION_STACK} px-3 pb-3 pt-1` : 'flex flex-col border-t border-slate-100'}>
           {card.actions.map((action, i) => <ActionButton key={i} action={action} channel={channel} interactive={interactive} variant="block" />)}
         </div>
       )}

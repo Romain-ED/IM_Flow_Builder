@@ -10,3 +10,8 @@ export const ACTION_ICONS: Record<Action['type'], LucideIcon> = {
   custom: Sparkles,
   display_only: Sparkles,
 }
+
+/** Resolve authored action types while keeping malformed runtime data renderable. */
+export function getActionIcon(type: Action['type'] | string | null | undefined): LucideIcon {
+  return (type ? ACTION_ICONS[type as Action['type']] : undefined) ?? ArrowRight
+}

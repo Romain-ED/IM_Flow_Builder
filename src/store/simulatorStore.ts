@@ -31,12 +31,13 @@ import { createId } from '../utils/id'
 import { downloadBoardingPassImage } from '../utils/boardingPassFile'
 import { findActiveInput } from '../utils/selectors'
 import { projectLiveSnapshot, type LiveProjection } from '../live/liveSessionProjection'
-import { readShareHash } from '../utils/shareLink'
-import { BUILT_IN_SCENARIOS, DEFAULT_SCENARIO } from '../scenarios'
+import { hasShareHash, readSharedPlatform, readShareHash } from '../utils/shareLink'
+import { BUILT_IN_SCENARIOS, DEFAULT_SCENARIO, REMOVED_SCENARIO_IDS } from '../scenarios'
 import {
   loadCustomScenarios,
   loadLastScenario,
   loadPreferences,
+  lockStorageWrites,
   saveCustomScenarios,
   saveLastScenario,
   savePreferences,
@@ -105,6 +106,12 @@ export interface SimulatorState {
    * on every `initialize()` rather than remembered across visits.
    */
   sharedLinkMode: boolean
+  /**
+   * Set when the URL carried a share payload that could not be loaded
+   * (malformed, truncated, or not a valid flow). The read-only viewer shows
+   * this message instead of any scenario or editor.
+   */
+  sharedLinkError: string | null
   debugPanelOpen: boolean
   debugWarningsEnabled: boolean
   compareMode: boolean
@@ -242,6 +249,16 @@ function persistScenario(state: SimulatorState) {
 }
 
 export const useSimulatorStore = create<SimulatorState>((set, get) => {
+  // Decided synchronously from the URL, before the first render, so a share
+  // link never flashes (or can reach) the editor while its payload decodes.
+  const startedFromShareLink = hasShareHash()
+  // Storage-level lock: a read-only viewer can never write to localStorage.
+  if (startedFromShareLink) lockStorageWrites()
+  // Only true while initialize() loads the shared flow itself.
+  let loadingSharedFlow = false
+  /** In a read-only shared view every editing/configuration action is a no-op. */
+  const isLocked = () => get().sharedLinkMode && !loadingSharedFlow
+
   function persistCurrentScenario() {
     const state = get()
     persistScenario(state)
@@ -329,14 +346,15 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     flowSource: '',
     flowSourceFormat: 'yaml',
     validation: null,
-    customScenarios: loadCustomScenarios(),
+    customScenarios: startedFromShareLink ? [] : loadCustomScenarios(),
     activeCustomScenarioId: null,
 
     channel: 'rcs',
     phonePlatform: DEFAULT_PHONE_PLATFORM,
     fastMode: false,
     presenterMode: false,
-    sharedLinkMode: false,
+    sharedLinkMode: startedFromShareLink,
+    sharedLinkError: null,
     debugPanelOpen: false,
     compareMode: false,
     debugWarningsEnabled: true,
@@ -369,6 +387,35 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     boardingPassPreview: null,
 
     initialize: async () => {
+      if (get().sharedLinkMode) {
+        // Read-only share link: never read the visitor's saved preferences,
+        // last scenario, or custom scenarios, and never fall back to them.
+        const fail = (message: string) =>
+          set({ flow: null, validation: null, sharedLinkError: message })
+        try {
+          const source = await readShareHash()
+          const platform = readSharedPlatform()
+          if (platform) set({ phonePlatform: platform })
+          loadingSharedFlow = true
+          try {
+            if (!get().loadScenarioSource(source)) {
+              const validation = get().validation
+              const detail = validation && !validation.success ? validation.errors[0]?.message : undefined
+              fail(`The shared flow is not valid${detail ? `: ${detail}` : '.'}`)
+            }
+          } finally {
+            loadingSharedFlow = false
+          }
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : ''
+          fail(
+            reason.startsWith('This shared link')
+              ? reason
+              : 'This shared link is damaged or incomplete. Ask the sender for a new link.',
+          )
+        }
+        return
+      }
       const prefs = loadPreferences()
       if (prefs) {
         // A returning visitor may have a channel persisted from before the
@@ -385,22 +432,15 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         }))
       }
 
-      try {
-        const sharedSource = await readShareHash()
-        if (sharedSource && get().loadScenarioSource(sharedSource)) {
-          set({ sharedLinkMode: true })
-          get().showToast('Loaded scenario from shared link')
-          return
-        }
-      } catch {
-        get().showToast('Could not load the shared link — showing the default scenario instead')
-      }
 
       const stored = loadLastScenario()
       const source = stored?.source ?? DEFAULT_SCENARIO.source
       const format = stored?.format ?? 'yaml'
       const parsed = parseFlowSource(source, format)
-      if (parsed.success) {
+      // A flow persisted from a since-removed built-in scenario falls through to the default.
+      const storedId = parsed.success ? (parsed.data as { metadata?: { id?: unknown } }).metadata?.id : undefined
+      const removedBuiltIn = typeof storedId === 'string' && REMOVED_SCENARIO_IDS.includes(storedId)
+      if (parsed.success && !removedBuiltIn) {
         const validation = validateFlow(parsed.data)
         if (validation.success) {
           get().loadFlow(validation.flow, source, format, stored?.configuredVariables, stored?.configuredBrand)
@@ -417,7 +457,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     loadFlow: (flow, sourceText, format, variablesOverride, brandOverride, customScenarioId) => {
-      if (get().liveSessionActive) return
+      if (get().liveSessionActive || isLocked()) return
       const configuredVariables = variablesOverride ?? { ...(flow.variables ?? {}) }
       const configuredBrand = resolveConfiguredBrand(flow.brand, brandOverride)
       set((s) => ({
@@ -436,7 +476,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     loadScenarioSource: (source, formatHint) => {
-      if (get().liveSessionActive) return false
+      if (get().liveSessionActive || isLocked()) return false
       const parsed = parseFlowSource(source, formatHint)
       if (!parsed.success) {
         set({ validation: { success: false, errors: [{ message: parsed.message }] } })
@@ -452,12 +492,13 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     loadBuiltInScenario: (id) => {
-      if (get().liveSessionActive) return
+      if (get().liveSessionActive || isLocked()) return
       const match = BUILT_IN_SCENARIOS.find((sc) => sc.id === id)
       if (match) get().loadScenarioSource(match.source, 'yaml')
     },
 
     importCustomScenario: (source, formatHint, nameOverride) => {
+      if (isLocked()) return { success: false, error: 'Not available in a shared link.' }
       if (get().liveSessionActive) return { success: false, error: 'Live session is active.' }
       const parsed = parseFlowSource(source, formatHint)
       if (!parsed.success) return { success: false, error: parsed.message }
@@ -482,6 +523,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     saveCustomScenario: (id, patch) => {
+      if (isLocked()) return { success: false, error: 'Not available in a shared link.' }
       if (get().liveSessionActive) return { success: false, error: 'Live session is active.' }
       const s = get()
       const existing = s.customScenarios.find((sc) => sc.id === id)
@@ -507,14 +549,14 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     deleteCustomScenario: (id) => {
-      if (get().liveSessionActive) return
+      if (get().liveSessionActive || isLocked()) return
       const customScenarios = get().customScenarios.filter((sc) => sc.id !== id)
       set({ customScenarios })
       saveCustomScenarios(customScenarios)
     },
 
     duplicateAsCustomScenario: (source, format, baseName) => {
-      if (get().liveSessionActive) return ''
+      if (get().liveSessionActive || isLocked()) return ''
       const now = Date.now()
       const entry: CustomScenario = {
         id: createId('scenario'),
@@ -532,7 +574,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     loadCustomScenario: (id) => {
       const match = get().customScenarios.find((sc) => sc.id === id)
-      if (!match || get().liveSessionActive) return
+      if (!match || get().liveSessionActive || isLocked()) return
       const parsed = parseFlowSource(match.source, match.format)
       if (!parsed.success) {
         set({ validation: { success: false, errors: [{ message: parsed.message }] } })
@@ -667,6 +709,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     back: () => {
       const s = get()
+      if (isLocked()) return
       if (s.liveSessionActive) return
       if (s.snapshots.length === 0) return
       const last = s.snapshots[s.snapshots.length - 1]
@@ -683,6 +726,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     jumpToNode: (nodeId) => {
       const s = get()
+      if (isLocked()) return
       if (!s.flow || !findNode(s.flow, nodeId)) return
       pushSnapshot()
       void get().goToNode(nodeId)
@@ -827,27 +871,30 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     togglePause: () => set((s) => ({ isPaused: !s.isPaused })),
     toggleFastMode: () =>
       set((s) => {
+        if (isLocked()) return s
         const next = { fastMode: !s.fastMode }
         persistPrefs({ ...s, ...next })
         return next
       }),
     togglePresenterMode: () =>
       set((s) => {
+        if (isLocked()) return s
         const next = { presenterMode: !s.presenterMode }
         persistPrefs({ ...s, ...next })
         return next
       }),
-    toggleDebugPanel: () => set((s) => ({ debugPanelOpen: !s.debugPanelOpen })),
-    toggleCompareMode: () => set((s) => s.liveSessionActive ? s : ({ compareMode: !s.compareMode })),
+    toggleDebugPanel: () => set((s) => (isLocked() ? s : { debugPanelOpen: !s.debugPanelOpen })),
+    toggleCompareMode: () => set((s) => s.liveSessionActive || isLocked() ? s : ({ compareMode: !s.compareMode })),
     toggleDebugWarnings: () =>
       set((s) => {
+        if (isLocked()) return s
         const next = { debugWarningsEnabled: !s.debugWarningsEnabled }
         persistPrefs({ ...s, ...next })
         return next
       }),
     setChannel: (channel) =>
       set((s) => {
-        if (s.liveSessionActive) return s
+        if (s.liveSessionActive || isLocked()) return s
         persistPrefs({ ...s, channel })
         return { channel }
       }),
@@ -857,9 +904,9 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         persistPrefs({ ...s, phonePlatform })
         return { phonePlatform }
       }),
-    setStartNodeOverride: (nodeId) => set((s) => s.liveSessionActive ? s : ({ startNodeOverride: nodeId })),
+    setStartNodeOverride: (nodeId) => set((s) => s.liveSessionActive || isLocked() ? s : ({ startNodeOverride: nodeId })),
     setLiveSessionActive: (active) =>
-      set((s) => active
+      set((s) => isLocked() ? s : active
         ? { liveSessionActive: true, playToken: s.playToken + 1, isPlaying: false, isTyping: false, isPaused: false }
         : { liveSessionActive: false, liveSessionId: null, liveOperatorToken: '', liveProjection: null, liveSyncState: 'idle', liveLastSyncedAt: null, liveSyncError: null }),
     setLiveSessionCredentials: (sessionId, operatorToken = '') => set({ liveSessionId: sessionId, liveOperatorToken: operatorToken }),
@@ -895,13 +942,13 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     updateConfiguredVariable: (key, value) => {
-      if (get().liveSessionActive) return
+      if (get().liveSessionActive || isLocked()) return
       set((s) => ({ configuredVariables: { ...s.configuredVariables, [key]: value } }))
       persistCurrentScenario()
     },
     resetConfiguredVariables: () => {
       const s = get()
-      if (s.liveSessionActive) return
+      if (s.liveSessionActive || isLocked()) return
       if (!s.flow) return
       set({ configuredVariables: { ...(s.flow.variables ?? {}) } })
       persistCurrentScenario()
@@ -909,7 +956,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     updateConfiguredBrand: (patch) => {
       const s = get()
-      if (s.liveSessionActive || !s.flow) return false
+      if (s.liveSessionActive || isLocked() || !s.flow) return false
       if (Object.keys(patch).some((key) => !EDITABLE_BRAND_KEYS.has(key))) {
         s.showToast('This brand field cannot be changed in the editor.')
         return false
@@ -925,7 +972,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
     resetConfiguredBrand: () => {
       const s = get()
-      if (s.liveSessionActive) return
+      if (s.liveSessionActive || isLocked()) return
       if (!s.flow) return
       set({ configuredBrand: { ...s.flow.brand } })
       persistCurrentScenario()

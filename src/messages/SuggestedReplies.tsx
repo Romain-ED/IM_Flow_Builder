@@ -13,7 +13,7 @@ export function SuggestedReplies({ message, channel, interactive }: SuggestedRep
   const handleChoice = useSimulatorStore((s) => s.handleChoice)
   if (message.message.type !== 'suggested_replies') return null
   return (
-    <div className="flex w-full justify-start pl-1">
+    <div className="flex w-full justify-end pr-1">
       <ChoiceChips
         choices={message.message.options}
         channel={channel}

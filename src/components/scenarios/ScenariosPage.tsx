@@ -35,7 +35,7 @@ async function shareScenario(
         brand: configuredBrand ? { ...parsedData.brand, ...(configuredBrand as object) } : parsedData.brand,
       })
     : source
-  const url = await buildShareUrl(shareSource)
+  const url = await buildShareUrl(shareSource, useSimulatorStore.getState().phonePlatform)
   return copyToClipboard(url)
 }
 

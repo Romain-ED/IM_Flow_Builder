@@ -4,6 +4,7 @@ import { CHANNEL_OPTIONS } from '../../channels/registry'
 import { channelThemes } from '../../channels/theme'
 import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
+import { darkFocusRing, darkSegment, darkSolids, darkTints } from '../../utils/darkChrome'
 
 export function ChannelSelector() {
   const channel = useSimulatorStore((s) => s.channel)
@@ -13,7 +14,7 @@ export function ChannelSelector() {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <SectionHeading accent={sectionAccents.channel}>Channel</SectionHeading>
+      <SectionHeading accent={sectionAccents.channel} tone="dark">Channel</SectionHeading>
       <div
         className={`grid grid-cols-2 gap-1.5 transition-opacity ${compareMode ? 'opacity-40 pointer-events-none' : ''}`}
         role="radiogroup"
@@ -29,11 +30,15 @@ export function ChannelSelector() {
               role="radio"
               aria-checked={isActive}
               onClick={() => setChannel(opt.id)}
-              className={`rounded-lg border px-2 py-2 text-[11.5px] font-semibold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 ${
-                isActive ? 'text-white' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+              className={`flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-[11.5px] font-semibold text-center transition-colors cursor-pointer ${darkFocusRing} ${
+                isActive ? darkSegment.active : darkSegment.idle
               }`}
-              style={isActive ? { backgroundColor: accentColor, borderColor: accentColor } : undefined}
             >
+              <span
+                className={`h-2 w-2 shrink-0 rounded-full ${isActive ? 'ring-2 ring-white' : ''}`}
+                style={{ backgroundColor: accentColor }}
+                aria-hidden="true"
+              />
               {opt.id.toUpperCase()}
             </button>
           )
@@ -43,10 +48,8 @@ export function ChannelSelector() {
         type="button"
         onClick={toggleCompareMode}
         aria-pressed={compareMode}
-        className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] font-medium border cursor-pointer transition-colors ${
-          compareMode
-            ? 'bg-violet-600 text-white border-violet-600'
-            : 'bg-white text-violet-700 border-violet-200 hover:bg-violet-50'
+        className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] font-medium cursor-pointer transition-colors ${darkFocusRing} ${
+          compareMode ? darkSolids.violet : darkTints.violet
         }`}
       >
         <Columns3 size={13} />

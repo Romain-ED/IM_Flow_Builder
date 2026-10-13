@@ -516,11 +516,32 @@ another `presenterMode`-gated UI behavior later, ask whether `sharedLinkMode`
 needs the same gate — the two "hide the debug chrome" cases so far have
 both needed it.
 
-`SharedLinkFloatingControls.tsx` intentionally has only a Restart button —
-no fullscreen toggle, no "exit" button like `PresenterFloatingControls` has
-(there's nothing to exit back to; this isn't a togglable view). Don't grow
-this control set without the user asking; the whole point of this mode is
-that it doesn't offer more.
+`SharedLinkFloatingControls.tsx` intentionally has only an iOS/Android
+switch and a Restart button — no fullscreen toggle, no "exit" button like
+`PresenterFloatingControls` has (there's nothing to exit back to; this isn't
+a togglable view). The platform switch was added in 0.19.0 at the user's
+request ("run it, choose android or ios, restart it, that's basically all").
+Don't grow this control set without the user asking; the whole point of this
+mode is that it doesn't offer more.
+
+### Read-only is enforced in code (0.19.0)
+Hiding buttons isn't the guarantee. In shared mode:
+- `sharedLinkMode` is initialised **synchronously** from `hasShareHash()` when
+  the store is created (not after `initialize()` awaits the payload), so the
+  editor never renders, even briefly. Any `#flow=` key counts, even if empty.
+- `lockStorageWrites()` (persistence.ts) makes every `save*`/`clear*` a
+  no-op for the page load. The visitor's saved prefs/last scenario/custom
+  scenarios are never read either.
+- Every editing/config store action starts with `isLocked()` and returns.
+  `initialize()` loads the shared flow via `loadingSharedFlow`, a closure
+  flag that briefly lifts the lock. **If you add a store action that edits
+  scenarios, brand, variables or preferences, add the `isLocked()` guard.**
+- Bad payloads set `sharedLinkError`; `App.tsx` shows it and nothing else.
+  There is no fallback to the default scenario.
+- Link format: `#flow=<z.|r.payload>&platform=<ios|android>`; `platform` is
+  the starting phone only. Decoded size is capped at 2 MB.
+- Tests: `src/store/sharedLinkMode.test.tsx` (uses `vi.resetModules()` since
+  the mode is decided at store creation).
 
 ## Fifth built-in: Pro Gadget Laos (0.15.0) — adapted from a real spec PDF, not invented
 

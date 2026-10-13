@@ -6,12 +6,14 @@ import { toYamlString } from '../../utils/flowSource'
 import { buildShareUrl, copyToClipboard } from '../../utils/shareLink'
 import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
+import { darkField, darkFocusRing, darkSurface, darkTints } from '../../utils/darkChrome'
 
 export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void }) {
   const flow = useSimulatorStore((s) => s.flow)
   const loadBuiltInScenario = useSimulatorStore((s) => s.loadBuiltInScenario)
   const flowSource = useSimulatorStore((s) => s.flowSource)
   const showToast = useSimulatorStore((s) => s.showToast)
+  const phonePlatform = useSimulatorStore((s) => s.phonePlatform)
   const [linkCopied, setLinkCopied] = useState(false)
   // Built-in scenario registry ids are independent of each YAML's own
   // metadata.id, so match the dropdown selection by source content instead.
@@ -32,7 +34,7 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
 
   async function shareLink() {
     if (!flowSource) return
-    const url = await buildShareUrl(flowSource)
+    const url = await buildShareUrl(flowSource, phonePlatform)
     const ok = await copyToClipboard(url)
     if (ok) {
       setLinkCopied(true)
@@ -46,12 +48,12 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
 
   return (
     <div className="flex flex-col gap-1.5">
-      <SectionHeading accent={accent}>Scenario</SectionHeading>
-      <p className="text-[13px] font-medium text-slate-900 m-0 truncate">{flow?.metadata.name ?? 'No scenario loaded'}</p>
+      <SectionHeading accent={accent} tone="dark">Scenario</SectionHeading>
+      <p className={`text-[13px] font-medium m-0 truncate ${darkSurface.text}`}>{flow?.metadata.name ?? 'No scenario loaded'}</p>
       <select
         value={selectedScenarioId}
         onChange={(e) => loadBuiltInScenario(e.target.value)}
-        className={`rounded-md border ${accent.border} px-2 py-1.5 text-[12.5px] bg-white`}
+        className={darkField}
         aria-label="Load example scenario"
       >
         <option value="" disabled>
@@ -67,7 +69,7 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
         <button
           type="button"
           onClick={onOpenEditor}
-          className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium ${accent.bg} ${accent.text} border ${accent.border} ${accent.bgHover} cursor-pointer`}
+          className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium ${darkTints.indigo} ${darkFocusRing} cursor-pointer`}
         >
           <FilePenLine size={13} /> Edit flow
         </button>
@@ -75,7 +77,7 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
           type="button"
           onClick={downloadCurrent}
           disabled={!flow}
-          className="flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-40 cursor-pointer"
+          className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium ${darkTints.emerald} ${darkFocusRing} disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
         >
           <Download size={13} /> Export
         </button>
@@ -83,7 +85,8 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
           type="button"
           onClick={shareLink}
           disabled={!flow}
-          className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 disabled:opacity-40 cursor-pointer"
+          title="Copy a read-only link: the recipient can run the simulation, switch iOS/Android, and restart it, but cannot edit"
+          className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium ${darkTints.teal} ${darkFocusRing} disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
         >
           {linkCopied ? <Check size={13} /> : <Link2 size={13} />}
           {linkCopied ? 'Link copied' : 'Copy share link'}

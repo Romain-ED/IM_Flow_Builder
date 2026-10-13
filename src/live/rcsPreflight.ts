@@ -96,6 +96,13 @@ function actionId(nodeId: string, index: number, actionIndex: number): string {
   return `${nodeId}:m:${index}:action:${actionIndex}`
 }
 
+function hasControlCharacters(value: string): boolean {
+  return Array.from(value).some((character) => {
+    const code = character.charCodeAt(0)
+    return code < 32 || code === 127
+  })
+}
+
 function resolvePublicUrl(
   source: string | undefined,
   publicBaseUrl: string | undefined,
@@ -104,14 +111,19 @@ function resolvePublicUrl(
   messageIndex: number,
   label: string,
 ): string | undefined {
-  if (!source) {
-    issue(errors, nodeId, `${label} requires a public HTTPS URL for Live RCS.`, messageIndex)
+  if (typeof source !== 'string') {
+    issue(errors, nodeId, `${label} URL is invalid.`, messageIndex)
+    return undefined
+  }
+  const value = source.trim()
+  if (!value || value.startsWith('//') || (!value.startsWith('/') && !/^https?:\/\//i.test(value)) || hasControlCharacters(value)) {
+    issue(errors, nodeId, `${label} URL "${source}" is invalid.`, messageIndex)
     return undefined
   }
 
   let url: URL
   try {
-    url = new URL(source, publicBaseUrl)
+    url = new URL(value, publicBaseUrl)
   } catch {
     issue(errors, nodeId, `${label} URL "${source}" is invalid.`, messageIndex)
     return undefined

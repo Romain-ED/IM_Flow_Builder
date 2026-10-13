@@ -6,7 +6,7 @@ import { useSimulatorStore } from '../../store/simulatorStore'
 import { useActiveChannel } from '../../app/ChannelContext'
 import { MessageRenderer } from '../../messages/MessageRenderer'
 import { channelThemes } from '../../channels/theme'
-import { ACTION_ICONS } from '../../utils/actionIcons'
+import { getActionIcon } from '../../utils/actionIcons'
 import type { TrailingActionItem } from './MessageShell'
 import { TypingIndicator } from './TypingIndicator'
 import { ChoiceChips } from './ChoiceChips'
@@ -27,7 +27,7 @@ function trailingItemsForAttached(
     return attached.message.actions.map((action, i) => ({
       key: `${action.type}-${i}`,
       label: action.label,
-      icon: ACTION_ICONS[action.type],
+      icon: getActionIcon(action.type),
       onClick: () => handleAction(action),
     }))
   }
@@ -99,7 +99,7 @@ export function ConversationView() {
       })}
       {!readOnly && isTyping && <TypingIndicator channel={channel} />}
       {!readOnly && floatingActions && (
-        <div className="flex w-full justify-start pl-1 animate-message-actions">
+        <div className="flex w-full justify-end pr-1 animate-message-actions">
           <ChoiceChips
             choices={floatingActions}
             channel={channel}

@@ -11,6 +11,31 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.21.0',
+    date: '2026-10-14',
+    changes: [
+      'Enhancement: the left sidebar and top bar now use a dark slate/navy background so they stand out from the light stage and the white RCS phone. Text, buttons, toggles, channel and phone selectors, nav tabs, the version badge, Live RCS status boxes and focus rings were restyled to stay readable on dark. The phone, stage and Scenarios/Manual/Live logs pages are unchanged.',
+    ],
+  },
+  {
+    version: '0.20.0',
+    date: '2026-10-14',
+    changes: [
+      'Enhancement: the RCS phone now uses a white, Google Messages-style look (white screen and header, light blue-grey composer pill with green mic button, neutral tinted message bubbles and a blue sent bubble) on both iPhone and Android. WhatsApp and the rest of the app are unchanged.',
+      'Enhancement: Domino\'s Singapore uses the Domino\'s app icon as the agent avatar and the "Have a slice day" banner as the welcome card image and RCS profile banner.',
+      'Removed: the original "Domino\'s Video & Deals" built-in scenario and its assets; Domino\'s Singapore is the only Domino\'s RCS scenario. A browser that had the old scenario saved loads the default scenario instead.',
+    ],
+  },
+  {
+    version: '0.19.0',
+    date: '2026-10-14',
+    changes: [
+      'New: the read-only shared-link viewer now has an iOS / Android switch next to Restart, so a recipient can run the simulation on either phone. The link also remembers which phone the sender had selected as the starting point.',
+      'Enhancement: shared links are now locked down at the code level, not just hidden in the UI. A link page load can never write to localStorage, never reads the visitor\'s saved scenarios or preferences, and every editing/configuration action in the store is a no-op.',
+      'Fix: a malformed, empty, or invalid share link now shows a clear "This shared link can\'t be opened" message instead of silently falling back to the full editor with the default scenario.',
+    ],
+  },
+  {
     version: '0.18.0',
     date: '2026-10-13',
     changes: [

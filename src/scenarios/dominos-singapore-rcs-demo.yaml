@@ -8,7 +8,8 @@ metadata:
 brand:
   name: "Romain RCS Demo Agent"
   shortName: "Romain RCS Demo Agent"
-  avatar: "/assets/dominos-singapore-rcs-demo/download.svg"
+  avatar: "/assets/dominos-singapore-rcs-demo/imgi_17_app-icon.png"
+  banner: "/assets/dominos-singapore-rcs-demo/image-4.png"
   description: "Romain demo"
   verified: true
   website: "https://www.vonage.com"
@@ -41,7 +42,7 @@ variables:
   customerName: Romain
   fallbackChannel: sms
   fallbackMessage: "Hi! Check out Domino's Singapore latest deals and order online: https://order.dominos.com.sg"
-  heroImage: "/assets/dominos-singapore-rcs-demo/welcome.jpeg"
+  heroImage: "/assets/dominos-singapore-rcs-demo/image-4.png"
   promoEverydayRegularImage: "/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg"
   promoEverydayLargeImage: "/assets/dominos-singapore-rcs-demo/imgi_5_SG_460691_en_MenuImage_17096.jpg"
   promo50Off1RegularImage: "/assets/dominos-singapore-rcs-demo/imgi_13_SG_50R1_en_MenuImage_16018.jpg"
@@ -121,7 +122,7 @@ nodes:
     messages:
       - type: rich_card
         image: "{{heroImage}}"
-        mediaHeight: tall
+        mediaHeight: short
         title: "Welcome to Domino's Singapore! 🍕"
         description: "Hi {{customerName}}! 👋 Craving something delicious? You're in the right place. Order your favourite pizza, grab today's best deals, or find a store near you — all right here."
         actions:
@@ -311,11 +312,6 @@ nodes:
               - type: reply
                 label: "Back to Menu"
                 next: menu_categories
-      - type: text
-        text: "More options:"
-        delayMs: 0
-        typingMs: 0
-        showTyping: false
       - type: suggested_replies
         delayMs: 0
         typingMs: 0
@@ -929,8 +925,6 @@ nodes:
                   selectedStoreId: store_white_sands
                   selectedStoreName: "White Sands — Pasir Ris"
                 next: choose_crust
-      - type: text
-        text: "The store cards are above; more options are available below:"
       - type: text
         text: "Found your store? 🎉 Ready to order or need anything else?"
       - type: suggested_replies

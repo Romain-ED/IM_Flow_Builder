@@ -11,8 +11,8 @@ interface SuggestedActionsProps {
 export function SuggestedActions({ message, channel, interactive }: SuggestedActionsProps) {
   if (message.message.type !== 'suggested_actions') return null
   return (
-    <div className="flex w-full justify-start pl-1">
-      <div className="flex flex-wrap gap-2" aria-label="Suggested actions">
+    <div className="flex w-full justify-end pr-1">
+      <div className="flex w-full flex-wrap justify-end gap-2" aria-label="Suggested actions">
         {message.message.actions.map((action, i) => (
           <ActionButton key={i} action={action} channel={channel} interactive={interactive} variant="chip" />
         ))}

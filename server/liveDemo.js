@@ -247,10 +247,12 @@ function presenterText(session, value) {
 }
 
 function presenterUrl(value) {
-  if (typeof value !== 'string' || !value) return ''
+  if (typeof value !== 'string' || !value.trim()) return ''
   if (/Bearer\s+|eyJ[A-Za-z0-9_-]+\.|-----BEGIN [A-Z ]+-----/i.test(value)) return ''
   try {
-    const url = new URL(value)
+    const url = new URL(value.trim())
+    const localHttp = url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+    if (url.protocol !== 'https:' && !localHttp) return ''
     for (const key of [...url.searchParams.keys()]) {
       if (/(token|secret|sig|signature|key|auth|credential)/i.test(key)) url.searchParams.delete(key)
     }
@@ -276,6 +278,8 @@ function liveMessageFromContent(content, sender, session) {
     type: content.type,
     ...base,
     url: presenterUrl(content.url),
+    ...(content.type === 'video' && content.thumbnailUrl && presenterUrl(content.thumbnailUrl) ? { thumbnailUrl: presenterUrl(content.thumbnailUrl) } : {}),
+    ...(content.type === 'video' && content.durationLabel ? { durationLabel: boundedText(content.durationLabel, 64) } : {}),
     ...(content.text ? { caption: presenterText(session, content.text) } : {}),
   }
   if (content.type === 'file' || content.type === 'document') return {
@@ -406,11 +410,18 @@ function interpolate(value, variables) {
 }
 
 function resolveMediaUrl(source, publicBaseUrl) {
-  if (!source || !publicBaseUrl) return source
+  if (typeof source !== 'string' || !source.trim() || source.trim().startsWith('//')) return undefined
+  const value = source.trim()
+  const isRootRelative = value.startsWith('/')
+  const isHttpAbsolute = /^https?:\/\//i.test(value)
+  if (!isRootRelative && !isHttpAbsolute) return undefined
   try {
-    return new URL(source, publicBaseUrl).toString()
+    const url = new URL(value, publicBaseUrl)
+    const localHttp = url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+    if (url.protocol !== 'https:' && !localHttp) return undefined
+    return url.toString()
   } catch {
-    return source
+    return undefined
   }
 }
 
@@ -481,7 +492,18 @@ function collectContent(session, node, variables) {
     if (message.sender === 'user') throw new Error('Authored user messages cannot be sent in Live RCS.')
     const previous = content.at(-1)
     if (message.type === 'text') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'text', text: message.text })
-    else if (message.type === 'image' || message.type === 'video') content.push({ id: interactionId(node.id, index, 'content', 0), type: message.type, url: resolveMediaUrl(message.url, session.publicBaseUrl), text: message.caption })
+    else if (message.type === 'image' || message.type === 'video') {
+      const url = resolveMediaUrl(message.url, session.publicBaseUrl)
+      if (message.type === 'video' && !url) throw new Error('Video messages require a valid public HTTP(S) URL.')
+      content.push({
+        id: interactionId(node.id, index, 'content', 0),
+        type: message.type,
+        url,
+        ...(message.type === 'video' && message.thumbnailUrl ? { thumbnailUrl: resolveMediaUrl(message.thumbnailUrl, session.publicBaseUrl) } : {}),
+        ...(message.type === 'video' && message.durationLabel ? { durationLabel: boundedText(message.durationLabel, 64) } : {}),
+        text: message.caption,
+      })
+    }
     else if (message.type === 'document') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'file', url: resolveMediaUrl(message.url, session.publicBaseUrl), filename: message.filename, title: message.title, description: message.description })
     else if (message.type === 'rich_card') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'card', title: message.title, description: message.description, url: resolveMediaUrl(message.image, session.publicBaseUrl), actions: (message.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, actionIndex)) })
     else if (message.type === 'carousel') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'carousel', cards: message.cards.map((card, cardIndex) => ({ id: card.id, title: card.title, description: card.description ?? card.subtitle, imageUrl: resolveMediaUrl(card.image, session.publicBaseUrl), actions: (card.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, cardIndex * 10 + actionIndex)) })) })
