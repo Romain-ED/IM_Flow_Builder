@@ -13,6 +13,7 @@ import { DebugDrawer } from './components/debug/DebugDrawer'
 import { ScenarioEditorModal } from './components/editor/ScenarioEditorModal'
 import { ScenariosPage } from './components/scenarios/ScenariosPage'
 import { ManualPage } from './components/manual/ManualPage'
+import { LiveDiagnosticsPage } from './components/live/LiveDiagnosticsPage'
 
 function App() {
   const initialize = useSimulatorStore((s) => s.initialize)
@@ -20,6 +21,7 @@ function App() {
   const sharedLinkMode = useSimulatorStore((s) => s.sharedLinkMode)
   const debugPanelOpen = useSimulatorStore((s) => s.debugPanelOpen)
   const compareMode = useSimulatorStore((s) => s.compareMode)
+  const phonePlatform = useSimulatorStore((s) => s.phonePlatform)
 
   const [page, setPage] = useState<AppPage>('simulator')
   const [editorOpen, setEditorOpen] = useState(false)
@@ -39,7 +41,7 @@ function App() {
     return (
       <div className="h-screen w-screen bg-slate-100 flex items-center justify-center p-6">
         <div className="phone-viewport h-full w-full">
-          <PhoneFrame>
+          <PhoneFrame platform={phonePlatform}>
             <PhoneScreen />
           </PhoneFrame>
         </div>
@@ -50,9 +52,9 @@ function App() {
 
   if (presenterMode) {
     return (
-      <div className="h-screen w-screen bg-slate-100 flex items-center justify-center p-6">
+      <div className="h-screen w-screen bg-slate-100 flex items-center justify-center p-6 pb-24">
         <div className="phone-viewport h-full w-full">
-          <PhoneFrame>
+          <PhoneFrame platform={phonePlatform}>
             <PhoneScreen />
           </PhoneFrame>
         </div>
@@ -72,6 +74,7 @@ function App() {
 
       {page === 'scenarios' && <ScenariosPage onNavigateToSimulator={() => setPage('simulator')} />}
       {page === 'manual' && <ManualPage />}
+      {page === 'liveDiagnostics' && <LiveDiagnosticsPage />}
 
       {page === 'simulator' && (
         <div className="flex-1 min-h-0 flex">
@@ -84,7 +87,7 @@ function App() {
           ) : (
             <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
               <div className="phone-viewport h-full w-full">
-                <PhoneFrame>
+                <PhoneFrame platform={phonePlatform}>
                   <PhoneScreen />
                 </PhoneFrame>
               </div>

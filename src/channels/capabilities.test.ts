@@ -86,7 +86,23 @@ describe('getCapabilityWarning', () => {
     expect(getCapabilityWarning(whatsappCapabilities, message)).toMatch(/at most 10/)
   })
 
-  it('flags a rich card title over RCS\'s 200-character cap', () => {
+  it('allows 11 RCS suggested actions in a chip list, but keeps card actions at 4', () => {
+    const replies: RenderableMessage = {
+      type: 'suggested_actions',
+      sender: 'business',
+      actions: Array.from({ length: 11 }, (_, i) => ({ type: 'reply' as const, label: `Option ${i}` })),
+    }
+    const card: RenderableMessage = {
+      type: 'rich_card',
+      sender: 'business',
+      title: 'Offers',
+      actions: Array.from({ length: 4 }, (_, i) => ({ type: 'reply' as const, label: `Option ${i}` })),
+    }
+    expect(getCapabilityWarning(rcsCapabilities, replies)).toBeNull()
+    expect(getCapabilityWarning(rcsCapabilities, card)).toBeNull()
+  })
+
+  it('flags a rich_card title over RCS\'s 200-character cap', () => {
     const message: RenderableMessage = {
       type: 'rich_card',
       sender: 'business',

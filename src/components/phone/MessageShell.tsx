@@ -75,7 +75,7 @@ export function MessageShell({
 
   return (
     <div
-      className={`flex w-full animate-message-in ${isUser ? 'justify-end' : 'justify-start'} ${!interactive ? 'opacity-60' : ''} ${className}`}
+      className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} ${!interactive ? 'opacity-60' : ''} ${className}`}
     >
       <div className={`flex flex-col gap-1 shrink-0 ${wrapperMaxWidth}`}>
         {chrome === 'none' ? (

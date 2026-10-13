@@ -1,28 +1,89 @@
 import type { ReactNode } from 'react'
+import type { PhonePlatform } from '../../schema/platform'
 
-export function PhoneFrame({ children }: { children: ReactNode }) {
+export function PhoneFrame({ children, platform = 'ios' }: { children: ReactNode; platform?: PhonePlatform }) {
+  return platform === 'android' ? <AndroidPhoneFrame>{children}</AndroidPhoneFrame> : <IPhoneFrame>{children}</IPhoneFrame>
+}
+
+function IPhoneFrame({ children }: { children: ReactNode }) {
   return (
     <div className="relative phone-frame-fit">
-      <div className="absolute inset-0 rounded-[2.5rem] bg-slate-900 shadow-2xl p-2.5">
-        <div className="relative h-full w-full rounded-[2rem] overflow-hidden bg-white flex flex-col">
-          <StatusBar />
-          <div className="relative flex-1 min-h-0 flex flex-col">{children}</div>
+      <div className="pointer-events-none absolute -left-[3px] top-[17%] z-10 h-[8%] w-[3px] rounded-l-full bg-gradient-to-r from-slate-500 via-slate-200 to-slate-500 shadow-sm" />
+      <div className="pointer-events-none absolute -left-[3px] top-[27%] z-10 h-[6%] w-[3px] rounded-l-full bg-gradient-to-r from-slate-500 via-slate-200 to-slate-500 shadow-sm" />
+      <div className="pointer-events-none absolute -left-[3px] top-[35%] z-10 h-[6%] w-[3px] rounded-l-full bg-gradient-to-r from-slate-500 via-slate-200 to-slate-500 shadow-sm" />
+      <div className="pointer-events-none absolute -right-[3px] top-[29%] z-10 h-[12%] w-[3px] rounded-r-full bg-gradient-to-l from-slate-500 via-slate-200 to-slate-500 shadow-sm" />
+      <div className="phone-device-shell absolute inset-0 rounded-[2.7rem] p-[3px]">
+        <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[2.45rem] bg-white ring-1 ring-black/40">
+          <IPhoneStatusBar />
+          <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
+          <PhoneHomeIndicator />
         </div>
-        <div className="absolute left-1/2 top-2.5 -translate-x-1/2 h-4 w-24 bg-slate-900 rounded-full" />
       </div>
     </div>
   )
 }
 
-function StatusBar() {
+function AndroidPhoneFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="shrink-0 h-7 flex items-center justify-between px-6 text-[11px] font-medium text-slate-900 bg-white select-none">
+    <div className="relative phone-frame-fit">
+      <div className="pointer-events-none absolute -left-[3px] top-[23%] z-10 h-[11%] w-[3px] rounded-l-full bg-gradient-to-r from-slate-700 via-slate-300 to-slate-700 shadow-sm" />
+      <div className="pointer-events-none absolute -left-[3px] top-[36%] z-10 h-[7%] w-[3px] rounded-l-full bg-gradient-to-r from-slate-700 via-slate-300 to-slate-700 shadow-sm" />
+      <div className="pointer-events-none absolute -right-[3px] top-[27%] z-10 h-[15%] w-[3px] rounded-r-full bg-gradient-to-l from-slate-700 via-slate-300 to-slate-700 shadow-sm" />
+      <div className="android-device-shell absolute inset-0 rounded-[2.45rem] p-[3px]">
+        <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[2.18rem] bg-white ring-1 ring-black/45">
+          <AndroidStatusBar />
+          <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
+          <AndroidNavigationBar />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function IPhoneStatusBar() {
+  return (
+    <div className="relative z-10 flex h-9 shrink-0 items-center justify-between bg-white px-6 text-[11px] font-semibold tracking-[0.01em] text-slate-900 select-none">
       <span>9:41</span>
       <div className="flex items-center gap-1">
         <SignalBars />
         <WifiIcon />
         <BatteryIcon />
       </div>
+      <div className="absolute left-1/2 top-[5px] h-[25px] w-[94px] -translate-x-1/2 rounded-full bg-black shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_1px_2px_rgba(0,0,0,0.35)]">
+        <span className="absolute right-[12px] top-1/2 h-[6px] w-[6px] -translate-y-1/2 rounded-full bg-slate-950 ring-1 ring-slate-700/70" />
+      </div>
+    </div>
+  )
+}
+
+function AndroidStatusBar() {
+  return (
+    <div className="relative z-10 flex h-8 shrink-0 items-center justify-between bg-[#f8fafc] px-5 text-[10px] font-medium tracking-[0.01em] text-slate-800 select-none">
+      <span>9:41</span>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[8px] font-semibold">5G</span>
+        <SignalBars />
+        <WifiIcon />
+        <span className="text-[8px] font-medium">97%</span>
+        <BatteryIcon />
+      </div>
+      <span className="android-punch-hole absolute left-1/2 top-1/2 h-[11px] w-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black ring-1 ring-slate-800/80" />
+    </div>
+  )
+}
+
+function PhoneHomeIndicator() {
+  return (
+    <div className="flex h-5 shrink-0 items-center justify-center bg-white">
+      <span className="h-1 w-24 rounded-full bg-slate-950" />
+    </div>
+  )
+}
+
+function AndroidNavigationBar() {
+  return (
+    <div className="flex h-5 shrink-0 items-center justify-center bg-white">
+      <span className="h-1 w-[68px] rounded-full bg-slate-900" />
     </div>
   )
 }
@@ -37,6 +98,7 @@ function SignalBars() {
     </svg>
   )
 }
+
 function WifiIcon() {
   return (
     <svg width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true">
@@ -46,6 +108,7 @@ function WifiIcon() {
     </svg>
   )
 }
+
 function BatteryIcon() {
   return (
     <svg width="20" height="10" viewBox="0 0 20 10" aria-hidden="true">

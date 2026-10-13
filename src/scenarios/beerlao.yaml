@@ -12,7 +12,7 @@ metadata:
 brand:
   name: "Beerlao"
   shortName: "Beerlao"
-  avatar: "/assets/beerlao_logo.png"
+  avatar: "/assets/beerlao/beerlao_logo.png"
   verified: true
 
 defaults:
@@ -93,7 +93,7 @@ nodes:
   - id: event_promotion
     messages:
       - type: rich_card
-        image: "/assets/event-boun-souang-heua-promo.png"
+        image: "/assets/beerlao/event-boun-souang-heua-promo.png"
         title: "Celebrate {{eventName}} with Beerlao"
         description: "Enjoy **{{discount}} OFF** your next order of {{productName}}. Use code **{{promoCode}}**. _Offer valid {{eventDate}} only._ Don't miss the wave! 🌊"
         footer: "_Drink responsibly. 18+._"

@@ -7,7 +7,8 @@
   src/schema/flow.ts, src/schema/messages.ts, and
   src/channels/{whatsapp,rcs}/capabilities.ts if those change — the numbers
   and field names below must match exactly, or generated scenarios will fail
-  the app's own validator.
+  the app's own validator. The authoritative RCS details live in
+  docs/RCS_SPEC_REFERENCE.md; update both when Google changes a limit.
 -->
 
 # Business Messaging Flow Simulator — scenario authoring guide
@@ -34,7 +35,7 @@ metadata:
 brand:
   name: "Acme Airlines"      # required
   shortName: "Acme"           # optional, shown in the header instead of name
-  avatar: "/assets/brand-avatar.svg"   # optional; omit rather than invent a real URL
+  avatar: "/assets/singapore-airlines/brand-avatar.svg"   # optional; omit rather than invent a real URL
   description: "Customer support"       # optional header subtitle; defaults to a channel label
   verified: true
 defaults:
@@ -186,7 +187,7 @@ default.
   fileType: PDF
 ```
 
-**`rich_card`** — official (WhatsApp interactive message; RCS rich card). Title + description + up to 3 buttons, plus an optional header and footer:
+**`rich_card`** — official (WhatsApp interactive message; RCS rich card). On RCS, title and description are capped at 200 and 2,000 characters, and card-owned suggestions/actions allow up to **4**. RCS rich cards have no dedicated `header` or `footer` fields. On WhatsApp, use up to 3 buttons plus the optional header/footer rules below:
 - `header` (text, max 60 chars) **or** `image` (media) — never both. A real
   WhatsApp interactive message has one header type; setting both fails
   validation.
@@ -198,7 +199,7 @@ default.
   content.
 ```yaml
 - type: rich_card
-  image: "/assets/package.svg"
+  image: "/assets/ecommerce/package.svg"
   title: "On its way"
   description: "Estimated arrival: {{eta}}"
   footer: "Questions? Reply to this chat."
@@ -213,7 +214,7 @@ default.
 - type: carousel
   cards:
     - id: seat-21a
-      image: "/assets/seat.svg"
+      image: "/assets/singapore-airlines/seat-window.png"
       title: "21A"
       subtitle: "Window seat"
       price: "SGD 0"
@@ -235,7 +236,7 @@ default.
       next: cancelled
 ```
 
-**`suggested_actions`** — official for `reply`/`open_url` (WhatsApp max **3**; RCS max **4**).
+**`suggested_actions`** — official for `reply`/`open_url` (WhatsApp max **3**; RCS suggestion chip lists max **11**; RCS card-owned actions max **4**).
 ```yaml
 - type: suggested_actions
   actions:
@@ -285,7 +286,7 @@ default.
   title: "Accessories"
   products:
     - id: case
-      image: "/assets/package.svg"
+      image: "/assets/ecommerce/package.svg"
       title: "Case"
       price: "$14.99"
 ```
@@ -338,15 +339,18 @@ step" or "verify the user's identity with a code" must use `input`, not
 
 | Limit | WhatsApp | RCS |
 |---|---|---|
-| Buttons on one interactive message (`rich_card`, or text + `suggested_replies`/`suggested_actions`) | 3 | 4 (11 for `suggested_replies` chips specifically) |
+| Suggestions below text/media (`suggested_replies` or `suggested_actions`) | 3 | 11 |
+| Suggestions inside one rich-card/card | 3 | 4 |
 | Carousel cards | up to 10 | 2–10 (1 card is invalid — use a standalone `rich_card` instead) |
 | Buttons per carousel card | 2 | 4 |
 | List rows (total, all sections) | 10 | — (no native list) |
 | `rich_card` header type | text OR `image`, never both | n/a (no header field) |
 
-Header/footer/label/title *character length* limits (e.g. the 60-char
-header/footer cap above) are a live soft warning, not a hard validation
-failure — see the note on why in the app's `CLAUDE.md`.
+WhatsApp header/footer/label/title *character length* limits (e.g. the
+60-char header/footer cap above) are live soft warnings in the visual
+simulator. RCS text/card lengths and cardinality are hard-checked for an RCS
+flow; see the canonical rules and enforcement notes in
+[`docs/RCS_SPEC_REFERENCE.md`](RCS_SPEC_REFERENCE.md).
 
 ## Worked example
 
@@ -375,7 +379,7 @@ nodes:
       - type: text
         text: "Thanks {{customerName}}! Order {{orderNumber}} is confirmed."
       - type: rich_card
-        image: "/assets/package.svg"
+        image: "/assets/ecommerce/package.svg"
         title: "Order confirmed"
         description: "Estimated delivery: {{eta}}"
         actions:

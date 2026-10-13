@@ -12,8 +12,9 @@ export const rcsCapabilities: ChannelCapabilities = {
     'carousel',
     'suggested_replies',
     'suggested_actions',
-    'location',
-    'system_action',
+    // `location` and `system_action` are simulator-side extensions here:
+    // RBM represents native location behavior as a suggested action, while
+    // system actions never travel as agent content.
   ],
   // Google's RCS Business Messaging API models message content as exactly
   // text, an uploaded file, or a rich card (standalone or in a carousel of
@@ -31,16 +32,22 @@ export const rcsCapabilities: ChannelCapabilities = {
   // card is title + description + media + suggestions, full stop) — these
   // are a genuine WhatsApp-only interactive-message concept, so `header`/
   // `footer` on a message only render on the WhatsApp channel.
+  // A standalone content message carries up to 11 suggestion chips. A rich
+  // card or each carousel card carries up to 4 suggestions of either type.
   maxSuggestedReplies: 11,
-  maxSuggestedActions: 4,
+  maxSuggestedActions: 11,
+  maxRichCardSuggestions: 4,
+  maxTextLength: 3072,
   maxCarouselCards: 10,
   maxCarouselCardButtons: 4,
-  maxListRows: 20,
+  maxListRows: 0,
   maxButtonLabelLength: 25,
   maxCardTitleLength: 200,
   maxCardDescriptionLength: 2000,
   fallbackNotes: {
     list: 'RCS has no native bottom-sheet list; rendered as a rich card with stacked options.',
+    location: 'RCS has no standalone location content message; use a native location suggested action instead.',
+    system_action: 'This is a local simulator notice, not an RCS agent message.',
     // These have no official RCS equivalent at all — the built-in scenarios
     // avoid them on this channel; these notes only fire if a custom
     // scenario still uses one.

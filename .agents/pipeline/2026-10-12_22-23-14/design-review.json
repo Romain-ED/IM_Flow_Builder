@@ -1,0 +1,82 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "title": "Presenter DTO union is undefined",
+      "location": "Server contract and data ownership",
+      "problem": "LiveRenderableMessage is named but its exact fields, nullability, sender placement, card shape, and transport-to-renderer mapping are not specified.",
+      "fix": "Define an exact discriminated JSON/TypeScript union for every supported message and action variant, with representative fixtures and explicit stripping/rejection rules."
+    },
+    {
+      "severity": "HIGH",
+      "title": "Authoritative server compiler has no implementation boundary",
+      "location": "Technology and repository fit; Server lifecycle and validation",
+      "problem": "The design requires server-side Live RCS compilation but only identifies the client TypeScript preflight; no server module, signature, or parity strategy is defined.",
+      "fix": "Add a server compileLiveRcsFlow(flow, options) contract/module, call it before session creation, and test server/client parity with shared fixtures."
+    },
+    {
+      "severity": "HIGH",
+      "title": "API migration and compatibility are underspecified",
+      "location": "Server contract and data ownership; HTTP errors and recoverability",
+      "problem": "Replacing sessionView while preserving only id/status does not preserve current consumers that read events/outbound, and the error envelope changes from strings to objects without endpoint-by-endpoint migration rules.",
+      "fix": "Specify exact response schemas for every live endpoint and choose either an atomic client migration to a versioned v1 DTO or a documented legacy plus new snapshot contract; add contract tests."
+    },
+    {
+      "severity": "HIGH",
+      "title": "Timeline persistence and concurrent mutation rules are missing",
+      "location": "Server contract and data ownership; Server lifecycle and validation",
+      "problem": "No persisted schema/migration for old sessions, append/ordinal allocation algorithm, per-session serialization, or send/save crash recovery is defined.",
+      "fix": "Define session schemaVersion/timeline/nextOrdinal migration, serialize session mutations, allocate IDs before sends, and specify recovery for provider-send/save failures."
+    },
+    {
+      "severity": "HIGH",
+      "title": "URL-less open_url mapping cannot satisfy the existing Action type",
+      "location": "Client projection boundary; Phone and sidebar rendering",
+      "problem": "The design strips open_url URLs but maps the action to the existing Action model, whose open_url variant requires url.",
+      "fix": "Introduce a separate display-only live action type or an explicit renderer prop/type that has kind and label but no URL, and test exhaustive action mapping."
+    },
+    {
+      "severity": "HIGH",
+      "title": "Read-only renderer path is not specified completely",
+      "location": "Phone and sidebar rendering",
+      "problem": "Current ConversationView creates local callbacks from history and current renderers perform toast, modal, download, and simulator-handler side effects; 'thread readOnly' does not define the required signatures or callback suppression path.",
+      "fix": "Define readOnly-aware MessageRenderer and ConversationView APIs, use a live-only entry branch with no local callbacks, and make every callback-bearing renderer passive with component tests."
+    },
+    {
+      "severity": "HIGH",
+      "title": "Active mode with no valid projection can leak local history",
+      "location": "Phone and sidebar rendering; Client projection boundary",
+      "problem": "The conditional liveSessionActive && liveProjection leaves behavior unspecified when the projection is null during startup or invalid-payload recovery, allowing a fallback to local history contrary to live isolation.",
+      "fix": "When active, always render the live branch; use an empty/unavailable live view until a valid projection exists and retain the last valid view on fetch errors."
+    },
+    {
+      "severity": "HIGH",
+      "title": "Inbound recognition and ordering semantics are ambiguous",
+      "location": "Server contract and data ownership; Server lifecycle and validation",
+      "problem": "The design does not define payload extraction precedence, event-id requirements, duplicate behavior, user-item node IDs, text sanitization, or deterministic user-before-outbound ordering.",
+      "fix": "Specify a normalized inbound result and append the recognized user item with an ordinal before routing/outbound append; explicitly choose and test no-target behavior."
+    },
+    {
+      "severity": "MEDIUM",
+      "title": "Provider status enum mapping is unspecified",
+      "location": "Server contract and data ownership; HTTP errors and recoverability",
+      "problem": "The snapshot has a closed provider-status enum while current handling stores arbitrary provider strings, with no unknown/casing/order/timestamp rules.",
+      "fix": "Define a provider-status mapping table, unknown-status behavior, receipt timestamp, and repeated/out-of-order callback tests."
+    },
+    {
+      "severity": "MEDIUM",
+      "title": "Redaction and media-URL policy is incomplete",
+      "location": "Server contract and data ownership; HTTP errors and recoverability",
+      "problem": "The design describes bounded pattern masking but no recursive policy for nested content/activity or policy for credentials and signed query parameters in media URLs; bounded provider error text is not necessarily safe.",
+      "fix": "Define one recursive sanitizer and public-URL policy, replace provider details with safe codes before diagnostics, and assert secrets/raw IDs/payload fragments are absent from all serialized outputs."
+    },
+    {
+      "severity": "MEDIUM",
+      "title": "Public-variable schema extension lacks default and migration rules",
+      "location": "Server contract and data ownership",
+      "problem": "The proposed metadata.livePublicVariables field is absent from the current schema and has no import/export, persistence, validation-stage, or absent-field behavior.",
+      "fix": "Add it as optional with default [], preserve it through scenario formats, enforce limits at server validation, and never fall back to publishing all variables."
+    }
+  ]
+}

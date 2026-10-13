@@ -10,21 +10,71 @@ export const flowMetadataSchema = z.object({
   description: z.string().optional(),
   channel: channelIdSchema.optional(),
   tags: z.array(z.string()).optional(),
+  /** Variable keys explicitly safe to include in the presenter live snapshot. */
+  livePublicVariables: z.array(z.string()).optional(),
 })
 export type FlowMetadata = z.infer<typeof flowMetadataSchema>
 
+const safeExternalUrl = z
+  .string()
+  .min(1)
+  .max(2048)
+  .refine((value) => !/\s/.test(value), 'URL must not contain whitespace')
+  .refine((value) => {
+    if (value.startsWith('/')) return !value.startsWith('//')
+    try {
+      const parsed = new URL(value)
+      return parsed.protocol === 'https:' && Boolean(parsed.hostname)
+    } catch {
+      return false
+    }
+  }, 'URL must be HTTPS or app-relative')
+
+const profileText = (max: number) => z.string().min(1).max(max)
+
+export const rcsProfileSchema = z.object({
+  displayName: profileText(80),
+  subtitle: profileText(160),
+  brandLabel: profileText(80),
+  phone: profileText(32),
+  websiteLabel: profileText(2048),
+  websiteUrl: safeExternalUrl,
+  email: z.string().email().max(254),
+  imageCount: z.number().int().nonnegative(),
+  imageUrls: z.array(safeExternalUrl).min(3).max(12),
+  privacyPolicyUrl: safeExternalUrl.optional(),
+  termsUrl: safeExternalUrl.optional(),
+})
+export type RcsProfile = z.infer<typeof rcsProfileSchema>
+
 export const brandDefinitionSchema = z.object({
-  name: z.string(),
-  shortName: z.string().optional(),
+  name: profileText(80),
+  shortName: profileText(80).optional(),
   avatar: z.string().optional(),
   logo: z.string().optional(),
   verified: z.boolean().optional(),
   /** Subtitle shown under the name in the chat header (e.g. "Customer support"). Defaults to a channel-appropriate label when omitted. */
-  description: z.string().optional(),
-  website: z.string().optional(),
-  supportPhone: z.string().optional(),
+  description: z.string().max(160).optional(),
+  website: safeExternalUrl.optional(),
+  supportPhone: z.string().max(32).optional(),
+  email: z.string().email().max(254).optional(),
+  rcsProfile: rcsProfileSchema.optional(),
 })
 export type BrandDefinition = z.infer<typeof brandDefinitionSchema>
+
+export const editableBrandOverrideSchema = brandDefinitionSchema.pick({
+  name: true,
+  shortName: true,
+  avatar: true,
+  logo: true,
+  verified: true,
+  description: true,
+  website: true,
+  supportPhone: true,
+  email: true,
+})
+export const editableBrandPatchSchema = editableBrandOverrideSchema.partial()
+export type EditableBrandOverride = z.infer<typeof editableBrandOverrideSchema>
 
 export const flowDefaultsSchema = z.object({
   messageDelayMs: z.number().nonnegative().optional(),

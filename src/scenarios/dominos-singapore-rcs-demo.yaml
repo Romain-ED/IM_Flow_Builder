@@ -1,0 +1,984 @@
+version: "1.0"
+metadata:
+  id: dominos-singapore-rcs-demo
+  name: "Domino's Pizza Singapore — RCS Demo Flow"
+  description: "End-to-end RCS demo covering promotions, menu browsing, order building, store discovery, tracking, customer care, and checkout handoff."
+  channel: rcs
+  tags: [Domino's, Singapore, promotions, menu, ordering, stores, tracking, customer-care]
+brand:
+  name: "Romain RCS Demo Agent"
+  shortName: "Romain RCS Demo Agent"
+  avatar: "/assets/dominos-singapore-rcs-demo/download.svg"
+  description: "Romain demo"
+  verified: true
+  website: "https://www.vonage.com"
+  supportPhone: "9750 2284"
+  email: "romain.edin@vonage.com"
+  rcsProfile:
+    displayName: "Romain RCS Demo Agent"
+    subtitle: "Romain demo"
+    brandLabel: "Vonage"
+    phone: "9750 2284"
+    websiteLabel: "www.vonage.com"
+    websiteUrl: "https://www.vonage.com"
+    email: "romain.edin@vonage.com"
+    imageCount: 44
+    imageUrls:
+      - "/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg"
+      - "/assets/dominos-singapore-rcs-demo/imgi_5_SG_460691_en_MenuImage_17096.jpg"
+      - "/assets/dominos-singapore-rcs-demo/imgi_13_SG_50R1_en_MenuImage_16018.jpg"
+    privacyPolicyUrl: "https://www.vonage.com/legal/privacy-policy/"
+    termsUrl: "https://www.vonage.com/legal/terms-of-use/"
+
+defaults:
+  messageDelayMs: 450
+  typingDurationMs: 700
+  showTimestamps: true
+
+# Singapore-specific uploaded media. The Cheese Volcano product card still uses
+# the existing uploaded Singapore menu image because no replacement was added.
+variables:
+  customerName: Romain
+  fallbackChannel: sms
+  fallbackMessage: "Hi! Check out Domino's Singapore latest deals and order online: https://order.dominos.com.sg"
+  heroImage: "/assets/dominos-singapore-rcs-demo/welcome.jpeg"
+  promoEverydayRegularImage: "/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg"
+  promoEverydayLargeImage: "/assets/dominos-singapore-rcs-demo/imgi_5_SG_460691_en_MenuImage_17096.jpg"
+  promo50Off1RegularImage: "/assets/dominos-singapore-rcs-demo/imgi_13_SG_50R1_en_MenuImage_16018.jpg"
+  promo50Off2RegularImage: "/assets/dominos-singapore-rcs-demo/imgi_14_SG_50R2_en_MenuImage_16018.jpg"
+  promo50Off2LargeImage: "/assets/dominos-singapore-rcs-demo/imgi_12_SG_50L2_en_MenuImage_16018.jpg"
+  promo3Pizza3SidesImage: "/assets/dominos-singapore-rcs-demo/imgi_9_SG_250839_en_MenuImage_17190.jpg"
+  promo4Pizza3SidesImage: "/assets/dominos-singapore-rcs-demo/imgi_10_SG_070960_en_MenuImage_17190.jpg"
+  promoCheeseVolcanoImage: "/assets/dominos-singapore-rcs-demo/imgi_24_SG_516644_en_MenuImage_16018.png"
+  promoPizzaPuffImage: "/assets/dominos-singapore-rcs-demo/imgi_6_SG_927039_en_MenuImage_17096.jpg"
+  menuCategoriesImage: "/assets/dominos-singapore-rcs-demo/menu-pizzas-singapore.jpg"
+  menuPizzasImage: "/assets/dominos-singapore-rcs-demo/menu-pizzas-singapore.jpg"
+  menuSidesImage: "/assets/dominos-singapore-rcs-demo/imgi_18_SG_Variety.others_en_menu_17128.jpg"
+  menuDrinksImage: "/assets/dominos-singapore-rcs-demo/imgi_15_SG_Variety.drinks_en_menu_17069.jpg"
+  menuDessertsImage: "/assets/dominos-singapore-rcs-demo/imgi_19_SG_Variety.desserts_en_menu_17128.jpg"
+  orderSidesImage: "/assets/dominos-singapore-rcs-demo/imgi_18_SG_Variety.others_en_menu_17128.jpg"
+  cartReviewImage: "/assets/dominos-singapore-rcs-demo/cart-review-singapore.jpeg"
+  orderConfirmationImage: "/assets/dominos-singapore-rcs-demo/order-confirmation-singapore.jpeg"
+  pizzaPepperoniImage: "/assets/dominos-singapore-rcs-demo/pizza-pepperoni-passion.jpg"
+  pizzaPhillyImage: "/assets/dominos-singapore-rcs-demo/pizza-philly-cheese-steak.jpeg"
+  pizzaChickenBbqImage: "/assets/dominos-singapore-rcs-demo/pizza-chicken-bbq.jpeg"
+  pizzaGardenVeggieImage: "/assets/dominos-singapore-rcs-demo/izza-garden-veggie.jpeg"
+  pizzaHawaiianImage: "/assets/dominos-singapore-rcs-demo/pizza-hawaiian-chicken.jpeg"
+  pizzaCheeseVolcanoImage: "/assets/dominos-singapore-rcs-demo/imgi_21_SG_074224_en_MenuImage_15713.jpg"
+  pizzaWagyuImage: "/assets/dominos-singapore-rcs-demo/pizza-wagyu-beef.jpeg"
+  pizzaTikkaImage: "/assets/dominos-singapore-rcs-demo/pizza-chicken-tikka-masala.jpeg"
+  storeBugisImage: "/assets/dominos-singapore-rcs-demo/store-bugis-junction.jpeg"
+  storeTampinesImage: "/assets/dominos-singapore-rcs-demo/store-tampines-mall.jpeg"
+  storeJemImage: "/assets/dominos-singapore-rcs-demo/store-jem-jurong-east.jpeg"
+  storeNexImage: "/assets/dominos-singapore-rcs-demo/store-nex-serangoon.jpeg"
+  storeWoodlandsImage: "/assets/dominos-singapore-rcs-demo/store-causeway-point-woodlands.jpeg"
+  storeClementiImage: "/assets/dominos-singapore-rcs-demo/store-clementi-mall.jpeg"
+  storeToaPayohImage: "/assets/dominos-singapore-rcs-demo/store-hdb-hub-toa-payoh.jpeg"
+  storePasirRisImage: "/assets/dominos-singapore-rcs-demo/store-white-sands-pasir-ris.jpeg"
+  trackingImage: "/assets/dominos-singapore-rcs-demo/order-tracking-singapore.jpeg"
+  supportUrl: "https://www.dominos.com.sg/contact-us"
+  storeLocatorUrl: "https://order.dominos.com.sg"
+  appCheckoutUrl: "https://order.dominos.com.sg"
+  trackingUrl: "https://order.dominos.com.sg/track"
+  selectedDeal: null
+  selectedPizza: "Not selected"
+  selectedSize: null
+  selectedQuantity: 1
+  selectedCrust: "Not selected"
+  selectedCrustSurcharge: 0
+  selectedSide: "None selected"
+  selectedDrink: "None selected"
+  selectedDessert: "None selected"
+  selectedStoreName: "Not selected"
+  selectedStoreId: null
+  orderMode: "delivery"
+  promoCode: "None"
+  discountAmount: 0
+  subtotal: "Calculated at checkout"
+  deliveryFee: "From $3.99"
+  total: "Calculated at checkout"
+  cartSummary: "Your selected items will appear here."
+
+triggers:
+  - keywords: [hi, hello, start, menu]
+    next: welcome
+  - keywords: [deals, promo, offer, discount]
+    next: promotions
+  - keywords: [order, pizza, buy]
+    next: choose_crust
+  - keywords: [store, location, near, find]
+    next: location_request
+  - keywords: [track, where, "delivery status"]
+    next: track_order
+  - keywords: [help, problem, complaint, refund]
+    next: customer_care
+
+start: promotions
+
+nodes:
+  - id: welcome
+    label: "Welcome"
+    messages:
+      - type: rich_card
+        image: "{{heroImage}}"
+        mediaHeight: tall
+        title: "Welcome to Domino's Singapore! 🍕"
+        description: "Hi {{customerName}}! 👋 Craving something delicious? You're in the right place. Order your favourite pizza, grab today's best deals, or find a store near you — all right here."
+        actions:
+          - type: reply
+            label: "🔥 Today's Deals"
+            next: promotions
+          - type: reply
+            label: "🍕 View Menu"
+            next: menu_categories
+          - type: reply
+            label: "🛒 Order Now"
+            next: choose_crust
+          - type: reply
+            label: "📍 Find a Store"
+            next: location_request
+
+  - id: promotions
+    label: "Promotions Carousel"
+    messages:
+      - type: carousel
+        delayMs: 0
+        typingMs: 0
+        showTyping: false
+        cards:
+          - id: promo-everyday-regular
+            image: "{{promoEverydayRegularImage}}"
+            title: "Everyday Value — 1 Regular Pizza"
+            subtitle: "$5.99"
+            description: "1 Regular Pizza for just $5.99! Choose from our classic range. Perfect for a solo meal. 🍕"
+            actions:
+              - type: reply
+                label: "Order for $5.99"
+                set:
+                  selectedDeal: everyday_regular
+                  selectedPizza: "Everyday Value Pizza"
+                  selectedSize: regular
+                  selectedQuantity: 1
+                  promoCode: "Everyday Value $5.99"
+                next: choose_crust
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-everyday-large
+            image: "{{promoEverydayLargeImage}}"
+            title: "$9.99 — Everyday Value: 1 Large Pizza"
+            description: "1 Large Pizza for just $9.99! More slices, more smiles. 😄"
+            actions:
+              - type: reply
+                label: "Order for $9.99"
+                set:
+                  selectedDeal: everyday_large
+                  selectedPizza: "Everyday Value Pizza"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  promoCode: "Everyday Value $9.99"
+                next: choose_crust
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-50off-1-regular
+            image: "{{promo50Off1RegularImage}}"
+            title: "50% Off 1 Regular Pizza"
+            subtitle: "From $12.95"
+            description: "Get 50% off when you order 2 Regular Pizzas — from only $12.95! Mix and match any flavours. 🎉"
+            actions:
+              - type: reply
+                label: "Grab This Deal"
+                set:
+                  selectedDeal: 50off_1regular
+                  selectedPizza: "Choose 2 Regular Pizzas"
+                  selectedSize: regular
+                  selectedQuantity: 2
+                  promoCode: "50% Off Regular"
+                next: choose_crust
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-50off-2-regular
+            image: "{{promo50Off2RegularImage}}"
+            title: "50% Off 2 Regular Pizzas"
+            subtitle: "From $25.90"
+            description: "Two's better than one! Get 50% off 2 Regular Pizzas from just $25.90. Perfect for sharing! 🍕🍕"
+            actions:
+              - type: reply
+                label: "Order 2 for $25.90"
+                set:
+                  selectedDeal: 50off_2regular
+                  selectedPizza: "Choose 2 Regular Pizzas"
+                  selectedSize: regular
+                  selectedQuantity: 2
+                  promoCode: "50% Off 2 Regular"
+                next: choose_crust
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-50off-2-large
+            image: "{{promo50Off2LargeImage}}"
+            title: "50% Off 2 Large Pizzas"
+            subtitle: "From $33.90"
+            description: "Go big! 50% off 2 Large Pizzas — from $33.90 only. Feed the whole family tonight! 🍕🍕"
+            actions:
+              - type: reply
+                label: "Order 2 Larges"
+                set:
+                  selectedDeal: 50off_2large
+                  selectedPizza: "Choose 2 Large Pizzas"
+                  selectedSize: large
+                  selectedQuantity: 2
+                  promoCode: "50% Off 2 Large"
+                next: choose_crust
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-3-pizza-3-sides
+            image: "{{promo3Pizza3SidesImage}}"
+            title: "3 Pizzas + 3 Sides (Cheese & Steak)"
+            subtitle: "Group meal"
+            description: "The perfect group meal! 3 pizzas featuring our Cheese & Steak range plus 3 sides including Coca-Cola. Best value for groups!"
+            actions:
+              - type: reply
+                label: "Order This Bundle"
+                set:
+                  selectedDeal: 3pizza_3sides_bundle
+                  selectedPizza: "3 Pizza Cheese & Steak Bundle"
+                  selectedSize: large
+                  selectedQuantity: 3
+                  selectedSide: "3 included sides"
+                  promoCode: "Group bundle"
+                next: cart_review
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-4-pizza-3-sides
+            image: "{{promo4Pizza3SidesImage}}"
+            title: "4 Pizzas + 3 Sides (Cheese & Steak)"
+            subtitle: "Family feast"
+            description: "The ultimate feast! 4 pizzas from our Cheese & Steak range plus 3 sides. Perfect for parties and family nights! 🎉"
+            actions:
+              - type: reply
+                label: "Order This Bundle"
+                set:
+                  selectedDeal: 4pizza_3sides_bundle
+                  selectedPizza: "4 Pizza Cheese & Steak Bundle"
+                  selectedSize: large
+                  selectedQuantity: 4
+                  selectedSide: "3 included sides"
+                  promoCode: "Family bundle"
+                next: cart_review
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-cheese-volcano
+            image: "{{promoCheeseVolcanoImage}}"
+            title: "🌋 2 Cheese Volcano + 6 Sides"
+            subtitle: "Limited time"
+            description: "The ultimate feast! 2 Cheese Volcano Pizzas with molten cheese at the centre, plus 6 sides including Garlic Bread and Coca-Cola. Limited time!"
+            actions:
+              - type: reply
+                label: "Order This Bundle"
+                set:
+                  selectedDeal: cheese_volcano_bundle
+                  selectedPizza: "2 Cheese Volcano Pizzas"
+                  selectedSize: large
+                  selectedQuantity: 2
+                  selectedSide: "6 included sides"
+                  promoCode: "Cheese Volcano bundle"
+                next: cart_review
+              - type: reply
+                label: "See All Deals"
+                next: promotions
+          - id: promo-pizza-puff
+            image: "{{promoPizzaPuffImage}}"
+            title: "🆕 NEW Pizza Puff + Drumlets"
+            subtitle: "New product"
+            description: "Introducing our NEW Pizza Puff — a crispy golden pastry filled with gooey cheese and sausage, served with Chicken Drumlets and creamy dip. Try it today!"
+            actions:
+              - type: reply
+                label: "Try It Now"
+                set:
+                  selectedDeal: pizza_puff_combo
+                  selectedPizza: "Pizza Puff + Drumlets"
+                  selectedSize: null
+                  selectedQuantity: 1
+                  selectedSide: "Chicken Drumlets + creamy dip"
+                  promoCode: "Pizza Puff combo"
+                next: cart_review
+              - type: reply
+                label: "Back to Menu"
+                next: menu_categories
+      - type: text
+        text: "More options:"
+        delayMs: 0
+        typingMs: 0
+        showTyping: false
+      - type: suggested_replies
+        delayMs: 0
+        typingMs: 0
+        showTyping: false
+        options:
+          - label: "🏠 Main Menu"
+            next: post_promo_nav
+
+  - id: post_promo_nav
+    label: "Post-Promo Navigation"
+    messages:
+      - type: text
+        text: "Ready to order, or want to browse more? 😊"
+      - type: suggested_replies
+        options:
+          - label: "🛒 Order Now"
+            next: choose_crust
+          - label: "🍕 Full Menu"
+            next: menu_categories
+          - label: "📍 Find a Store"
+            next: location_request
+          - label: "🏠 Main Menu"
+            next: welcome
+
+  - id: menu_categories
+    label: "Menu Categories Carousel"
+    messages:
+      - type: text
+        text: "🍕 What are you in the mood for today? Browse our full menu below!"
+      - type: carousel
+        cards:
+          - id: menu-pizzas
+            image: "{{menuPizzasImage}}"
+            title: "🍕 Pizzas"
+            description: "Classic, specialty, and signature — over 15 flavours to choose from. Regular or Large, any crust!"
+            actions:
+              - type: reply
+                label: "See All Pizzas"
+                next: pizza_menu
+              - type: reply
+                label: "🛒 Order a Pizza"
+                next: choose_crust
+          - id: menu-sides
+            image: "{{menuSidesImage}}"
+            title: "🍗 Sides & Snacks"
+            description: "Complete your meal with crispy sides — Chicken Drumlets, Garlic Bread, Crinkle Fries, and more!"
+            actions:
+              - type: reply
+                label: "View Sides"
+                next: sides_menu
+              - type: reply
+                label: "🛒 Add to Order"
+                next: choose_crust
+          - id: menu-drinks
+            image: "{{menuDrinksImage}}"
+            title: "🥤 Drinks"
+            description: "Stay refreshed! Choose from Coca-Cola, Sprite, and more. Perfect to pair with your pizza."
+            actions:
+              - type: reply
+                label: "View Drinks"
+                next: drinks_menu
+              - type: reply
+                label: "🛒 Add to Order"
+                next: choose_crust
+          - id: menu-desserts
+            image: "{{menuDessertsImage}}"
+            title: "🍫 Desserts"
+            description: "End on a sweet note! Try our legendary Chocolate Lava Cake — warm, gooey, and irresistible. 🤤"
+            actions:
+              - type: reply
+                label: "View Desserts"
+                next: desserts_menu
+              - type: reply
+                label: "🛒 Add to Order"
+                next: choose_crust
+
+  - id: pizza_menu
+    label: "Pizza Menu Carousel"
+    messages:
+      - type: text
+        text: "Here are our most popular pizzas! 🍕 Tap any to add to your order."
+      - type: carousel
+        cards:
+          - id: pizza-pepperoni-passion
+            image: "{{pizzaPepperoniImage}}"
+            title: "Pepperoni Passion ⭐"
+            description: "Our #1 bestseller! Loaded with double pepperoni on a rich tomato base. Regular from $12.95 | Large from $19.90"
+            actions:
+              - type: reply
+                label: "Regular — $12.95"
+                set:
+                  selectedPizza: "Pepperoni Passion"
+                  selectedSize: regular
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "Large — $19.90"
+                set:
+                  selectedPizza: "Pepperoni Passion"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+          - id: pizza-philly-cheese-steak
+            image: "{{pizzaPhillyImage}}"
+            title: "Philly Cheese Steak"
+            description: "A Singaporean favourite! Tender beef strips, caramelised onions, and creamy mozzarella. Regular from $13.95 | Large from $21.90"
+            actions:
+              - type: reply
+                label: "Regular — $13.95"
+                set:
+                  selectedPizza: "Philly Cheese Steak"
+                  selectedSize: regular
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "Large — $21.90"
+                set:
+                  selectedPizza: "Philly Cheese Steak"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+          - id: pizza-chicken-bbq
+            image: "{{pizzaChickenBbqImage}}"
+            title: "Chicken BBQ"
+            description: "Smoky BBQ sauce, grilled chicken, and red onions — a crowd-pleaser every time! Regular from $12.95 | Large from $19.90"
+            actions:
+              - type: reply
+                label: "Regular — $12.95"
+                set:
+                  selectedPizza: "Chicken BBQ"
+                  selectedSize: regular
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "Large — $19.90"
+                set:
+                  selectedPizza: "Chicken BBQ"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+          - id: pizza-garden-veggie
+            image: "{{pizzaGardenVeggieImage}}"
+            title: "Garden Veggie 🥦"
+            description: "Fresh and colourful — loaded with garden vegetables on a tangy tomato base. Regular from $11.95 | Large from $17.90"
+            actions:
+              - type: reply
+                label: "Regular — $11.95"
+                set:
+                  selectedPizza: "Garden Veggie"
+                  selectedSize: regular
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "Large — $17.90"
+                set:
+                  selectedPizza: "Garden Veggie"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+          - id: pizza-hawaiian-chicken
+            image: "{{pizzaHawaiianImage}}"
+            title: "Hawaiian Chicken 🍍"
+            description: "The sweet-savoury classic! Chicken, pineapple, and mozzarella on a tomato base. Regular from $12.95 | Large from $19.90"
+            actions:
+              - type: reply
+                label: "Regular — $12.95"
+                set:
+                  selectedPizza: "Hawaiian Chicken"
+                  selectedSize: regular
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "Large — $19.90"
+                set:
+                  selectedPizza: "Hawaiian Chicken"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+          - id: pizza-cheese-volcano
+            image: "{{pizzaCheeseVolcanoImage}}"
+            title: "🌋 Cheese Volcano (Specialty)"
+            description: "An eruption of flavour! Molten cheese crater at the centre surrounded by your choice of toppings. Large only — from $26.90"
+            actions:
+              - type: reply
+                label: "Add — $26.90"
+                set:
+                  selectedPizza: "Cheese Volcano"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "View Deals"
+                next: promotions
+          - id: pizza-wagyu-beef
+            image: "{{pizzaWagyuImage}}"
+            title: "Wagyu Beef Premium 🥩"
+            description: "Premium wagyu beef with truffle-infused cream sauce. A luxurious treat! Large only — from $29.90"
+            actions:
+              - type: reply
+                label: "Add — $29.90"
+                set:
+                  selectedPizza: "Wagyu Beef"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "View Deals"
+                next: promotions
+          - id: pizza-chicken-tikka
+            image: "{{pizzaTikkaImage}}"
+            title: "Chicken Tikka Masala 🌶️"
+            description: "Inspired by the classic Indian favourite — tikka-spiced chicken on a creamy masala sauce base! Regular from $13.95 | Large from $21.90"
+            actions:
+              - type: reply
+                label: "Regular — $13.95"
+                set:
+                  selectedPizza: "Chicken Tikka Masala"
+                  selectedSize: regular
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+              - type: reply
+                label: "Large — $21.90"
+                set:
+                  selectedPizza: "Chicken Tikka Masala"
+                  selectedSize: large
+                  selectedQuantity: 1
+                  selectedDeal: null
+                  promoCode: "None"
+                next: choose_crust
+
+  - id: sides_menu
+    label: "Sides Menu"
+    messages:
+      - type: text
+        text: "🍗 Our sides menu:\n• Chicken Drumlets (4 pcs) — $7.90\n• Chicken Drumlets (6 pcs) — $10.90\n• Crinkle Fries — $4.90\n• Garlic Bread — $4.90\n• NEW Pizza Puff + Dip — $6.90\n• Coleslaw — $3.50\n\nTap to add to your order:"
+      - type: suggested_replies
+        options:
+          - label: "Drumlets 4 — $7.90"
+            set:
+              selectedSide: "Chicken Drumlets 4pc"
+            next: add_drinks
+          - label: "Drumlets 6 — $10.90"
+            set:
+              selectedSide: "Chicken Drumlets 6pc"
+            next: add_drinks
+          - label: "Fries — $4.90"
+            set:
+              selectedSide: "Crinkle Fries"
+            next: add_drinks
+          - label: "Garlic Bread $4.90"
+            set:
+              selectedSide: "Garlic Bread"
+            next: add_drinks
+          - label: "Pizza Puff — $6.90"
+            set:
+              selectedSide: "Pizza Puff + Dip"
+            next: add_drinks
+          - label: "Back to Menu"
+            next: menu_categories
+
+  - id: drinks_menu
+    label: "Drinks Menu"
+    messages:
+      - type: text
+        text: "🥤 Our drinks:\n• Coca-Cola Classic 1.5L — $4.90\n• Coca-Cola Zero 1.5L — $4.90\n• Sprite 1.5L — $4.90\n• Mineral Water — $2.00\n\nTap to add:"
+      - type: suggested_replies
+        options:
+          - label: "Coke 1.5L — $4.90"
+            set:
+              selectedDrink: "Coca-Cola 1.5L"
+            next: cart_review
+          - label: "Coke Zero — $4.90"
+            set:
+              selectedDrink: "Coke Zero 1.5L"
+            next: cart_review
+          - label: "Sprite 1.5L — $4.90"
+            set:
+              selectedDrink: "Sprite 1.5L"
+            next: cart_review
+          - label: "Water — $2.00"
+            set:
+              selectedDrink: "Mineral Water"
+            next: cart_review
+          - label: "Back to Menu"
+            next: menu_categories
+
+  - id: desserts_menu
+    label: "Desserts Menu"
+    messages:
+      - type: text
+        text: "🍫 Our desserts:\n• Chocolate Lava Cake — $4.90\n• Double Choco Lava Cake — $8.90\n\nTap to add:"
+      - type: suggested_replies
+        options:
+          - label: "Lava Cake — $4.90"
+            set:
+              selectedDessert: "Chocolate Lava Cake"
+            next: cart_review
+          - label: "2x Lava Cake — $8.90"
+            set:
+              selectedDessert: "Double Chocolate Lava Cake"
+            next: cart_review
+          - label: "Back to Menu"
+            next: menu_categories
+
+  - id: choose_crust
+    label: "Order Builder — Choose Crust"
+    messages:
+      - type: text
+        text: "🍕 Great choice! Now, pick your crust:"
+      - type: suggested_replies
+        options:
+          - label: "Classic Hand-Tossed"
+            set:
+              selectedCrust: "Classic Hand-Tossed"
+              selectedCrustSurcharge: 0
+            next: size_gate
+          - label: "Thin & Crispy"
+            set:
+              selectedCrust: "Thin & Crispy"
+              selectedCrustSurcharge: 0
+            next: size_gate
+          - label: "Cheese-Stuffed +$3"
+            set:
+              selectedCrust: "Cheese-Stuffed"
+              selectedCrustSurcharge: 3
+            next: size_gate
+          - label: "Garlic Butter +$2"
+            set:
+              selectedCrust: "Garlic Butter"
+              selectedCrustSurcharge: 2
+            next: size_gate
+
+  - id: size_gate
+    label: "Order Builder — Size Gate"
+    condition:
+      variable: selectedSize
+      operator: exists
+    then: add_sides
+    else: choose_size
+
+  - id: choose_size
+    label: "Order Builder — Confirm Size"
+    messages:
+      - type: text
+        text: "📏 What size would you like?"
+      - type: suggested_replies
+        options:
+          - label: "Regular 9in — $11.95"
+            set:
+              selectedSize: regular
+            next: add_sides
+          - label: "Large 12in — $17.90"
+            set:
+              selectedSize: large
+            next: add_sides
+          - label: "Go Back"
+            next: pizza_menu
+
+  - id: add_sides
+    label: "Order Builder — Add Sides"
+    messages:
+      - type: rich_card
+        image: "{{orderSidesImage}}"
+        mediaHeight: medium
+        title: "🍗 Want to add some sides?"
+        description: "Pair your pizza with our crispy sides!\n• Chicken Drumlets (4 pcs) — $7.90\n• Crinkle Fries — $4.90\n• Garlic Bread — $4.90\n• NEW Pizza Puff + Dip — $6.90"
+      - type: text
+        text: "Choose a side or skip this step:"
+      - type: suggested_replies
+        options:
+          - label: "Drumlets 4 — $7.90"
+            set:
+              selectedSide: "Chicken Drumlets 4pc"
+            next: add_drinks
+          - label: "Fries — $4.90"
+            set:
+              selectedSide: "Crinkle Fries"
+            next: add_drinks
+          - label: "Garlic Bread $4.90"
+            set:
+              selectedSide: "Garlic Bread"
+            next: add_drinks
+          - label: "Skip Sides"
+            set:
+              selectedSide: "None selected"
+            next: add_drinks
+
+  - id: add_drinks
+    label: "Order Builder — Add Drinks"
+    messages:
+      - type: text
+        text: "🥤 Complete your meal! Add a drink?"
+      - type: suggested_replies
+        options:
+          - label: "Coke 1.5L — $4.90"
+            set:
+              selectedDrink: "Coca-Cola 1.5L"
+            next: cart_review
+          - label: "Coke Zero — $4.90"
+            set:
+              selectedDrink: "Coke Zero 1.5L"
+            next: cart_review
+          - label: "Sprite 1.5L — $4.90"
+            set:
+              selectedDrink: "Sprite 1.5L"
+            next: cart_review
+          - label: "Water — $2.00"
+            set:
+              selectedDrink: "Mineral Water"
+            next: cart_review
+          - label: "No Thanks"
+            set:
+              selectedDrink: "None selected"
+            next: cart_review
+
+  - id: cart_review
+    label: "Cart Review"
+    messages:
+      - type: rich_card
+        image: "{{cartReviewImage}}"
+        mediaHeight: tall
+        title: "🛒 Your Order Summary"
+        description: "🍕 {{selectedQuantity}}x {{selectedPizza}} ({{selectedSize}}, {{selectedCrust}})\n🍗 Side: {{selectedSide}}\n🥤 Drink: {{selectedDrink}}\n🍫 Dessert: {{selectedDessert}}\n\n🏷️ Promotion: {{promoCode}}\n\nSubtotal: {{subtotal}}\nDelivery: {{deliveryFee}}\nTOTAL: {{total}}\n\nThe final total and any applicable discount will be confirmed at checkout."
+      - type: text
+        text: "Review your order and choose what to do next:"
+      - type: suggested_replies
+        options:
+          - label: "✅ Checkout"
+            next: order_confirmation
+          - label: "➕ Add More Items"
+            next: menu_categories
+          - label: "🗑 Clear Cart"
+            set:
+              selectedDeal: null
+              selectedPizza: "Not selected"
+              selectedSize: null
+              selectedQuantity: 1
+              selectedCrust: "Not selected"
+              selectedCrustSurcharge: 0
+              selectedSide: "None selected"
+              selectedDrink: "None selected"
+              selectedDessert: "None selected"
+              selectedStoreName: "Not selected"
+              selectedStoreId: null
+              promoCode: "None"
+            next: welcome
+
+  - id: order_confirmation
+    label: "Order Confirmation — App Deep-Link"
+    messages:
+      - type: rich_card
+        image: "{{orderConfirmationImage}}"
+        mediaHeight: tall
+        title: "🎉 Finalise Your Order in the App!"
+        description: "Your cart is ready! Tap below to open the Domino's Singapore app, pay, and confirm your order. Your pre-filled cart is waiting — takes less than 60 seconds! ⚡\n\n🛵 Estimated delivery: 30–45 mins"
+      - type: text
+        text: "Open the Domino's Singapore app to checkout: {{appCheckoutUrl}}\n\nChoose pickup or return to the start:"
+      - type: suggested_replies
+        options:
+          - label: "📍 Pick Up Instead"
+            set:
+              orderMode: pickup
+            next: location_request
+          - label: "🏠 Back to Start"
+            next: welcome
+
+  - id: location_request
+    label: "Store Finder — Location Request"
+    messages:
+      - type: text
+        text: "📍 Let's find your nearest Domino's! Share your location using the store locator, or browse stores by region below."
+      - type: text
+        text: "📍 Store locator: {{storeLocatorUrl}}\n\nOr browse stores by region:"
+      - type: suggested_replies
+        options:
+          - label: "Central: Bugis"
+            next: store_carousel
+          - label: "East: Tampines"
+            next: store_carousel
+          - label: "West: Jurong"
+            next: store_carousel
+          - label: "North: Woodlands"
+            next: store_carousel
+
+  - id: store_carousel
+    label: "Store Finder — Stores Carousel"
+    messages:
+      - type: text
+        text: "🗺️ Here are Domino's stores near you in Singapore! All stores open daily 11am–11pm."
+      - type: carousel
+        cards:
+          - id: store-bugis
+            image: "{{storeBugisImage}}"
+            title: "🏪 Bugis Junction"
+            description: "📍 200 Victoria St, #03-27 Bugis Junction, S188021\n📞 +65 6338 7770\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_bugis
+                  selectedStoreName: "Bugis Junction"
+                next: choose_crust
+          - id: store-tampines
+            image: "{{storeTampinesImage}}"
+            title: "🏪 Tampines Mall"
+            description: "📍 4 Tampines Central 5, #01-21 Tampines Mall, S529510\n📞 +65 6788 9922\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_tampines
+                  selectedStoreName: "Tampines Mall"
+                next: choose_crust
+          - id: store-jem
+            image: "{{storeJemImage}}"
+            title: "🏪 JEM — Jurong East"
+            description: "📍 50 Jurong Gateway Rd, #B1-06 JEM, S608549\n📞 +65 6262 8838\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_jem
+                  selectedStoreName: "JEM — Jurong East"
+                next: choose_crust
+          - id: store-nex
+            image: "{{storeNexImage}}"
+            title: "🏪 NEX — Serangoon"
+            description: "📍 23 Serangoon Central, #01-40 NEX, S556083\n📞 +65 6636 9922\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_nex
+                  selectedStoreName: "NEX — Serangoon"
+                next: choose_crust
+          - id: store-causeway-point
+            image: "{{storeWoodlandsImage}}"
+            title: "🏪 Causeway Point — Woodlands"
+            description: "📍 1 Woodlands Square, #01-11 Causeway Point, S738099\n📞 +65 6894 7721\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_causeway_point
+                  selectedStoreName: "Causeway Point — Woodlands"
+                next: choose_crust
+          - id: store-clementi
+            image: "{{storeClementiImage}}"
+            title: "🏪 The Clementi Mall"
+            description: "📍 3155 Commonwealth Ave W, #01-62, S129588\n📞 +65 6777 2533\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_clementi
+                  selectedStoreName: "The Clementi Mall"
+                next: choose_crust
+          - id: store-hdb-hub
+            image: "{{storeToaPayohImage}}"
+            title: "🏪 HDB Hub — Toa Payoh"
+            description: "📍 480 Lorong 6 Toa Payoh, #01-07 HDB Hub, S310480\n📞 +65 6259 2211\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_hdb_hub
+                  selectedStoreName: "HDB Hub — Toa Payoh"
+                next: choose_crust
+          - id: store-white-sands
+            image: "{{storePasirRisImage}}"
+            title: "🏪 White Sands — Pasir Ris"
+            description: "📍 1 Pasir Ris Central St 3, #01-02 White Sands, S518457\n📞 +65 6585 6655\n🕐 Mon–Sun 11:00am–11:00pm\n🛵 Delivery & Takeaway"
+            actions:
+              - type: reply
+                label: "Order Pick-Up Here"
+                set:
+                  orderMode: pickup
+                  selectedStoreId: store_white_sands
+                  selectedStoreName: "White Sands — Pasir Ris"
+                next: choose_crust
+      - type: text
+        text: "The store cards are above; more options are available below:"
+      - type: text
+        text: "Found your store? 🎉 Ready to order or need anything else?"
+      - type: suggested_replies
+        options:
+          - label: "🛒 Order Now"
+            next: choose_crust
+          - label: "🔥 Today's Deals"
+            next: promotions
+          - label: "🏠 Main Menu"
+            next: welcome
+
+  - id: post_store_nav
+    label: "Post-Store Finder Navigation"
+    messages:
+      - type: text
+        text: "Found your store? 🎉 Ready to order or need anything else?"
+      - type: suggested_replies
+        options:
+          - label: "🛒 Order Now"
+            next: choose_crust
+          - label: "🔥 Today's Deals"
+            next: promotions
+          - label: "🏠 Main Menu"
+            next: welcome
+
+  - id: track_order
+    label: "Track Order"
+    messages:
+      - type: rich_card
+        image: "{{trackingImage}}"
+        mediaHeight: medium
+        title: "🛵 Track Your Order"
+        description: "Want to track your delivery in real time? Open the Domino's Singapore app for live GPS tracking — see exactly where your rider is!\n\n📞 Hotline: +65 6222 6333\n⏱️ Avg. delivery time: 30–45 mins"
+      - type: text
+        text: "Tracking: {{trackingUrl}}\nHotline: {{supportUrl}}\n\nChoose an option below:"
+      - type: suggested_replies
+        options:
+          - label: "🏠 Back to Start"
+            next: welcome
+
+  - id: customer_care
+    label: "Customer Care"
+    messages:
+      - type: text
+        text: "😟 Sorry to hear that! Our customer care team is here to help.\n\nHotline: +65 6222 6333"
+      - type: text
+        text: "Email support: {{supportUrl}}\nLive chat: https://www.dominos.com.sg/chat\n\nChoose an option below:"
+      - type: suggested_replies
+        options:
+          - label: "🏠 Main Menu"
+            next: welcome

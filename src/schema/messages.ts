@@ -76,6 +76,11 @@ export const actionSchema = z.discriminatedUnion('type', [
     ...actionBase,
     message: z.string().optional(),
   }),
+  /** Display-only action used by the server-authoritative live projection. */
+  z.object({
+    type: z.literal('display_only'),
+    ...actionBase,
+  }),
 ])
 export type Action = z.infer<typeof actionSchema>
 

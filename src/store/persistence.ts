@@ -1,4 +1,5 @@
-import type { BrandDefinition, ChannelId } from '../schema/flow'
+import type { ChannelId } from '../schema/flow'
+import type { PhonePlatform } from '../schema/platform'
 import type { VariableMap } from '../schema/messages'
 import type { FlowSourceFormat } from '../utils/flowSource'
 
@@ -12,14 +13,15 @@ export interface StoredPreferences {
   fastMode: boolean
   presenterMode: boolean
   debugWarningsEnabled: boolean
+  phonePlatform: PhonePlatform
 }
 
 export interface StoredScenario {
   source: string
   format: FlowSourceFormat
   configuredVariables: VariableMap
-  /** Live overrides of the flow's own `brand` block (name, avatar, description, verified…), edited via the sidebar's Brand section. */
-  configuredBrand?: BrandDefinition
+  /** Runtime-untrusted editable brand data from older/local browser storage. */
+  configuredBrand?: unknown
 }
 
 /** A user-created or user-imported scenario, saved locally in the browser. */

@@ -1,5 +1,14 @@
 import { create } from 'zustand'
-import { channelIdSchema, type BrandDefinition, type ChannelId, type FlowDefinition } from '../schema/flow'
+import {
+  brandDefinitionSchema,
+  channelIdSchema,
+  editableBrandOverrideSchema,
+  type BrandDefinition,
+  type ChannelId,
+  type EditableBrandOverride,
+  type FlowDefinition,
+} from '../schema/flow'
+import { DEFAULT_PHONE_PLATFORM, phonePlatformSchema, type PhonePlatform } from '../schema/platform'
 import type { Action, BoardingPassAction, Choice, ListRow, VariableMap } from '../schema/messages'
 import {
   computeNodePlan,
@@ -21,6 +30,7 @@ import { sleep } from '../utils/sleep'
 import { createId } from '../utils/id'
 import { downloadBoardingPassImage } from '../utils/boardingPassFile'
 import { findActiveInput } from '../utils/selectors'
+import { projectLiveSnapshot, type LiveProjection } from '../live/liveSessionProjection'
 import { readShareHash } from '../utils/shareLink'
 import { BUILT_IN_SCENARIOS, DEFAULT_SCENARIO } from '../scenarios'
 import {
@@ -51,6 +61,26 @@ function applyFastMode(durationMs: number, fastMode: boolean): number {
   return Math.min(durationMs, 60)
 }
 
+export function resolveConfiguredBrand(flowBrand: BrandDefinition, override: unknown): BrandDefinition {
+  const base = brandDefinitionSchema.safeParse(flowBrand)
+  if (!base.success) return flowBrand
+  const parsedOverride = editableBrandOverrideSchema.safeParse(override)
+  if (!parsedOverride.success) return base.data
+  return { ...base.data, ...parsedOverride.data, rcsProfile: base.data.rcsProfile }
+}
+
+const EDITABLE_BRAND_KEYS = new Set([
+  'name',
+  'shortName',
+  'avatar',
+  'logo',
+  'verified',
+  'description',
+  'website',
+  'supportPhone',
+  'email',
+])
+
 export interface SimulatorState {
   flow: FlowDefinition | null
   flowSource: string
@@ -59,6 +89,7 @@ export interface SimulatorState {
   customScenarios: CustomScenario[]
 
   channel: ChannelId
+  phonePlatform: PhonePlatform
   fastMode: boolean
   presenterMode: boolean
   /**
@@ -78,6 +109,13 @@ export interface SimulatorState {
   compareMode: boolean
   /** True while the real device, rather than the browser simulator, owns the next interaction. */
   liveSessionActive: boolean
+  /** Credentials for the current live session, held in memory only for phone controls. */
+  liveSessionId: string | null
+  liveOperatorToken: string
+  liveProjection: LiveProjection | null
+  liveSyncState: 'idle' | 'fresh' | 'stale' | 'error'
+  liveLastSyncedAt: number | null
+  liveSyncError: string | null
 
   configuredVariables: VariableMap
   configuredBrand: BrandDefinition
@@ -105,7 +143,7 @@ export interface SimulatorState {
     sourceText: string,
     format: FlowSourceFormat,
     variablesOverride?: VariableMap,
-    brandOverride?: BrandDefinition,
+    brandOverride?: unknown,
   ) => void
   loadScenarioSource: (source: string, format?: FlowSourceFormat) => boolean
   loadBuiltInScenario: (id: string) => void
@@ -154,17 +192,24 @@ export interface SimulatorState {
   toggleDebugWarnings: () => void
   toggleCompareMode: () => void
   setChannel: (channel: ChannelId) => void
+  setPhonePlatform: (platform: PhonePlatform) => void
   setStartNodeOverride: (nodeId: string | null) => void
   setLiveSessionActive: (active: boolean) => void
+  setLiveSessionCredentials: (sessionId: string | null, operatorToken?: string) => void
+  syncLiveSnapshot: (snapshot: unknown) => boolean
+  markLiveProjectionStale: (error?: string) => void
+  clearLiveProjection: () => void
+  restartLiveSession: () => Promise<boolean>
   updateConfiguredVariable: (key: string, value: string | number | boolean) => void
   resetConfiguredVariables: () => void
-  updateConfiguredBrand: (patch: Partial<BrandDefinition>) => void
+  updateConfiguredBrand: (patch: Partial<EditableBrandOverride>) => boolean
   resetConfiguredBrand: () => void
 }
 
 function persistPrefs(state: SimulatorState) {
   savePreferences({
     channel: state.channel,
+    phonePlatform: state.phonePlatform,
     fastMode: state.fastMode,
     presenterMode: state.presenterMode,
     debugWarningsEnabled: state.debugWarningsEnabled,
@@ -253,6 +298,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     customScenarios: loadCustomScenarios(),
 
     channel: 'rcs',
+    phonePlatform: DEFAULT_PHONE_PLATFORM,
     fastMode: false,
     presenterMode: false,
     sharedLinkMode: false,
@@ -260,6 +306,12 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     compareMode: false,
     debugWarningsEnabled: true,
     liveSessionActive: false,
+    liveSessionId: null,
+    liveOperatorToken: '',
+    liveProjection: null,
+    liveSyncState: 'idle',
+    liveLastSyncedAt: null,
+    liveSyncError: null,
 
     configuredVariables: {},
     configuredBrand: { name: '' },
@@ -288,8 +340,10 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         // Generic channel was removed — validate before applying it so a
         // stale value can't put an invalid ChannelId into state.
         const persistedChannel = channelIdSchema.safeParse(prefs.channel)
+        const persistedPhonePlatform = phonePlatformSchema.safeParse(prefs.phonePlatform)
         set((s) => ({
           channel: persistedChannel.success ? persistedChannel.data : s.channel,
+          phonePlatform: persistedPhonePlatform.success ? persistedPhonePlatform.data : s.phonePlatform,
           fastMode: prefs.fastMode ?? s.fastMode,
           presenterMode: prefs.presenterMode ?? s.presenterMode,
           debugWarningsEnabled: prefs.debugWarningsEnabled ?? s.debugWarningsEnabled,
@@ -328,8 +382,9 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     loadFlow: (flow, sourceText, format, variablesOverride, brandOverride) => {
+      if (get().liveSessionActive) return
       const configuredVariables = variablesOverride ?? { ...(flow.variables ?? {}) }
-      const configuredBrand = brandOverride ?? { ...flow.brand }
+      const configuredBrand = resolveConfiguredBrand(flow.brand, brandOverride)
       set((s) => ({
         flow,
         flowSource: sourceText,
@@ -345,6 +400,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     loadScenarioSource: (source, formatHint) => {
+      if (get().liveSessionActive) return false
       const parsed = parseFlowSource(source, formatHint)
       if (!parsed.success) {
         set({ validation: { success: false, errors: [{ message: parsed.message }] } })
@@ -360,11 +416,13 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     loadBuiltInScenario: (id) => {
+      if (get().liveSessionActive) return
       const match = BUILT_IN_SCENARIOS.find((sc) => sc.id === id)
       if (match) get().loadScenarioSource(match.source, 'yaml')
     },
 
     importCustomScenario: (source, formatHint, nameOverride) => {
+      if (get().liveSessionActive) return { success: false, error: 'Live session is active.' }
       const parsed = parseFlowSource(source, formatHint)
       if (!parsed.success) return { success: false, error: parsed.message }
       const validation = validateFlow(parsed.data)
@@ -388,6 +446,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     saveCustomScenario: (id, patch) => {
+      if (get().liveSessionActive) return { success: false, error: 'Live session is active.' }
       const s = get()
       const existing = s.customScenarios.find((sc) => sc.id === id)
       if (!existing) return { success: false, error: 'Scenario not found.' }
@@ -412,12 +471,14 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     },
 
     deleteCustomScenario: (id) => {
+      if (get().liveSessionActive) return
       const customScenarios = get().customScenarios.filter((sc) => sc.id !== id)
       set({ customScenarios })
       saveCustomScenarios(customScenarios)
     },
 
     duplicateAsCustomScenario: (source, format, baseName) => {
+      if (get().liveSessionActive) return ''
       const now = Date.now()
       const entry: CustomScenario = {
         id: createId('scenario'),
@@ -576,6 +637,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleChoice: (choice) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       pushSnapshot()
       applyInteractionResult(resolveChoice(choice, s.currentNodeId))
@@ -583,6 +645,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleListRowSelect: (row) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       pushSnapshot()
       applyInteractionResult(resolveListRow(row, s.currentNodeId))
@@ -605,6 +668,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleInputSubmit: (value) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       const activeInput = findActiveInput(s.history, s.currentNodeId)
       if (!activeInput || activeInput.message.type !== 'input') return
@@ -616,6 +680,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleFreeText: (text) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId || !text.trim()) return
 
       // A global keyword trigger wins even over an active structured `input`
@@ -637,6 +702,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleOtpSubmit: (message, code) => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       if (message.message.type !== 'otp') return
       pushSnapshot()
@@ -719,7 +785,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         return next
       }),
     toggleDebugPanel: () => set((s) => ({ debugPanelOpen: !s.debugPanelOpen })),
-    toggleCompareMode: () => set((s) => ({ compareMode: !s.compareMode })),
+    toggleCompareMode: () => set((s) => s.liveSessionActive ? s : ({ compareMode: !s.compareMode })),
     toggleDebugWarnings: () =>
       set((s) => {
         const next = { debugWarningsEnabled: !s.debugWarningsEnabled }
@@ -728,32 +794,85 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       }),
     setChannel: (channel) =>
       set((s) => {
+        if (s.liveSessionActive) return s
         persistPrefs({ ...s, channel })
         return { channel }
       }),
-    setStartNodeOverride: (nodeId) => set({ startNodeOverride: nodeId }),
+    setPhonePlatform: (phonePlatform) =>
+      set((s) => {
+        if (s.liveSessionActive) return s
+        persistPrefs({ ...s, phonePlatform })
+        return { phonePlatform }
+      }),
+    setStartNodeOverride: (nodeId) => set((s) => s.liveSessionActive ? s : ({ startNodeOverride: nodeId })),
     setLiveSessionActive: (active) =>
       set((s) => active
         ? { liveSessionActive: true, playToken: s.playToken + 1, isPlaying: false, isTyping: false, isPaused: false }
-        : { liveSessionActive: false }),
+        : { liveSessionActive: false, liveSessionId: null, liveOperatorToken: '', liveProjection: null, liveSyncState: 'idle', liveLastSyncedAt: null, liveSyncError: null }),
+    setLiveSessionCredentials: (sessionId, operatorToken = '') => set({ liveSessionId: sessionId, liveOperatorToken: operatorToken }),
+    syncLiveSnapshot: (snapshot) => {
+      const result = projectLiveSnapshot(snapshot)
+      if (!result.success) {
+        set({ liveSyncState: 'error', liveSyncError: result.error })
+        return false
+      }
+      set({ liveProjection: result.projection, liveSyncState: 'fresh', liveLastSyncedAt: Date.now(), liveSyncError: null })
+      return true
+    },
+    markLiveProjectionStale: (error) => set((s) => ({ liveSyncState: s.liveProjection ? 'stale' : 'error', liveSyncError: error ?? 'Could not refresh the live session.' })),
+    clearLiveProjection: () => set({ liveProjection: null, liveSyncState: 'idle', liveLastSyncedAt: null, liveSyncError: null }),
+    restartLiveSession: async () => {
+      const { liveSessionId, liveOperatorToken } = get()
+      if (!liveSessionId || !liveOperatorToken) return false
+      try {
+        const response = await fetch(`/api/live/sessions/${liveSessionId}/restart`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${liveOperatorToken}` },
+        })
+        const body = await response.json().catch(() => ({})) as { error?: string | { message?: string }; liveSnapshot?: unknown }
+        if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : body.error?.message ?? `Could not restart the live session (${response.status}).`)
+        get().syncLiveSnapshot(body)
+        get().showToast('Flow restarted on the test phone')
+        return true
+      } catch (error) {
+        get().markLiveProjectionStale(error instanceof Error ? error.message : 'Could not restart the live session.')
+        get().showToast(error instanceof Error ? error.message : 'Could not restart the live session.')
+        return false
+      }
+    },
 
     updateConfiguredVariable: (key, value) => {
+      if (get().liveSessionActive) return
       set((s) => ({ configuredVariables: { ...s.configuredVariables, [key]: value } }))
       persistScenario(get())
     },
     resetConfiguredVariables: () => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow) return
       set({ configuredVariables: { ...(s.flow.variables ?? {}) } })
       persistScenario(get())
     },
 
     updateConfiguredBrand: (patch) => {
-      set((s) => ({ configuredBrand: { ...s.configuredBrand, ...patch } }))
+      const s = get()
+      if (s.liveSessionActive || !s.flow) return false
+      if (Object.keys(patch).some((key) => !EDITABLE_BRAND_KEYS.has(key))) {
+        s.showToast('This brand field cannot be changed in the editor.')
+        return false
+      }
+      const parsed = editableBrandOverrideSchema.safeParse({ ...s.configuredBrand, ...patch })
+      if (!parsed.success) {
+        s.showToast('That brand value is not valid.')
+        return false
+      }
+      set({ configuredBrand: { ...s.configuredBrand, ...parsed.data, rcsProfile: s.flow.brand.rcsProfile } })
       persistScenario(get())
+      return true
     },
     resetConfiguredBrand: () => {
       const s = get()
+      if (s.liveSessionActive) return
       if (!s.flow) return
       set({ configuredBrand: { ...s.flow.brand } })
       persistScenario(get())

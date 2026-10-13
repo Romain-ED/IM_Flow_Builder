@@ -9,6 +9,25 @@ instance:
   entrypoint:
     - node
     - server/index.js
+  environment:
+    - name: LIVE_RCS_MODE
+      secret: LIVE_RCS_MODE
+    - name: LIVE_RCS_TEST_RECIPIENT
+      secret: LIVE_RCS_TEST_RECIPIENT
+    - name: LIVE_RCS_OPERATOR_TOKEN
+      secret: LIVE_RCS_OPERATOR_TOKEN
+    - name: LIVE_RCS_ALLOWED_FLOW_IDS
+      secret: LIVE_RCS_ALLOWED_FLOW_IDS
+    - name: LIVE_RCS_VONAGE_APPLICATION_ID
+      secret: LIVE_RCS_VONAGE_APPLICATION_ID
+    - name: LIVE_RCS_RCS_AGENT_ID
+      secret: LIVE_RCS_RCS_AGENT_ID
+    - name: LIVE_RCS_VONAGE_PRIVATE_KEY
+      secret: LIVE_RCS_VONAGE_PRIVATE_KEY
+    - name: LIVE_RCS_VONAGE_SIGNATURE_SECRET
+      secret: LIVE_RCS_VONAGE_SIGNATURE_SECRET
+    - name: LIVE_RCS_DEMO_EPHEMERAL_STORAGE
+      secret: LIVE_RCS_DEMO_EPHEMERAL_STORAGE
   security:
     access: public
 debug:

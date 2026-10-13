@@ -75,8 +75,10 @@ export interface LiveRcsPreflightOptions {
   publicBaseUrl?: string
 }
 
-const MAX_TEXT_LENGTH = 3000
-const MAX_MEDIA_URL_LENGTH = 2000
+const MAX_TEXT_LENGTH = rcsCapabilities.maxTextLength ?? 3072
+const RCS_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.gif', '.png'])
+const RCS_VIDEO_EXTENSIONS = new Set(['.h263', '.m4v', '.mp4', '.m4p', '.mpeg', '.webm'])
+const RCS_DOCUMENT_EXTENSIONS = new Set(['.pdf'])
 
 function issue(errors: LiveRcsIssue[], nodeId: string, message: string, messageIndex?: number) {
   errors.push({ nodeId, messageIndex, message })
@@ -120,11 +122,14 @@ function resolvePublicUrl(
     issue(errors, nodeId, `${label} URL must use HTTPS (or localhost during development).`, messageIndex)
     return undefined
   }
-  if (url.href.length > MAX_MEDIA_URL_LENGTH) {
-    issue(errors, nodeId, `${label} URL exceeds the ${MAX_MEDIA_URL_LENGTH}-character RCS limit.`, messageIndex)
-    return undefined
-  }
   return url.href
+}
+
+function validateMediaFormat(url: string, allowedExtensions: Set<string>, label: string, errors: LiveRcsIssue[], nodeId: string, messageIndex: number) {
+  const extension = new URL(url).pathname.match(/\.[a-z0-9]+$/i)?.[0].toLowerCase()
+  if (extension && !allowedExtensions.has(extension)) {
+    issue(errors, nodeId, `${label} uses unsupported RCS media format "${extension}". Use JPG/GIF/PNG for images, H.263/M4V/MP4/MPEG/WebM for video, or PDF for documents.`, messageIndex)
+  }
 }
 
 function compileAction(
@@ -134,6 +139,10 @@ function compileAction(
   index: number,
   errors: LiveRcsIssue[],
 ): LiveRcsAction | undefined {
+  const labelLimit = rcsCapabilities.maxButtonLabelLength
+  if (labelLimit && action.label.length > labelLimit) {
+    issue(errors, nodeId, `Action "${action.label}" is ${action.label.length} characters; RCS suggestion labels allow at most ${labelLimit}.`, messageIndex)
+  }
   const id = actionId(nodeId, messageIndex, index)
   if (action.type === 'reply') {
     return { id, label: action.label, type: 'reply', next: action.next, set: action.set }
@@ -151,13 +160,19 @@ function compileAction(
   return undefined
 }
 
-function compileChoices(choices: Choice[], nodeId: string, messageIndex: number): LiveRcsReply[] {
-  return choices.map((choice, index) => ({
-    id: replyId(nodeId, messageIndex, index),
-    label: choice.label,
-    next: choice.next,
-    set: choice.set,
-  }))
+function compileChoices(choices: Choice[], nodeId: string, messageIndex: number, errors: LiveRcsIssue[]): LiveRcsReply[] {
+  const labelLimit = rcsCapabilities.maxButtonLabelLength
+  return choices.map((choice, index) => {
+    if (labelLimit && choice.label.length > labelLimit) {
+      issue(errors, nodeId, `Reply "${choice.label}" is ${choice.label.length} characters; RCS suggestion labels allow at most ${labelLimit}.`, messageIndex)
+    }
+    return {
+      id: replyId(nodeId, messageIndex, index),
+      label: choice.label,
+      next: choice.next,
+      set: choice.set,
+    }
+  })
 }
 
 function addSuggestions(
@@ -216,12 +231,16 @@ function compileNode(
       case 'image':
       case 'video': {
         const url = resolvePublicUrl(message.url, options.publicBaseUrl, errors, node.id, index, message.type)
-        if (url) content.push({ id, nodeId: node.id, type: message.type, url, text: message.caption })
+        if (url) {
+          validateMediaFormat(url, message.type === 'image' ? RCS_IMAGE_EXTENSIONS : RCS_VIDEO_EXTENSIONS, message.type, errors, node.id, index)
+          content.push({ id, nodeId: node.id, type: message.type, url, text: message.caption })
+        }
         break
       }
       case 'document': {
         const url = resolvePublicUrl(message.url, options.publicBaseUrl, errors, node.id, index, 'Document')
         if (url) {
+          validateMediaFormat(url, RCS_DOCUMENT_EXTENSIONS, 'Document', errors, node.id, index)
           content.push({
             id,
             nodeId: node.id,
@@ -235,12 +254,23 @@ function compileNode(
         break
       }
       case 'rich_card': {
+        if (message.title.length > (rcsCapabilities.maxCardTitleLength ?? Infinity)) {
+          issue(errors, node.id, `Rich card title is ${message.title.length} characters; RCS allows at most ${rcsCapabilities.maxCardTitleLength} characters.`, index)
+        }
+        if (message.description && message.description.length > (rcsCapabilities.maxCardDescriptionLength ?? Infinity)) {
+          issue(errors, node.id, `Rich card description is ${message.description.length} characters; RCS allows at most ${rcsCapabilities.maxCardDescriptionLength} characters.`, index)
+        }
+        const cardActionLimit = rcsCapabilities.maxRichCardSuggestions ?? rcsCapabilities.maxSuggestedActions
+        if ((message.actions?.length ?? 0) > cardActionLimit) {
+          issue(errors, node.id, `Rich card has ${message.actions?.length ?? 0} buttons; RCS allows at most ${cardActionLimit} on one card.`, index)
+        }
         const actions = (message.actions ?? [])
           .map((action, actionIndex) => compileAction(action, node.id, index, actionIndex, errors))
           .filter((action): action is LiveRcsAction => Boolean(action))
         const imageUrl = message.image
           ? resolvePublicUrl(message.image, options.publicBaseUrl, errors, node.id, index, 'Rich card image')
           : undefined
+        if (imageUrl) validateMediaFormat(imageUrl, RCS_IMAGE_EXTENSIONS, 'Rich card image', errors, node.id, index)
         content.push({
           id,
           nodeId: node.id,
@@ -253,22 +283,43 @@ function compileNode(
         break
       }
       case 'carousel': {
-        const cards = message.cards.map((card, cardIndex) => ({
-          id: card.id,
-          title: card.title,
-          description: card.description ?? card.subtitle,
-          imageUrl: card.image
+        if (message.cards.length < 2) {
+          issue(errors, node.id, "RCS carousels require at least 2 cards; use a standalone rich card for one card.", index)
+        }
+        if (message.cards.length > rcsCapabilities.maxCarouselCards) {
+          issue(errors, node.id, `RCS carousels allow at most ${rcsCapabilities.maxCarouselCards} cards.`, index)
+        }
+        const cards = message.cards.map((card, cardIndex) => {
+          if (card.title.length > (rcsCapabilities.maxCardTitleLength ?? Infinity)) {
+            issue(errors, node.id, `Carousel card title is ${card.title.length} characters; RCS allows at most ${rcsCapabilities.maxCardTitleLength} characters.`, index)
+          }
+          const description = card.description ?? card.subtitle
+          if (description && description.length > (rcsCapabilities.maxCardDescriptionLength ?? Infinity)) {
+            issue(errors, node.id, `Carousel card description is ${description.length} characters; RCS allows at most ${rcsCapabilities.maxCardDescriptionLength} characters.`, index)
+          }
+          const cardActionLimit = rcsCapabilities.maxCarouselCardButtons ?? rcsCapabilities.maxRichCardSuggestions ?? rcsCapabilities.maxSuggestedActions
+          if ((card.actions?.length ?? 0) > cardActionLimit) {
+            issue(errors, node.id, `Carousel card "${card.title}" has ${card.actions?.length ?? 0} buttons; RCS allows at most ${cardActionLimit} per card.`, index)
+          }
+          const imageUrl = card.image
             ? resolvePublicUrl(card.image, options.publicBaseUrl, errors, node.id, index, `Carousel card "${card.title}" image`)
-            : undefined,
-          actions: (card.actions ?? [])
-            .map((action, actionIndex) => compileAction(action, node.id, index, cardIndex * 10 + actionIndex, errors))
-            .filter((action): action is LiveRcsAction => Boolean(action)),
-        }))
+            : undefined
+          if (imageUrl) validateMediaFormat(imageUrl, RCS_IMAGE_EXTENSIONS, `Carousel card "${card.title}" image`, errors, node.id, index)
+          return {
+            id: card.id,
+            title: card.title,
+            description,
+            imageUrl,
+            actions: (card.actions ?? [])
+              .map((action, actionIndex) => compileAction(action, node.id, index, cardIndex * 10 + actionIndex, errors))
+              .filter((action): action is LiveRcsAction => Boolean(action)),
+          }
+        })
         content.push({ id, nodeId: node.id, type: 'carousel', cards })
         break
       }
       case 'suggested_replies':
-        addSuggestions(previous, compileChoices(message.options, node.id, index), undefined, errors, node.id, index)
+        addSuggestions(previous, compileChoices(message.options, node.id, index, errors), undefined, errors, node.id, index)
         break
       case 'suggested_actions': {
         const actions = message.actions
@@ -291,7 +342,7 @@ function compileNode(
   }
 
   if (node.actions?.length) {
-    const replies = compileChoices(node.actions, node.id, messages.length)
+    const replies = compileChoices(node.actions, node.id, messages.length, errors)
     addSuggestions(content.at(-1), replies, undefined, errors, node.id, messages.length)
   }
 

@@ -11,7 +11,6 @@ import type { TrailingActionItem } from './MessageShell'
 import { TypingIndicator } from './TypingIndicator'
 import { ChoiceChips } from './ChoiceChips'
 
-/** Builds the divided-footer button list for a merged suggested_replies/suggested_actions message. */
 function trailingItemsForAttached(
   attached: NormalizedMessage,
   handleChoice: (choice: Choice) => void,
@@ -38,27 +37,23 @@ function trailingItemsForAttached(
 export function ConversationView() {
   const channel = useActiveChannel()
   const history = useSimulatorStore((s) => s.history)
+  const liveProjection = useSimulatorStore((s) => s.liveProjection)
+  const liveSessionActive = useSimulatorStore((s) => s.liveSessionActive)
   const isTyping = useSimulatorStore((s) => s.isTyping)
   const pendingOutcome = useSimulatorStore((s) => s.pendingOutcome)
   const handleChoice = useSimulatorStore((s) => s.handleChoice)
   const handleAction = useSimulatorStore((s) => s.handleAction)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const pendingActions = pendingOutcome?.kind === 'await-actions' ? pendingOutcome.actions : null
-
-  // Real WhatsApp interactive buttons are always part of the one message
-  // object that offered them — never a separate message. On channels whose
-  // chips render "stacked" (WhatsApp), fold a node's trailing `actions` and
-  // any `suggested_replies`/`suggested_actions` message into the business
-  // text message they logically follow, instead of a separate floating
-  // block. RCS suggestion chips genuinely do float as their own pill row
-  // below the card in the real UI, so none of this applies there.
+  const readOnly = liveSessionActive
+  const displayedHistory = useMemo(() => liveSessionActive ? (liveProjection?.timeline ?? []) : history, [history, liveProjection?.timeline, liveSessionActive])
+  const pendingActions = !readOnly && pendingOutcome?.kind === 'await-actions' ? pendingOutcome.actions : null
   const canAttach = channelThemes[channel].chipStyle === 'stacked'
-
-  const entries = useMemo(() => computeMessageAttachments(history, canAttach), [history, canAttach])
+  const entries = useMemo(() => computeMessageAttachments(displayedHistory, canAttach), [displayedHistory, canAttach])
 
   const lastEntry = entries[entries.length - 1]
   const canAttachPending =
+    !readOnly &&
     canAttach &&
     lastEntry &&
     !lastEntry.attached &&
@@ -69,20 +64,22 @@ export function ConversationView() {
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [history.length, isTyping, pendingActions])
+  }, [displayedHistory.length, isTyping, pendingActions])
 
   return (
-    <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto thin-scrollbar px-3 py-3 flex flex-col gap-2.5">
-      {history.length === 0 && !isTyping && (
-        <p className="text-center text-[12px] text-slate-400 mt-6">Starting conversation…</p>
+    <div ref={scrollRef} className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 overflow-y-auto overflow-x-hidden px-3 py-3 thin-scrollbar">
+      {displayedHistory.length === 0 && !isTyping && (
+        <p className="text-center text-[12px] text-slate-400 mt-6">
+          {readOnly ? (liveProjection ? 'No live conversation messages yet.' : 'Waiting for the live session snapshot…') : 'Starting conversation…'}
+        </p>
       )}
       {entries.map((entry, i) => {
         const isLast = i === entries.length - 1
-        const trailingItems = entry.attached
+        const trailingItems = !readOnly && entry.attached
           ? trailingItemsForAttached(entry.attached, handleChoice, handleAction)
           : []
         const pendingItems =
-          isLast && canAttachPending && pendingActions
+          !readOnly && isLast && canAttachPending && pendingActions
             ? pendingActions.map((choice, j) => ({
                 key: choice.value ?? choice.label ?? `pending-${j}`,
                 label: choice.label,
@@ -95,16 +92,14 @@ export function ConversationView() {
             key={entry.message.runtimeId}
             message={entry.message}
             channel={channel}
+            readOnly={readOnly}
             trailingActions={combined.length > 0 ? combined : undefined}
           />
         )
       })}
-      {isTyping && <TypingIndicator channel={channel} />}
-      {floatingActions && (
-        // Real RCS suggestion chips float as their own pill row below the
-        // card, so this branch stays for channels where chips aren't
-        // "stacked" (see canAttach above).
-        <div className="flex w-full justify-start pl-1">
+      {!readOnly && isTyping && <TypingIndicator channel={channel} />}
+      {!readOnly && floatingActions && (
+        <div className="flex w-full justify-start pl-1 animate-message-actions">
           <ChoiceChips
             choices={floatingActions}
             channel={channel}

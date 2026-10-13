@@ -10,9 +10,10 @@ interface VideoMessageProps {
   message: NormalizedMessage
   channel: ChannelId
   timestampLabel?: string
+  interactive: boolean
 }
 
-export function VideoMessage({ message, channel, timestampLabel }: VideoMessageProps) {
+export function VideoMessage({ message, channel, timestampLabel, interactive }: VideoMessageProps) {
   const showToast = useSimulatorStore((s) => s.showToast)
   if (message.message.type !== 'video') return null
   const { sender, thumbnailUrl, caption, durationLabel } = message.message
@@ -22,8 +23,9 @@ export function VideoMessage({ message, channel, timestampLabel }: VideoMessageP
       <button
         type="button"
         className="relative w-full h-48 block group cursor-pointer"
-        onClick={() => showToast('Video playback is not available in this simulator')}
+        onClick={interactive ? () => showToast('Video playback is not available in this simulator') : undefined}
         aria-label="Play video preview"
+        disabled={!interactive}
       >
         <ImageWithFallback src={thumbnailUrl} alt={caption ?? 'Video preview'} className="w-full h-full object-cover" />
         <span className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">

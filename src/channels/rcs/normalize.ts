@@ -49,10 +49,9 @@ function isRcsAttachableTrailing(message: Message): boolean {
 
 /**
  * Walks one node's raw authored messages (pre-interpolation, same stage
- * `flowValidator` operates at). See `whatsapp/normalize.ts` for the shared
- * rationale (count/structural hard errors only, not length — that stays a
- * live soft warning; unsupported types are an intentional soft fallback,
- * not validated here).
+ * `flowValidator` operates at). Structural/cardinality limits are hard
+ * errors. Text length is also checked here when its authored value is known;
+ * Live RCS preflight repeats length and media checks after interpolation.
  */
 export function normalizeForRcs(messages: Message[]): RcsNormalizeResult {
   const normalized: RcsNormalizedMessage[] = []
@@ -86,6 +85,11 @@ export function normalizeForRcs(messages: Message[]): RcsNormalizeResult {
 
     switch (message.type) {
       case 'text':
+        if (message.text.length > (rcsCapabilities.maxTextLength ?? Infinity)) {
+          errors.push(
+            `text has ${message.text.length} characters — RCS allows at most ${rcsCapabilities.maxTextLength} characters.`,
+          )
+        }
         normalized.push({ kind: 'text', suggestionCount: attachedSuggestions })
         break
       case 'suggested_replies':
@@ -107,9 +111,10 @@ export function normalizeForRcs(messages: Message[]): RcsNormalizeResult {
         break
       case 'rich_card': {
         const buttonCount = message.actions?.length ?? 0
-        if (buttonCount > rcsCapabilities.maxSuggestedActions) {
+        const buttonLimit = rcsCapabilities.maxRichCardSuggestions ?? rcsCapabilities.maxSuggestedActions
+        if (buttonCount > buttonLimit) {
           errors.push(
-            `rich_card "${message.title}" has ${buttonCount} buttons — RCS rich cards allow at most ${rcsCapabilities.maxSuggestedActions}.`,
+            `rich_card "${message.title}" has ${buttonCount} buttons — RCS rich cards allow at most ${buttonLimit}.`,
           )
         } else {
           normalized.push({ kind: 'rich_card', suggestionCount: attachedSuggestions })

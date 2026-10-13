@@ -11,6 +11,59 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.17.7',
+    date: '2026-10-07',
+    changes: [
+      'Maintenance: removed six confirmed-unused airline and placeholder SVG assets after auditing every public asset reference; no unreferenced files remain in public/assets.',
+    ],
+  },
+  {
+    version: '0.17.6',
+    date: '2026-10-07',
+    changes: [
+      'Fix: added versioned query strings to Singapore Airlines media URLs so browsers, service workers, and the live RCS provider cannot reuse cached artwork after an asset replacement.',
+    ],
+  },
+  {
+    version: '0.17.5',
+    date: '2026-10-07',
+    changes: [
+      'Enhancement: refreshed the Singapore Airlines aircraft and seat-selection artwork with production-ready RGB PNG assets for clearer RCS cards and carousel media.',
+    ],
+  },
+  {
+    version: '0.17.4',
+    date: '2026-10-07',
+    changes: [
+      'Fix: Live RCS now resolves relative media paths to the deployed public origin and maps carousel images to the Vonage payload field correctly.',
+      'Guard: Live RCS preflight rejects rich cards without required media and known unsupported SVG media before a session can send a message.',
+    ],
+  },
+  {
+    version: '0.17.3',
+    date: '2026-10-07',
+    changes: [
+      'Fix: airline RCS card and carousel media now use PNG assets, which are accepted by the Vonage media endpoint instead of the previous SVG URLs.',
+    ],
+  },
+  {
+    version: '0.17.2',
+    date: '2026-10-07',
+    changes: [
+      'Fix: Live RCS flight-detail cards now include the media required by the Vonage RCS card payload, so the Check in flow continues beyond its first text reply.',
+      'Fix: Vonage outbound errors now include a truncated provider reason in diagnostics, making rejected rich-content payloads actionable without exposing credentials.',
+    ],
+  },
+  {
+    version: '0.17.1',
+    date: '2026-10-07',
+    changes: [
+      'New: Live logs page with protected session inspection and copyable sanitized webhook diagnostics for troubleshooting real-device RCS callbacks.',
+      'Fix: Vonage webhook diagnostics now expose safe signing-claim context, accept the documented optional application_id claim, and tolerate harmless surrounding whitespace in the configured signature secret without weakening signature verification.',
+      'Enhancement: Singapore Airlines RCS booking and seat-selection cards now use selective aircraft and seat illustrations while keeping conversational steps text-led.',
+    ],
+  },
+  {
     version: '0.17.0',
     date: '2026-10-06',
     changes: [

@@ -22,7 +22,8 @@ export function ChoiceChips({ choices, channel, interactive, onSelect, ariaLabel
             type="button"
             disabled={!interactive}
             onClick={() => interactive && onSelect(choice)}
-            className={`px-4 py-2.5 text-[13.5px] font-medium text-center transition-colors ${theme.chipText} ${i > 0 ? 'border-t border-slate-200' : ''} ${interactive ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+            className={`animate-choice-chip px-4 py-2.5 text-[13.5px] font-medium text-center transition-colors ${theme.chipText} ${i > 0 ? 'border-t border-slate-200' : ''} ${interactive ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+            style={{ animationDelay: `${120 + i * 45}ms` }}
           >
             {choice.label}
           </button>
@@ -39,7 +40,8 @@ export function ChoiceChips({ choices, channel, interactive, onSelect, ariaLabel
           type="button"
           disabled={!interactive}
           onClick={() => interactive && onSelect(choice)}
-          className={`rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors ${theme.chipBg} ${theme.chipBorder} ${theme.chipText} ${interactive ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
+          className={`animate-choice-chip rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors ${theme.chipBg} ${theme.chipBorder} ${theme.chipText} ${interactive ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
+          style={{ animationDelay: `${120 + i * 45}ms` }}
         >
           {choice.label}
         </button>

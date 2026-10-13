@@ -38,9 +38,11 @@ interface MessageRendererProps {
    * message — so this must render inside the same card, not float below it.
    */
   trailingActions?: TrailingActionItem[]
+  /** Prevents every simulator interaction and side effect in the live mirror. */
+  readOnly?: boolean
 }
 
-export function MessageRenderer({ message, channel, trailingActions }: MessageRendererProps) {
+export function MessageRenderer({ message, channel, trailingActions, readOnly = false }: MessageRendererProps) {
   const currentNodeId = useSimulatorStore((s) => s.currentNodeId)
   const debugWarningsEnabled = useSimulatorStore((s) => s.debugWarningsEnabled)
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
@@ -48,7 +50,7 @@ export function MessageRenderer({ message, channel, trailingActions }: MessageRe
   const showTimestamps = useSimulatorStore((s) => s.flow?.defaults?.showTimestamps ?? true)
   const locale = useSimulatorStore((s) => s.flow?.defaults?.locale)
 
-  const interactive = isMessageInteractive(message, currentNodeId)
+  const interactive = !readOnly && isMessageInteractive(message, currentNodeId)
   const capabilities = channelCapabilities[channel]
   const supported = isMessageTypeSupported(capabilities, message.message.type)
   // Hidden in presenter mode (a live demo) and shared-link mode (an
@@ -64,9 +66,13 @@ export function MessageRenderer({ message, channel, trailingActions }: MessageRe
   const showCapabilityWarning = Boolean(capabilityWarning) && debugWarningsEnabled && !presenterMode && !sharedLinkMode
   const timestampLabel = showTimestamps ? formatTime(message.timestamp, locale) : undefined
   const deliveryState = message.message.sender === 'user' ? 'read' : undefined
+  const sender = message.message.sender ?? 'business'
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div
+      className={`message-entry message-entry-${sender} flex flex-col gap-1 w-full animate-message-in`}
+      data-message-sender={sender}
+    >
       {showFallbackNote && (
         <div className="flex items-start gap-1.5 pl-1 text-[11px] text-amber-700 max-w-[86%]">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />
@@ -79,7 +85,7 @@ export function MessageRenderer({ message, channel, trailingActions }: MessageRe
           <span>{capabilityWarning}</span>
         </div>
       )}
-      {renderContent(message, channel, interactive, timestampLabel, deliveryState, trailingActions)}
+      {renderContent(message, channel, interactive, timestampLabel, deliveryState, readOnly ? undefined : trailingActions)}
     </div>
   )
 }
@@ -106,9 +112,9 @@ function renderContent(
     case 'image':
       return <ImageMessage message={message} channel={channel} timestampLabel={timestampLabel} />
     case 'video':
-      return <VideoMessage message={message} channel={channel} timestampLabel={timestampLabel} />
+      return <VideoMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
     case 'document':
-      return <DocumentMessage message={message} channel={channel} timestampLabel={timestampLabel} />
+      return <DocumentMessage message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
     case 'rich_card':
       return <RichCard message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
     case 'carousel':

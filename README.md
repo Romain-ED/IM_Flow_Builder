@@ -153,7 +153,7 @@ metadata:
 brand:
   name: "Acme Airlines"
   shortName: "Acme"                    # optional, shown in the header instead of name
-  avatar: "/assets/brand-avatar.svg"
+  avatar: "/assets/singapore-airlines/brand-avatar.svg"
   description: "Customer support"      # optional header subtitle; defaults to a channel label
   verified: true
 defaults:

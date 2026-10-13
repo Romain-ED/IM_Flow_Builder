@@ -10,7 +10,7 @@ import { preflightLiveRcsFlow } from '../live/rcsPreflight'
 
 describe('built-in scenarios', () => {
   for (const scenario of BUILT_IN_SCENARIOS) {
-    it(`${scenario.id} parses, validates, and is compliant on both channels`, () => {
+    it(`${scenario.id} parses, validates, and is compliant on its authored channel`, () => {
       const parsed = parseFlowSource(scenario.source, 'yaml')
       expect(parsed.success).toBe(true)
       if (!parsed.success) return
@@ -23,7 +23,31 @@ describe('built-in scenarios', () => {
   }
 })
 
-// Guards the promise CLAUDE.md makes for built-ins: every message type they
+describe('RCS capacity regressions', () => {
+  it("uses four Domino's welcome card actions and keeps coherent choice groups together", () => {
+    const scenario = BUILT_IN_SCENARIOS.find((entry) => entry.id === 'dominos-singapore-rcs-demo')
+    expect(scenario).toBeDefined()
+    const parsed = parseFlowSource(scenario!.source, 'yaml')
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+    const flow = flowDefinitionSchema.parse(parsed.data)
+    const welcome = flow.nodes.find((node) => node.id === 'welcome')!
+    const welcomeCard = welcome.messages?.find((message) => message.type === 'rich_card')
+    expect(welcomeCard?.type === 'rich_card' ? welcomeCard.actions : []).toHaveLength(4)
+
+    for (const node of flow.nodes) {
+      const messages = node.messages ?? []
+      for (let index = 1; index < messages.length; index++) {
+        const previous = messages[index - 1].type
+        const current = messages[index].type
+        expect([previous, current]).not.toEqual([
+          expect.stringMatching(/^suggested_(replies|actions)$/),
+          expect.stringMatching(/^suggested_(replies|actions)$/),
+        ])
+      }
+    }
+  })
+})
 // use has a real wire-format equivalent on *at least one* of WhatsApp/RCS —
 // i.e. none of them is one of the 5 types CLAUDE.md documents as having "no
 // official basis on any platform" (otp, flight_card, boarding_pass,

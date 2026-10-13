@@ -14,7 +14,7 @@ metadata:
 brand:
   name: "Pro Gadget Laos"
   shortName: "Pro Gadget"
-  avatar: "/assets/brand-avatar-progadget.svg"
+  avatar: "/assets/progadget-laos/brand-avatar-progadget.svg"
   verified: true
   website: "https://progadget.tech"
   supportPhone: "+856 20 5515 5569"
@@ -89,7 +89,7 @@ nodes:
       - type: text
         text: "Phone verified! Your pre-order is confirmed, {{customerName}}."
       - type: rich_card
-        image: "/assets/garmin_cirqa.jpeg"
+        image: "/assets/progadget-laos/garmin_cirqa.jpeg"
         title: "{{productName}} x{{quantity}}"
         description: "Order **{{orderNumber}}** · **{{orderTotal}}**. We'll text you at every step — payment, shipping, and delivery."
         footer: "_Track anytime using the link below._"
@@ -116,7 +116,7 @@ nodes:
       - type: text
         text: "🚀 Thanks for being a Pro Gadget Laos customer, {{customerName}}."
       - type: rich_card
-        image: "/assets/garmin_cirqa.jpeg"
+        image: "/assets/progadget-laos/garmin_cirqa.jpeg"
         title: "10% off your next order"
         description: "Enjoying your {{productName}}? Use code **{{promoCode}}** for **{{discount}} off** your next pre-order — or share it with a friend."
         actions:

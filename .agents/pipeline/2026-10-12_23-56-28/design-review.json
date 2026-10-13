@@ -1,0 +1,54 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "HIGH",
+      "location": "02-design.md: Flow and data model, promotions fixture and carousel geometry",
+      "problem": "The design does not specify exact second-card copy or rendering order that makes the visible card begin with the $9.99 offer. The current fixture title precedes its $9.99 subtitle, so the acceptance criterion can still fail.",
+      "fix": "Choose exact second-card title/body beginning with $9.99 (for example, title '$9.99 — Everyday Value: 1 Large Pizza'), or require subtitle-before-title rendering, and test that the rendered second-card text starts with $9.99."
+    },
+    {
+      "id": 2,
+      "severity": "MEDIUM",
+      "location": "02-design.md: RCS conversation attachment plan and file list",
+      "problem": "The design says More-options reply choices are attached, but current ConversationView only attaches trailing choices when the theme chipStyle is stacked; RCS currently uses pill, so the choices render as a separate floating row. ConversationView is not listed as a required modification.",
+      "fix": "Either explicitly retain floating RCS pills and remove 'attached' from the contract, or specify a narrow ConversationView RCS attachment rule for More options and add a render test; do not globally change unrelated RCS behavior."
+    },
+    {
+      "id": 3,
+      "severity": "HIGH",
+      "location": "02-design.md: post_promo_nav reachability instruction",
+      "problem": "The existing post_promo_nav node is not currently reachable from promotions: the Main Menu choice points to welcome. The design does not specify the exact choice mapping that must change.",
+      "fix": "State explicitly that promotions' More-options Main Menu choice changes from next: welcome to next: post_promo_nav, preserve all other action semantics, and test the label-to-node mapping."
+    },
+    {
+      "id": 4,
+      "severity": "MEDIUM",
+      "location": "02-design.md: nested profile schema and shared safe URL schema",
+      "problem": "'Practical maximum lengths' and the scope of safe URL validation are undefined. The current top-level brand.website is unrestricted and is used directly as href by the generic profile.",
+      "fix": "Define exact max lengths for every profile field and URL, and explicitly validate/sanitize top-level brand.website or state and test a deliberate legacy exception. Cover protocol-relative, whitespace, javascript:, data:, and over-limit inputs."
+    },
+    {
+      "id": 5,
+      "severity": "MEDIUM",
+      "location": "02-design.md: updateConfiguredBrand persistence paragraph",
+      "problem": "The design requires validating live brand patches but does not define rejection/rollback/reporting behavior or narrow the current Partial<BrandDefinition> API, which can permit rcsProfile to be supplied by a caller.",
+      "fix": "Define an EditableBrandOverride type/schema, narrow updateConfiguredBrand to it, validate the merged candidate, leave state/storage unchanged on failure with a non-fatal toast or result, and always retain the validated flow profile."
+    },
+    {
+      "id": 6,
+      "severity": "MEDIUM",
+      "location": "02-design.md: RCS header requirements",
+      "problem": "The current RCS header also renders video and phone controls, but the design does not state whether target-profile rendering removes or retains them. Either choice affects screenshot fidelity and fallback-brand behavior.",
+      "fix": "Specify the target control set, preferably exactly back/identity/overflow for rcsProfile brands, and specify whether existing controls remain for non-profile RCS brands; add tests for both paths."
+    },
+    {
+      "id": 7,
+      "severity": "NIT",
+      "location": "02-design.md: Testability and verification",
+      "problem": "The manual narrow-viewport procedure does not identify the exact scenario entry, playback settled signal, or reproducible overflow check.",
+      "fix": "Record the exact steps: load the built-in RCS scenario, wait for isPlaying=false and pendingOutcome=idle, use a 360 CSS-pixel viewport, check document scrollWidth equals clientWidth, then capture conversation and profile states."
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { CHANNEL_OPTIONS } from '../../channels/registry'
 import { channelThemes } from '../../channels/theme'
 import { PhoneFrame } from './PhoneFrame'
 import { PhoneScreen } from './PhoneScreen'
+import { useSimulatorStore } from '../../store/simulatorStore'
 
 /**
  * Renders all three channels side by side, driven by the exact same live
@@ -9,6 +10,8 @@ import { PhoneScreen } from './PhoneScreen'
  * shared engine, and the others reflect it immediately.
  */
 export function ComparePhones() {
+  const phonePlatform = useSimulatorStore((s) => s.phonePlatform)
+
   return (
     <div className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden p-6">
       <div className="flex gap-6 h-full min-w-fit mx-auto justify-center">
@@ -21,7 +24,7 @@ export function ComparePhones() {
               {opt.label}
             </span>
             <div className="phone-viewport flex-1 min-h-0">
-              <PhoneFrame>
+              <PhoneFrame platform={phonePlatform}>
                 <PhoneScreen channelOverride={opt.id} />
               </PhoneFrame>
             </div>

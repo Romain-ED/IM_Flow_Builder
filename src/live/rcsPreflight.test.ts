@@ -32,7 +32,25 @@ describe('preflightLiveRcsFlow', () => {
     })
   })
 
-  it('requires a public URL for files and resolves VCR-relative assets', () => {
+  it('uses 11 for trailing RCS suggestions and 4 for card-owned actions', () => {
+    const flow = flowDefinitionSchema.parse({
+      ...baseFlow,
+      nodes: [{
+        id: 'start',
+        messages: [
+          { type: 'text', text: 'Choose' },
+          { type: 'suggested_actions', actions: Array.from({ length: 11 }, (_, i) => ({ type: 'reply', label: `Option ${i}` })) },
+          { type: 'rich_card', title: 'Card', actions: Array.from({ length: 4 }, (_, i) => ({ type: 'reply', label: `Card ${i}` })) },
+        ],
+        end: true,
+      }],
+    })
+    const result = preflightLiveRcsFlow(flow, { publicBaseUrl: 'https://demo.example' })
+    expect(result.success).toBe(true)
+    expect(result.errors).toEqual([])
+  })
+
+  it('resolves relative document URLs against the public base URL', () => {
     const flow = flowDefinitionSchema.parse({
       ...baseFlow,
       nodes: [{ id: 'start', messages: [{ type: 'document', filename: 'pass.pdf', url: '/assets/pass.pdf' }], end: true }],

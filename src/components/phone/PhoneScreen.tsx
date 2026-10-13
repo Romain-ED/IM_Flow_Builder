@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { channelRenderers } from '../../channels/registry'
 import { ChannelProvider } from '../../app/ChannelContext'
@@ -8,6 +9,8 @@ import { ListSheet } from './ListSheet'
 import { BoardingPassPreviewModal } from './BoardingPassPreviewModal'
 import { ExternalActionModal } from './ExternalActionModal'
 import { Toast } from './Toast'
+import { LiveStateIndicator } from './LiveStateIndicator'
+import { BusinessProfileView } from './BusinessProfileView'
 
 interface PhoneScreenProps {
   /** Pins this screen to a specific channel, used by Compare Mode. Defaults to the store's global channel. */
@@ -19,6 +22,8 @@ export function PhoneScreen({ channelOverride }: PhoneScreenProps = {}) {
   const storeChannel = useSimulatorStore((s) => s.channel)
   const configuredBrand = useSimulatorStore((s) => s.configuredBrand)
   const channel = channelOverride ?? storeChannel
+  const [profileOpen, setProfileOpen] = useState(false)
+  const liveSessionActive = useSimulatorStore((s) => s.liveSessionActive)
 
   if (!flow) {
     return (
@@ -32,13 +37,20 @@ export function PhoneScreen({ channelOverride }: PhoneScreenProps = {}) {
 
   return (
     <ChannelProvider channel={channel}>
-      <ChannelRenderer brand={configuredBrand}>
+        <ChannelRenderer brand={configuredBrand} onBrandClick={() => { if (!liveSessionActive) setProfileOpen(true) }}>
+        <LiveStateIndicator />
         <ConversationView />
         <Composer />
-        <ListSheet />
-        <BoardingPassPreviewModal />
-        <ExternalActionModal />
-        <Toast />
+        {!liveSessionActive && <ListSheet />}
+        {!liveSessionActive && <BoardingPassPreviewModal />}
+        {!liveSessionActive && <ExternalActionModal />}
+        {!liveSessionActive && <Toast />}
+        <BusinessProfileView
+          brand={configuredBrand}
+          channel={channel}
+          open={profileOpen && !liveSessionActive}
+          onClose={() => setProfileOpen(false)}
+        />
       </ChannelRenderer>
     </ChannelProvider>
   )

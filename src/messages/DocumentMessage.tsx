@@ -8,9 +8,10 @@ interface DocumentMessageProps {
   message: NormalizedMessage
   channel: ChannelId
   timestampLabel?: string
+  interactive: boolean
 }
 
-export function DocumentMessage({ message, channel, timestampLabel }: DocumentMessageProps) {
+export function DocumentMessage({ message, channel, timestampLabel, interactive }: DocumentMessageProps) {
   const showToast = useSimulatorStore((s) => s.showToast)
   if (message.message.type !== 'document') return null
   const { sender, filename, title, description, fileType } = message.message
@@ -20,7 +21,8 @@ export function DocumentMessage({ message, channel, timestampLabel }: DocumentMe
       <button
         type="button"
         className="flex items-center gap-3 w-full p-3 text-left hover:bg-slate-50 transition-colors cursor-pointer"
-        onClick={() => showToast(`${filename} downloaded`)}
+        onClick={interactive ? () => showToast(`${filename} downloaded`) : undefined}
+        disabled={!interactive}
       >
         <span className="h-11 w-11 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
           <FileText size={22} />

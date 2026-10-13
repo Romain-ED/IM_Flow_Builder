@@ -11,7 +11,7 @@ export const channelCapabilities: Record<ChannelId, ChannelCapabilities> = {
   whatsapp: whatsappCapabilities,
 }
 
-type ChannelRendererProps = { brand: BrandDefinition; children: ReactNode }
+type ChannelRendererProps = { brand: BrandDefinition; children: ReactNode; onBrandClick: () => void }
 
 export const channelRenderers: Record<ChannelId, ComponentType<ChannelRendererProps>> = {
   rcs: RcsRenderer,

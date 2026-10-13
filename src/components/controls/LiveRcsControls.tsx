@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { CircleAlert, CircleCheck, LoaderCircle, Radio, Square, WifiOff } from 'lucide-react'
 import { preflightLiveRcsFlow, type LiveRcsIssue } from '../../live/rcsPreflight'
 import { useSimulatorStore } from '../../store/simulatorStore'
+import type { LiveProjection, LiveSnapshot } from '../../live/liveSessionProjection'
 import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
 
@@ -14,30 +15,14 @@ interface LiveDiagnostics {
   errors: string[]
 }
 
-interface LiveEvent {
-  id: string
-  at: string
-  type: string
-  status?: string
-  text?: string
-  recognized?: boolean
-}
+type LiveSession = LiveSnapshot
 
-interface LiveSession {
-  id: string
-  status: string
-  recipient: string
-  events: LiveEvent[]
+function activityLabel(activity: LiveProjection['activity']['latestInbound']): string {
+  if (!activity) return '—'
+  return `${activity.preview} · ${new Date(activity.at).toLocaleTimeString()}`
 }
-
 function publicBaseUrl() {
   return typeof window === 'undefined' ? undefined : window.location.origin
-}
-
-function eventLabel(event: LiveEvent): string {
-  if (event.type === 'status') return `${event.status ?? 'updated'} status`
-  if (event.type === 'inbound_text') return event.recognized ? `Phone: ${event.text}` : `Phone (unmatched): ${event.text}`
-  return event.type.replaceAll('_', ' ')
 }
 
 async function api<T>(path: string, token: string, init?: RequestInit): Promise<T> {
@@ -49,8 +34,12 @@ async function api<T>(path: string, token: string, init?: RequestInit): Promise<
       ...init?.headers,
     },
   })
-  const body = await response.json().catch(() => ({})) as T & { error?: string }
-  if (!response.ok) throw new Error(body.error ?? `Live RCS request failed (${response.status}).`)
+  const body = await response.json().catch(() => ({})) as T & { error?: string | { message?: string }; liveSnapshot?: unknown; id?: string }
+  if (!response.ok) {
+    const error = new Error(typeof body.error === 'string' ? body.error : body.error?.message ?? `Live RCS request failed (${response.status}).`)
+    if (body.liveSnapshot) Object.assign(error, { liveSnapshot: body.liveSnapshot, id: (body as T & { id?: string }).id })
+    throw error
+  }
   return body
 }
 
@@ -59,7 +48,12 @@ export function LiveRcsControls() {
   const configuredVariables = useSimulatorStore((state) => state.configuredVariables)
   const channel = useSimulatorStore((state) => state.channel)
   const liveSessionActive = useSimulatorStore((state) => state.liveSessionActive)
+  const liveProjection = useSimulatorStore((state) => state.liveProjection)
+  const liveSyncState = useSimulatorStore((state) => state.liveSyncState)
+  const syncLiveSnapshot = useSimulatorStore((state) => state.syncLiveSnapshot)
+  const markLiveProjectionStale = useSimulatorStore((state) => state.markLiveProjectionStale)
   const setLiveSessionActive = useSimulatorStore((state) => state.setLiveSessionActive)
+  const setLiveSessionCredentials = useSimulatorStore((state) => state.setLiveSessionCredentials)
   const [diagnostics, setDiagnostics] = useState<LiveDiagnostics | null>(null)
   const [operatorToken, setOperatorToken] = useState('')
   const [session, setSession] = useState<LiveSession | null>(null)
@@ -71,6 +65,9 @@ export function LiveRcsControls() {
   const preflight = useMemo(() => liveFlow && liveFlow.metadata.channel === 'rcs'
     ? preflightLiveRcsFlow(liveFlow, { publicBaseUrl: publicBaseUrl() })
     : null, [liveFlow])
+  const nodeLabel = liveProjection?.currentNodeId
+    ? flow?.nodes.find((node) => node.id === liveProjection.currentNodeId)?.label
+    : undefined
 
   useEffect(() => {
     let cancelled = false
@@ -97,15 +94,21 @@ export function LiveRcsControls() {
     const poll = async () => {
       try {
         const next = await api<LiveSession>(`/api/live/sessions/${session.id}`, operatorToken)
-        if (!cancelled) setSession(next)
+        if (!cancelled) {
+          setSession(next)
+          syncLiveSnapshot(next)
+        }
       } catch (pollError) {
-        if (!cancelled) setError(pollError instanceof Error ? pollError.message : 'Could not refresh the live session.')
+        if (!cancelled) {
+          markLiveProjectionStale(pollError instanceof Error ? pollError.message : 'Could not refresh the live session.')
+          setError(pollError instanceof Error ? pollError.message : 'Could not refresh the live session.')
+        }
       }
     }
     void poll()
     const timer = window.setInterval(() => void poll(), 2_500)
     return () => { cancelled = true; window.clearInterval(timer) }
-  }, [liveSessionActive, operatorToken, session?.id])
+  }, [liveSessionActive, markLiveProjectionStale, operatorToken, session?.id, syncLiveSnapshot])
 
   async function start() {
     if (!liveFlow || !diagnostics?.ready || !preflight?.success || !operatorToken || offline) return
@@ -118,8 +121,17 @@ export function LiveRcsControls() {
         body: JSON.stringify({ flow: liveFlow, variables: configuredVariables }),
       })
       setSession(started)
+      setLiveSessionCredentials(started.id, operatorToken)
+      syncLiveSnapshot(started)
       setLiveSessionActive(true)
     } catch (startError) {
+      const recovery = startError as Error & { liveSnapshot?: LiveSnapshot; id?: string }
+      if (recovery.liveSnapshot && recovery.id) {
+        setSession(recovery.liveSnapshot)
+        setLiveSessionCredentials(recovery.id, operatorToken)
+        syncLiveSnapshot(recovery.liveSnapshot)
+        setLiveSessionActive(true)
+      }
       setError(startError instanceof Error ? startError.message : 'Could not start the live session.')
     } finally {
       setIsLoading(false)
@@ -184,10 +196,13 @@ export function LiveRcsControls() {
           {session ? (
             <>
               <div className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-2 text-[12px] text-indigo-800">
-                <div className="flex items-center justify-between gap-2"><span className="font-medium">{session.status.replaceAll('_', ' ')}</span><span className="font-mono text-[10px]">{session.id.slice(0, 8)}</span></div>
-                <ol className="mt-1.5 max-h-24 overflow-y-auto list-none p-0 m-0 space-y-0.5">
-                  {session.events.slice(-5).reverse().map((entry) => <li key={entry.id} className="truncate">• {eventLabel(entry)}</li>)}
-                </ol>
+                <div className="flex items-center justify-between gap-2"><span className="font-medium">{liveProjection?.status?.replaceAll('_', ' ') ?? session.status.replaceAll('_', ' ')}</span><span className="font-mono text-[10px]">{session.id.slice(0, 8)}</span></div>
+                <p className="mt-1 m-0">Node: {nodeLabel ? `${nodeLabel} · ` : ''}<span className="font-mono">{liveProjection?.currentNodeId ?? 'unavailable'}</span></p>
+                <p className="mt-1 m-0 truncate">Inbound: {activityLabel(liveProjection?.activity.latestInbound ?? null)}</p>
+                <p className="mt-1 m-0 truncate">Outbound: {activityLabel(liveProjection?.activity.latestOutbound ?? null)}</p>
+                {liveProjection?.activity.latestProvider && <p className="mt-1 m-0 truncate">Provider: {activityLabel(liveProjection.activity.latestProvider)}</p>}
+                {liveSyncState === 'stale' && <p className="mt-1 m-0 text-amber-700">Live view is stale; retaining the last valid snapshot.</p>}
+                {liveSyncState === 'error' && <p className="mt-1 m-0 text-rose-700">Live view is unavailable until a valid snapshot arrives.</p>}
               </div>
               <button type="button" onClick={() => void stop()} disabled={isLoading} className="flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 disabled:opacity-40 cursor-pointer">
                 <Square size={12} fill="currentColor" /> Stop live session

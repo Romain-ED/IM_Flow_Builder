@@ -47,8 +47,7 @@ a message type" checklist in the README if it does).
 
 ## Official vs. invented message types — the most important open decision
 
-All five built-in scenarios (`singapore-airlines.yaml`, `ecommerce.yaml`,
-`restaurant.yaml`, `beerlao.yaml`, `progadget-laos.yaml`) were audited against the real WhatsApp
+All built-in scenarios were audited against the real WhatsApp
 Cloud API (interactive messages guide, interactive message templates,
 commerce/product-sharing guide) and Google's RCS Business Messaging spec,
 and use **only types with a real platform equivalent** — none of them
@@ -66,8 +65,9 @@ basis to any built-in scenario, don't — that's exactly what this rewrite
 removed, twice now.
 
 **Verified official** (keep using these; they map to a real payload):
-- `text`, `image`/`video`/`document`, `location` — direct equivalents on
-  both platforms.
+- `text`, `image`/`video`/`document` — direct equivalents on both
+  platforms. A top-level `location` message is WhatsApp/RCS simulator
+  fallback here; RCS native location behavior is a suggested action.
 - `rich_card` ≈ a real WhatsApp interactive message (header image + body +
   footer + up to 3 buttons) and a real RCS rich card.
 - `carousel` ≈ WhatsApp's **Carousel Template** (Meta-approved, up to 10
@@ -111,11 +111,11 @@ cleanly to a real primitive — just be honest about it (fallback notes
 already do this) and don't add new ones without the same rigor (verify
 against a real doc, not vibes).
 
-`suggested_actions`' `call`/`location`/`calendar`/`custom` action subtypes
-are a known lower-priority gap: only `reply`/`open_url` are genuinely
-official WhatsApp button actions. Not fixed yet — flagged in
-`capabilities.ts` comments, low priority since it's a nested field, not a
-top-level message type.
+`suggested_actions`' `call`/`location`/`calendar` subtypes map to native RCS
+suggested actions, but the current Live RCS provider adapter only maps
+`reply`/`open_url`; `custom` remains simulator-only. WhatsApp's native
+button subset is narrower. Keep this provider limitation distinct from the
+RCS specification; see `docs/RCS_SPEC_REFERENCE.md`.
 
 ## Automated guard against built-ins regressing to invented types (0.12.1)
 

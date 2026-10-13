@@ -1,13 +1,15 @@
-import type { FlowDefinition } from '../schema/flow'
+import type { ChannelId, FlowDefinition } from '../schema/flow'
 import { validateFlow, type FlowValidationResult, type ValidationIssue } from '../engine/flowValidator'
 import { normalizeForWhatsApp } from './whatsapp/normalize'
 import { normalizeForRcs } from './rcs/normalize'
 
 /**
- * Runs every node's messages through both channels' real-payload-shape
- * normalizers (`whatsapp/normalize.ts`, `rcs/normalize.ts`) and turns any
- * hard error they return into a `ValidationIssue`, prefixed per channel so
- * it's clear which platform the violation is specific to.
+ * Runs each node through the authored channel's real-payload normalizer. A
+ * channel-less flow is checked against both channels so it remains portable;
+ * a channel-specific flow is checked against the channel it declares. The
+ * sidebar can still preview a flow on the other channel and show its soft
+ * capability warnings, but that fallback view must not lower the authored
+ * channel's official limits.
  *
  * Deliberately lives in `channels/`, not `engine/flowValidator.ts` — this
  * check needs `ChannelCapabilities` (channel-specific real limits), and
@@ -19,15 +21,19 @@ import { normalizeForRcs } from './rcs/normalize'
  */
 export function validateChannelCompliance(flow: FlowDefinition): ValidationIssue[] {
   const issues: ValidationIssue[] = []
+  const channels: ChannelId[] = flow.metadata.channel
+    ? [flow.metadata.channel]
+    : ['whatsapp', 'rcs']
+
   for (const node of flow.nodes) {
     const messages = node.messages ?? []
-    const whatsapp = normalizeForWhatsApp(messages)
-    for (const message of whatsapp.errors) {
-      issues.push({ nodeId: node.id, message: `[WhatsApp] Node "${node.id}": ${message}` })
-    }
-    const rcs = normalizeForRcs(messages)
-    for (const message of rcs.errors) {
-      issues.push({ nodeId: node.id, message: `[RCS] Node "${node.id}": ${message}` })
+    for (const channel of channels) {
+      const normalize = channel === 'whatsapp' ? normalizeForWhatsApp : normalizeForRcs
+      const result = normalize(messages)
+      const label = channel === 'whatsapp' ? 'WhatsApp' : 'RCS'
+      for (const message of result.errors) {
+        issues.push({ nodeId: node.id, message: `[${label}] Node "${node.id}": ${message}` })
+      }
     }
   }
   return issues
@@ -36,12 +42,11 @@ export function validateChannelCompliance(flow: FlowDefinition): ValidationIssue
 /**
  * The full validation pipeline: structural validation
  * (`engine/flowValidator.ts`), then — only if that passes — real-payload
- * channel compliance. Callers that gate scenario loading (the store,
- * scenario editor/preview modals, `utils/flowSource.ts`) should use this
- * instead of calling `validateFlow` directly, so a flow that's
- * structurally fine but violates a real WhatsApp/RCS limit still fails to
- * load rather than silently rendering something neither platform could
- * actually send.
+ * channel compliance. Channel-specific flows are validated against their
+ * declared native channel; channel-less flows are validated against both.
+ * Callers that gate scenario loading should use this instead of calling
+ * `validateFlow` directly, so structural and authored-channel RCS/WhatsApp
+ * violations fail to load rather than silently rendering an invalid payload.
  */
 export function validateFlowWithChannelCompliance(raw: unknown): FlowValidationResult {
   const structural = validateFlow(raw)

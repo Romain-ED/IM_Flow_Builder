@@ -17,8 +17,8 @@ metadata:
 brand:
   name: "Singapore Airlines (Demo)"
   shortName: "SIA Demo"
-  avatar: "/assets/brand-avatar.svg"
-  logo: "/assets/brand-logo.svg"
+  avatar: "/assets/singapore-airlines/brand-avatar.svg"
+  logo: "/assets/singapore-airlines/brand-logo.svg"
   verified: true
   website: "https://www.singaporeair.com"
   supportPhone: "+65 6223 8888"
@@ -115,6 +115,7 @@ nodes:
     messages:
       - type: rich_card
         sender: business
+        image: /assets/singapore-airlines/aircraft-a350.png?v=0.17.6
         title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
           {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
@@ -148,6 +149,7 @@ nodes:
           Let's get you checked in for **{{flightNumber}}**.
       - type: rich_card
         sender: business
+        image: /assets/singapore-airlines/aircraft-a350.png?v=0.17.6
         title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
           {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
@@ -200,6 +202,7 @@ nodes:
         sender: business
         cards:
           - id: seat-21a
+            image: /assets/singapore-airlines/seat-window.png?v=0.17.6
             title: 21A
             subtitle: Window seat
             description: |
@@ -214,6 +217,7 @@ nodes:
                 set: { seat: 21A }
                 next: seat_selected
           - id: seat-21c
+            image: /assets/singapore-airlines/seat-aisle.png?v=0.17.6
             title: 21C
             subtitle: Aisle seat
             description: |
@@ -228,6 +232,7 @@ nodes:
                 set: { seat: 21C }
                 next: seat_selected
           - id: seat-32a
+            image: /assets/singapore-airlines/seat-legroom.png?v=0.17.6
             title: 32A
             subtitle: Extra legroom
             description: |
@@ -327,7 +332,7 @@ nodes:
         title: Your boarding pass
         description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
         fileType: PDF
-        url: /assets/boarding-pass-demo.pdf
+        url: /assets/singapore-airlines/boarding-pass-demo.pdf
       - type: text
         sender: business
         text: |
@@ -389,6 +394,7 @@ nodes:
     messages:
       - type: rich_card
         sender: business
+        image: /assets/singapore-airlines/aircraft-a350.png?v=0.17.6
         title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
           {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
@@ -416,7 +422,7 @@ nodes:
         title: Your boarding pass
         description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
         fileType: PDF
-        url: /assets/boarding-pass-demo.pdf
+        url: /assets/singapore-airlines/boarding-pass-demo.pdf
       - type: text
         sender: business
         text: |

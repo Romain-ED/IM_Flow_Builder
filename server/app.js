@@ -2,7 +2,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getLiveDemoConfig, LiveDemoService, verifyWebhook } from './liveDemo.js'
+import { getLiveDemoConfig, LiveDemoService, summarizeInboundPayload, verifyWebhook } from './liveDemo.js'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDirectory = join(projectRoot, 'dist')
@@ -85,14 +85,14 @@ function readBody(request) {
       }
       chunks.push(chunk)
     })
-    request.on('end', () => resolveBody(Buffer.concat(chunks).toString('utf8')))
+    request.on('end', () => resolveBody(Buffer.concat(chunks)))
     request.on('error', reject)
   })
 }
 
 function readJson(rawBody) {
   try {
-    return JSON.parse(rawBody)
+    return JSON.parse(rawBody.toString('utf8'))
   } catch {
     throw new Error('Request body must be valid JSON.')
   }
@@ -103,13 +103,34 @@ function bearerToken(request) {
   return typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7) : ''
 }
 
+function errorEnvelope(code, message) {
+  return { error: { code, message } }
+}
+
 function apiError(response, error) {
-  const message = error instanceof Error ? error.message : 'Unexpected server error.'
-  const status = message.includes('not configured') ? 503
-    : message.includes('allowlisted') || message.includes('required') || message.includes('Unauthorized') ? 403
-      : message.includes('No Live RCS session') ? 404
-        : 422
-  sendJson(response, status, { error: message })
+  const rawMessage = error instanceof Error ? error.message : 'Unexpected server error.'
+  const code = rawMessage.includes('not configured') ? 'LIVE_NOT_CONFIGURED'
+    : rawMessage.includes('allowlisted') || rawMessage.includes('required') ? 'LIVE_INVALID_REQUEST'
+      : rawMessage.includes('already active') || rawMessage.includes('already starting') ? 'LIVE_CONFLICT'
+        : rawMessage.includes('not found') || rawMessage.includes('No Live RCS session') || rawMessage.includes('No active Live RCS session') ? 'SESSION_NOT_FOUND'
+          : rawMessage.includes('Vonage') ? 'DELIVERY_FAILED'
+            : 'LIVE_INVALID_REQUEST'
+  const status = code === 'LIVE_NOT_CONFIGURED' ? 503 : code === 'LIVE_CONFLICT' ? 409 : code === 'SESSION_NOT_FOUND' ? 404 : code === 'DELIVERY_FAILED' ? 502 : 422
+  const messages = {
+    LIVE_NOT_CONFIGURED: 'Live RCS is not configured.',
+    LIVE_INVALID_REQUEST: 'The live RCS request is invalid.',
+    LIVE_CONFLICT: 'A live RCS session is already active.',
+    SESSION_NOT_FOUND: 'Live session not found.',
+    DELIVERY_FAILED: 'Live message delivery failed.',
+  }
+  const body = { ...errorEnvelope(code, messages[code]), ...(error?.liveSnapshot ? { id: error.liveSnapshot.id, liveSnapshot: error.liveSnapshot } : {}) }
+  sendJson(response, status, body)
+}
+
+function requestOrigin(request) {
+  if (typeof request.headers.origin === 'string' && request.headers.origin) return request.headers.origin
+  const protocol = typeof request.headers['x-forwarded-proto'] === 'string' ? request.headers['x-forwarded-proto'].split(',')[0].trim() : 'http'
+  return `${protocol}://${request.headers.host ?? 'localhost'}`
 }
 
 async function handleApi(request, response, url, liveDemo) {
@@ -118,20 +139,35 @@ async function handleApi(request, response, url, liveDemo) {
     return true
   }
   if (!liveDemo.authorize(bearerToken(request))) {
-    sendJson(response, 401, { error: 'Unauthorized.' })
+    sendJson(response, 401, errorEnvelope('UNAUTHORIZED', 'Unauthorized.'))
     return true
   }
   try {
     if (request.method === 'POST' && url.pathname === '/api/live/sessions') {
       const body = readJson(await readBody(request))
-      const session = await liveDemo.createSession(body)
+      const session = await liveDemo.createSession({ ...body, publicBaseUrl: requestOrigin(request) })
       sendJson(response, 201, session)
+      return true
+    }
+    if (request.method === 'GET' && url.pathname === '/api/live/sessions') {
+      sendJson(response, 200, liveDemo.listSessions())
+      return true
+    }
+    if (request.method === 'GET' && url.pathname === '/api/live/logs') {
+      sendJson(response, 200, liveDemo.diagnosticsLog(url.searchParams.get('sessionId') ?? undefined))
+      return true
+    }
+    const restartMatch = url.pathname.match(/^\/api\/live\/sessions\/([\w-]+)\/restart$/)
+    if (request.method === 'POST' && restartMatch) {
+      const session = await liveDemo.restartSession(restartMatch[1])
+      if (!session) sendJson(response, 404, errorEnvelope('SESSION_NOT_FOUND', 'Live session not found.'))
+      else sendJson(response, 200, session)
       return true
     }
     const stopMatch = url.pathname.match(/^\/api\/live\/sessions\/([\w-]+)\/stop$/)
     if (request.method === 'POST' && stopMatch) {
       const session = liveDemo.stopSession(stopMatch[1])
-      if (!session) sendJson(response, 404, { error: 'Live session not found.' })
+      if (!session) sendJson(response, 404, errorEnvelope('SESSION_NOT_FOUND', 'Live session not found.'))
       else sendJson(response, 200, session)
       return true
     }
@@ -154,24 +190,56 @@ async function handleApi(request, response, url, liveDemo) {
 
 async function handleWebhook(request, response, url, liveDemo) {
   if (request.method !== 'POST' || !url.pathname.startsWith('/webhooks/vonage/')) return false
+  let payload = null
   try {
     const rawBody = await readBody(request)
-    if (!verifyWebhook(liveDemo.config, rawBody, request.headers['x-vonage-signature'])) {
+    const verification = verifyWebhook(liveDemo.config, rawBody, request.headers.authorization)
+    if (!verification.valid) {
+      liveDemo.recordDiagnostic({
+        type: 'webhook_rejected',
+        route: url.pathname,
+        reason: verification.reason ?? 'Webhook signature verification failed.',
+        ...(verification.webhookApiKey ? { webhookApiKey: verification.webhookApiKey } : {}),
+        ...(verification.webhookApplicationId ? { webhookApplicationId: verification.webhookApplicationId } : {}),
+        ...(verification.webhookAlgorithm ? { webhookAlgorithm: verification.webhookAlgorithm } : {}),
+      })
       sendJson(response, 401, { error: 'Webhook signature verification failed.' })
       return true
     }
-    const payload = readJson(rawBody)
+    if (!liveDemo.claimWebhookReplayId(verification.jti)) {
+      liveDemo.recordDiagnostic({ type: 'webhook_duplicate', route: url.pathname, replayIdPresent: Boolean(verification.jti) })
+      sendJson(response, 202, { accepted: true, duplicate: true })
+      return true
+    }
+    payload = readJson(rawBody)
+    liveDemo.recordDiagnostic({ type: 'webhook_received', route: url.pathname, ...summarizeInboundPayload(payload) })
+    let result
     if (url.pathname === '/webhooks/vonage/inbound') {
-      await liveDemo.handleInbound(payload)
+      result = await liveDemo.handleInbound(payload)
     } else if (url.pathname === '/webhooks/vonage/status') {
-      liveDemo.handleStatus(payload)
+      result = liveDemo.handleStatus(payload)
     } else {
+      liveDemo.recordDiagnostic({ type: 'webhook_error', route: url.pathname, error: 'Webhook endpoint not found.' })
       sendJson(response, 404, { error: 'Webhook endpoint not found.' })
       return true
     }
+    liveDemo.recordDiagnostic({
+      type: 'webhook_processed',
+      route: url.pathname,
+      eventId: summarizeInboundPayload(payload).eventId,
+      sessionId: result?.id ?? null,
+      status: result?.status ?? null,
+      currentNodeId: result?.currentNodeId ?? null,
+    })
     sendJson(response, 202, { accepted: true })
     return true
   } catch (error) {
+    liveDemo.recordDiagnostic({
+      type: 'webhook_error',
+      route: url.pathname,
+      ...(payload ? summarizeInboundPayload(payload) : {}),
+      error: error instanceof Error ? error.message : 'Unexpected webhook error.',
+    })
     apiError(response, error)
     return true
   }

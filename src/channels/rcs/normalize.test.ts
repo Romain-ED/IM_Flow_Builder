@@ -35,7 +35,21 @@ describe('normalizeForRcs', () => {
     expect(normalized).toEqual([])
   })
 
-  it('hard-errors when attached suggestions exceed the RCS per-message limit', () => {
+  it('allows 11 suggested actions when attached to an RCS content message', () => {
+    const messages: Message[] = [
+      { type: 'text', sender: 'business', text: 'Pick one' },
+      {
+        type: 'suggested_actions',
+        sender: 'business',
+        actions: Array.from({ length: 11 }, (_, i) => ({ type: 'reply' as const, label: `Option ${i}` })),
+      },
+    ]
+    const { normalized, errors } = normalizeForRcs(messages)
+    expect(errors).toEqual([])
+    expect(normalized).toEqual([{ kind: 'text', suggestionCount: 11 }])
+  })
+
+  it('flags more than 11 suggested replies attached to RCS content', () => {
     const options = Array.from({ length: 12 }, (_, i) => ({ label: `Option ${i}` }))
     const messages: Message[] = [
       { type: 'text', sender: 'business', text: 'Pick one' },

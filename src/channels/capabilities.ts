@@ -8,10 +8,14 @@ export interface ChannelCapabilities {
   supportedMessageTypes: MessageType[]
   /** Max chips/buttons on a standalone suggested_replies message (WhatsApp: 3 reply buttons; RCS: 11 suggestion chips per Google's spec). */
   maxSuggestedReplies: number
-  /** Max buttons on a standalone suggested_actions message (RCS: 4 suggestions per rich card/message). */
+  /** Max action chips in a standalone suggestion list (RCS: 11; WhatsApp: 3). */
   maxSuggestedActions: number
+  /** Max suggestions attached inside one standalone rich card (RCS: 4). */
+  maxRichCardSuggestions?: number
   /** Max cards in a carousel (RCS: 10; WhatsApp: 10 via a Carousel Template). */
   maxCarouselCards: number
+  /** Max characters in an RCS text message, when the channel defines one. */
+  maxTextLength?: number
   /** Max buttons per carousel card (RCS: 4, same as a rich card; WhatsApp Carousel Templates: 2). */
   maxCarouselCardButtons?: number
   /** Max list rows, summed across all sections (WhatsApp: 10 total rows across up to 10 sections). */
@@ -42,10 +46,9 @@ export function isMessageTypeSupported(
 /**
  * The real button/chip cap for whichever of `suggested_replies` (reply-type
  * chips) or `suggested_actions` (action-type chips/buttons) is being
- * checked — the two aren't the same limit on RCS (11 vs 4 per Google's
- * spec), so callers must not use `maxSuggestedActions` as a stand-in for
- * both. Shared by `getCapabilityWarning` below and the WhatsApp/RCS
- * `normalize.ts` hard-validators, so the two can't drift.
+ * checked — both are suggestion chips in a standalone message (11 on RCS,
+ * 3 on WhatsApp). Rich-card-owned suggestions use `maxRichCardSuggestions`
+ * instead, because RCS allows 4 inside a card but 11 below a content message.
  */
 export function maxTrailingButtons(
   capabilities: ChannelCapabilities,
@@ -87,6 +90,11 @@ export function getCapabilityWarning(
   }
 
   switch (message.type) {
+    case 'text':
+      if (capabilities.maxTextLength && message.text.length > capabilities.maxTextLength) {
+        return `${capabilities.label} text messages support at most ${capabilities.maxTextLength} characters (this message has ${message.text.length}).`
+      }
+      return null
     case 'suggested_replies': {
       if (message.options.length > capabilities.maxSuggestedReplies) {
         return `${capabilities.label} supports at most ${capabilities.maxSuggestedReplies} suggested replies (this message has ${message.options.length}).`
@@ -124,6 +132,10 @@ export function getCapabilityWarning(
         ) {
           return `Card "${card.title}" has ${card.actions.length} buttons — ${capabilities.label} caps carousel card buttons at ${capabilities.maxCarouselCardButtons}.`
         }
+        if (card.actions) {
+          const labelWarning = tooLongLabel(card.actions.map((action) => action.label))
+          if (labelWarning) return labelWarning
+        }
       }
       return null
     }
@@ -152,10 +164,11 @@ export function getCapabilityWarning(
       ) {
         return `Footer "${message.footer}" is ${message.footer.length} characters — ${capabilities.label} caps footer text at ${capabilities.maxFooterTextLength}.`
       }
-      if (message.actions && message.actions.length > capabilities.maxSuggestedActions) {
-        return `${capabilities.label} supports at most ${capabilities.maxSuggestedActions} buttons on a card (this one has ${message.actions.length}).`
+      if (message.actions && message.actions.length > (capabilities.maxRichCardSuggestions ?? capabilities.maxSuggestedActions)) {
+        const limit = capabilities.maxRichCardSuggestions ?? capabilities.maxSuggestedActions
+        return `${capabilities.label} supports at most ${limit} buttons on a card (this one has ${message.actions.length}).`
       }
-      return null
+      return message.actions ? tooLongLabel(message.actions.map((action) => action.label)) : null
     }
     case 'list': {
       const rowCount = message.sections.reduce((sum, section) => sum + section.rows.length, 0)

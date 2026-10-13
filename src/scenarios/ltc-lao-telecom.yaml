@@ -13,7 +13,7 @@ metadata:
 brand:
   name: "Lao Telecom"
   shortName: "LaoTel"
-  avatar: "/assets/brand-avatar-lao-telecom.svg"
+  avatar: "/assets/ltc-lao-telecom/brand-avatar-lao-telecom.svg"
   description: "Account notifications"
   verified: true
 
@@ -70,11 +70,11 @@ nodes:
   - id: data_usage_alert
     messages:
       - type: image
-        url: "/assets/ltc-data-usage-chart.svg"
+        url: "/assets/ltc-lao-telecom/ltc-data-usage-chart.svg"
         alt: "Data usage chart showing 92% consumed"
         caption: "Your data usage this billing cycle"
       - type: rich_card
-        image: "/assets/ltc-data-usage-warning.svg"
+        image: "/assets/ltc-lao-telecom/ltc-data-usage-warning.svg"
         title: "⚠️ Data usage at {{dataUsedPercent}}"
         description: "You've used *{{dataUsedGB}} GB* out of your *{{dataLimitGB}} GB* plan.\n\nRemaining: {{remainingDataGB}} GB\nPlan: {{planName}}\n\nAt this rate, you may run out before your cycle resets."
         actions:
@@ -107,7 +107,7 @@ nodes:
       - type: carousel
         cards:
           - id: addon-2gb
-            image: "/assets/ltc-data-addon-small.svg"
+            image: "/assets/ltc-lao-telecom/ltc-data-addon-small.svg"
             title: "2 GB Add-on"
             subtitle: "Valid for 7 days"
             price: "15,000 KIP"
@@ -117,7 +117,7 @@ nodes:
                 next: data_topup_confirm
                 set: { selectedAddon: "2 GB (15,000 KIP)" }
           - id: addon-5gb
-            image: "/assets/ltc-data-addon-medium.svg"
+            image: "/assets/ltc-lao-telecom/ltc-data-addon-medium.svg"
             title: "5 GB Add-on"
             subtitle: "Valid for 14 days"
             price: "30,000 KIP"
@@ -128,7 +128,7 @@ nodes:
                 next: data_topup_confirm
                 set: { selectedAddon: "5 GB (30,000 KIP)" }
           - id: addon-10gb
-            image: "/assets/ltc-data-addon-large.svg"
+            image: "/assets/ltc-lao-telecom/ltc-data-addon-large.svg"
             title: "10 GB Add-on"
             subtitle: "Valid for 30 days"
             price: "50,000 KIP"
@@ -168,7 +168,7 @@ nodes:
   - id: plan_upgrade
     messages:
       - type: rich_card
-        image: "/assets/ltc-5g-upgrade.svg"
+        image: "/assets/ltc-lao-telecom/ltc-5g-upgrade.svg"
         title: "Upgrade to 5G Unlimited Max"
         description: "Get *unlimited data* with 5G speeds! 🚀\n\n• Unlimited high-speed data\n• Free 100 min international calls\n• Priority network access\n\nOnly *250,000 KIP/month* (current plan: 185,000 KIP/month)"
         footer: "Minimum 6-month commitment"
@@ -186,7 +186,7 @@ nodes:
   - id: balance_alert
     messages:
       - type: rich_card
-        image: "/assets/ltc-low-balance.svg"
+        image: "/assets/ltc-lao-telecom/ltc-low-balance.svg"
         title: "💰 Low balance alert"
         description: "Your prepaid balance is *{{balanceKIP}} KIP*, which is below your threshold of {{lowBalanceThresholdKIP}} KIP.\n\nTop up now to keep your services active and avoid interruptions."
         actions:
@@ -297,7 +297,7 @@ nodes:
   - id: bill_reminder
     messages:
       - type: image
-        url: "/assets/ltc-bill-reminder.svg"
+        url: "/assets/ltc-lao-telecom/ltc-bill-reminder.svg"
         alt: "Bill payment reminder for August 2026"
         caption: "Your monthly bill is ready"
       - type: rich_card

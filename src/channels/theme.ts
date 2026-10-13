@@ -18,19 +18,19 @@ export interface ChannelTheme {
 
 export const channelThemes: Record<ChannelId, ChannelTheme> = {
   rcs: {
-    screenBg: 'bg-[#f0f4f9]',
-    businessBubble: 'bg-white text-slate-900 shadow-sm border border-slate-200',
+    screenBg: 'bg-[#f7f2ff]',
+    businessBubble: 'bg-white text-slate-900 shadow-sm border border-[#e2d9ee]',
     businessBubbleText: 'text-slate-900',
-    userBubble: 'bg-[#0b57d0] text-white',
+    userBubble: 'bg-[#7350a3] text-white',
     userBubbleText: 'text-white',
     bubbleRadius: 'rounded-2xl',
-    cardRadius: 'rounded-2xl',
+    cardRadius: 'rounded-[22px]',
     chipStyle: 'pill',
-    chipBorder: 'border border-[#0b57d0]/30',
-    chipText: 'text-[#0b57d0]',
-    chipBg: 'bg-white hover:bg-[#e8f0fe]',
-    accent: '#0b57d0',
-    accentText: 'text-[#0b57d0]',
+    chipBorder: 'border border-[#7350a3]/30',
+    chipText: 'text-[#68458f]',
+    chipBg: 'bg-white hover:bg-[#eee5fa]',
+    accent: '#7350a3',
+    accentText: 'text-[#68458f]',
   },
   whatsapp: {
     screenBg: 'bg-[#e5ddd5]',

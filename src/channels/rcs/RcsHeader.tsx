@@ -1,33 +1,63 @@
-import { ArrowLeft, MoreVertical, Phone, Video, BadgeCheck } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, MoreVertical, Phone, Video } from 'lucide-react'
 import { Avatar } from '../../components/phone/Avatar'
+import { useSimulatorStore } from '../../store/simulatorStore'
 import type { BrandDefinition } from '../../schema/flow'
+import { RcsAvatar } from './RcsAvatar'
 
-export function RcsHeader({ brand }: { brand: BrandDefinition }) {
+interface RcsHeaderProps {
+  brand: BrandDefinition
+  onBrandClick: () => void
+}
+
+export function RcsHeader({ brand, onBrandClick }: RcsHeaderProps) {
+  const showToast = useSimulatorStore((s) => s.showToast)
+  const targetProfile = brand.rcsProfile
+  const title = targetProfile?.displayName ?? brand.shortName ?? brand.name
+
   return (
-    <div className="shrink-0 bg-white border-b border-slate-200">
-      <div className="flex items-center gap-3 px-3 py-2.5">
-        <ArrowLeft size={19} className="text-slate-600 shrink-0" aria-hidden="true" />
-        <Avatar src={brand.avatar} name={brand.name} size={36} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <span className="text-[14.5px] font-medium text-slate-900 truncate">
-              {brand.shortName ?? brand.name}
+    <div className="shrink-0 border-b border-[#d9d0e8] bg-[#f7f2ff] shadow-[0_1px_3px_rgba(56,36,84,0.08)]">
+      <div className="flex min-h-[58px] items-center gap-1.5 px-2 py-1.5">
+        <button
+          type="button"
+          aria-label="Back navigation"
+          onClick={() => showToast('Back navigation is not available in this demo.')}
+          className="flex h-9 w-8 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7950a8] cursor-pointer"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <button
+          type="button"
+          onClick={onBrandClick}
+          aria-label={`Open ${title} business profile`}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 text-left hover:bg-white/70 active:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7950a8] cursor-pointer"
+        >
+          {targetProfile ? <RcsAvatar size={36} /> : <Avatar src={brand.avatar} name={brand.name} size={36} />}
+          <span className="min-w-0 flex-1">
+            <span className="flex min-w-0 items-center gap-1">
+              <span className="truncate text-[14px] font-semibold tracking-[-0.01em] text-slate-900">{title}</span>
+              {brand.verified && <BadgeCheck size={14} className="shrink-0 text-[#7350a3]" aria-label="Verified business" />}
             </span>
-            {brand.verified && (
-              <BadgeCheck size={14} className="text-[#0b57d0] shrink-0" aria-label="Verified business" />
-            )}
-          </div>
-          <div className="flex items-center gap-1 min-w-0">
-            <span className="inline-flex items-center shrink-0 rounded-[4px] border border-[#0b57d0] text-[#0b57d0] text-[9.5px] font-semibold px-1 leading-tight">
-              RCS
+            <span className="mt-0.5 flex min-w-0 items-center gap-1">
+              <span className="inline-flex shrink-0 items-center rounded-[4px] border border-[#7350a3] px-1 text-[9px] font-semibold leading-[13px] text-[#7350a3]">RCS</span>
+              <span className="block truncate text-[11px] text-slate-500">{targetProfile?.subtitle ?? brand.description ?? 'Business messaging'}</span>
             </span>
-            <span className="block truncate text-[11.5px] text-slate-500">{brand.description || 'Business messaging'}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 text-slate-500 shrink-0">
-          <Video size={18} aria-hidden="true" />
-          <Phone size={17} aria-hidden="true" />
-          <MoreVertical size={18} aria-hidden="true" />
+          </span>
+        </button>
+        <div className="flex shrink-0 items-center gap-0.5 text-slate-500">
+          {!targetProfile && (
+            <>
+              <button type="button" aria-label="Start video call" className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7950a8] cursor-pointer"><Video size={18} /></button>
+              <button type="button" aria-label="Call business" className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7950a8] cursor-pointer"><Phone size={17} /></button>
+            </>
+          )}
+          <button
+            type="button"
+            aria-label="More conversation options"
+            onClick={() => showToast('More conversation options are not available in this demo.')}
+            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7950a8] cursor-pointer"
+          >
+            <MoreVertical size={18} />
+          </button>
         </div>
       </div>
     </div>

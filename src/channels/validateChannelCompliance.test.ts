@@ -46,7 +46,30 @@ describe('validateFlowWithChannelCompliance', () => {
     }
   })
 
-  it('hard-fails a flow with a standalone suggested_actions message with no owning content', () => {
+  it('uses RCS limits for an RCS-authored flow instead of applying WhatsApp caps', () => {
+    const flow = baseFlow({
+      metadata: { id: 'test', name: 'Test flow', channel: 'rcs' },
+      nodes: [{
+        id: 'welcome',
+        messages: [
+          {
+            type: 'rich_card',
+            title: 'Choose',
+            actions: Array.from({ length: 4 }, (_, i) => ({ type: 'reply', label: `Option ${i}` })),
+          },
+          {
+            type: 'suggested_replies',
+            options: Array.from({ length: 11 }, (_, i) => ({ label: `Choice ${i}` })),
+          },
+        ],
+        end: true,
+      }],
+    })
+    const result = validateFlowWithChannelCompliance(flow)
+    expect(result.success).toBe(true)
+  })
+
+  it('reports unsupported action variants for both channel validators', () => {
     const flow = baseFlow({
       start: 'help',
       nodes: [

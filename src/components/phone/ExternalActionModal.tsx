@@ -35,6 +35,7 @@ const CONTENT: Record<
     title: 'Simulated action',
     body: action.type === 'custom' ? (action.message ?? action.label) : '',
   }),
+  display_only: (action) => ({ icon: Sparkles, title: 'Display-only action', body: action.label }),
 }
 
 export function ExternalActionModal() {

@@ -8,4 +8,5 @@ export const ACTION_ICONS: Record<Action['type'], LucideIcon> = {
   location: MapPin,
   calendar: Calendar,
   custom: Sparkles,
+  display_only: Sparkles,
 }

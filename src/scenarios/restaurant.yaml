@@ -12,7 +12,7 @@ metadata:
 brand:
   name: "Riverside Bistro (Demo)"
   shortName: "Riverside"
-  avatar: "/assets/brand-avatar-restaurant.svg"
+  avatar: "/assets/restaurant/brand-avatar-restaurant.svg"
   verified: false
   website: "https://example.com"
   supportPhone: "+1 555 0188"
@@ -94,7 +94,7 @@ nodes:
   - id: confirmed
     messages:
       - type: rich_card
-        image: "/assets/restaurant-table.svg"
+        image: "/assets/restaurant/restaurant-table.svg"
         title: "Table confirmed"
         description: "{{tableArea}} · {{partySize}} guests · **{{reservationTime}}**"
       - type: text

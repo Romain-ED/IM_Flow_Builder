@@ -12,7 +12,7 @@ metadata:
 brand:
   name: "Northwind Store (Demo)"
   shortName: "Northwind"
-  avatar: "/assets/brand-avatar-shop.svg"
+  avatar: "/assets/ecommerce/brand-avatar-shop.svg"
   verified: true
   website: "https://example.com"
   supportPhone: "+1 555 0100"
@@ -49,7 +49,7 @@ nodes:
       - type: text
         text: "Hi {{customerName}}! Your order **{{orderNumber}}** ({{itemName}}) has shipped via {{carrier}}."
       - type: rich_card
-        image: "/assets/package.svg"
+        image: "/assets/ecommerce/package.svg"
         title: "On its way"
         description: "Estimated arrival: **{{eta}}**"
         actions:
@@ -144,16 +144,16 @@ nodes:
       - type: product_catalog
         products:
           - id: case
-            image: "/assets/package.svg"
+            image: "/assets/ecommerce/package.svg"
             title: "Headphone case"
             price: "$14.99"
             description: "Protective travel case"
           - id: cable
-            image: "/assets/package.svg"
+            image: "/assets/ecommerce/package.svg"
             title: "USB-C cable, 2m"
             price: "$8.99"
           - id: standx
-            image: "/assets/package.svg"
+            image: "/assets/ecommerce/package.svg"
             title: "Desk stand"
             price: "$19.99"
             description: "Foldable aluminum stand"
