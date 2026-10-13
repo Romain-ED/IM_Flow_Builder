@@ -1,6 +1,24 @@
 import { MessageCircle } from 'lucide-react'
+import { useState } from 'react'
+import { assetUrl } from '../../utils/assetUrl'
 
-export function RcsAvatar({ size = 36 }: { size?: number }) {
+export function RcsAvatar({ size = 36, src, name = 'RCS account' }: { size?: number; src?: string; name?: string }) {
+  const [errored, setErrored] = useState(false)
+
+  if (src && !errored) {
+    return (
+      <img
+        src={assetUrl(src)}
+        alt={name}
+        width={size}
+        height={size}
+        className="shrink-0 rounded-[28%] object-cover shadow-sm"
+        style={{ width: size, height: size }}
+        onError={() => setErrored(true)}
+      />
+    )
+  }
+
   return (
     <span
       className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[28%] bg-[#0b7a55] text-white shadow-sm"

@@ -31,7 +31,7 @@ export function RcsHeader({ brand, onBrandClick }: RcsHeaderProps) {
           aria-label={`Open ${title} business profile`}
           className="flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 text-left hover:bg-white/70 active:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7950a8] cursor-pointer"
         >
-          {targetProfile ? <RcsAvatar size={36} /> : <Avatar src={brand.avatar} name={brand.name} size={36} />}
+          {targetProfile ? <RcsAvatar size={36} src={brand.logo ?? brand.avatar} name={brand.name} /> : <Avatar src={brand.logo ?? brand.avatar} name={brand.name} size={36} />}
           <span className="min-w-0 flex-1">
             <span className="flex min-w-0 items-center gap-1">
               <span className="truncate text-[14px] font-semibold tracking-[-0.01em] text-slate-900">{title}</span>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import type { FlowDefinition, VariableMap } from '../../schema/flow'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { BUILT_IN_SCENARIOS } from '../../scenarios'
 import { parseFlowSource, toJsonString, toYamlString } from '../../utils/flowSource'
@@ -7,7 +8,7 @@ import { buildShareUrl, copyToClipboard } from '../../utils/shareLink'
 import { ScenarioCard } from './ScenarioCard'
 import { CustomScenarioEditorModal } from './CustomScenarioEditorModal'
 import { ScenarioPreviewModal } from './ScenarioPreviewModal'
-
+import { ScenarioConfigurationPage } from './ScenarioConfigurationPage'
 function downloadText(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime })
   const url = URL.createObjectURL(blob)
@@ -20,14 +21,41 @@ function downloadText(filename: string, content: string, mime: string) {
   URL.revokeObjectURL(url)
 }
 
-async function shareScenario(source: string): Promise<boolean> {
-  const url = await buildShareUrl(source)
+async function shareScenario(
+  source: string,
+  configuredVariables?: VariableMap,
+  configuredBrand?: unknown,
+): Promise<boolean> {
+  const parsed = parseFlowSource(source)
+  const parsedData = parsed.success ? (parsed.data as FlowDefinition) : null
+  const shareSource = parsedData && (configuredVariables || configuredBrand)
+    ? toYamlString({
+        ...parsedData,
+        variables: configuredVariables ?? parsedData.variables,
+        brand: configuredBrand ? { ...parsedData.brand, ...(configuredBrand as object) } : parsedData.brand,
+      })
+    : source
+  const url = await buildShareUrl(shareSource)
   return copyToClipboard(url)
 }
 
-function exportScenario(name: string, source: string, kind: 'json' | 'yaml') {
+function exportScenario(
+  name: string,
+  source: string,
+  kind: 'json' | 'yaml',
+  configuredVariables?: VariableMap,
+  configuredBrand?: unknown,
+) {
   const parsed = parseFlowSource(source)
-  const data = parsed.success ? parsed.data : source
+  const parsedData = parsed.success ? (parsed.data as FlowDefinition) : null
+  let data: FlowDefinition | string = parsedData ?? source
+  if (parsedData && (configuredVariables || configuredBrand)) {
+    data = {
+      ...parsedData,
+      variables: configuredVariables ?? parsedData.variables,
+      brand: configuredBrand ? { ...parsedData.brand, ...(configuredBrand as object) } : parsedData.brand,
+    }
+  }
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'scenario'
   if (kind === 'json') {
     downloadText(`${slug}.json`, toJsonString(data), 'application/json')
@@ -49,10 +77,35 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
   >({ open: false })
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [previewState, setPreviewState] = useState<{ name: string; source: string } | null>(null)
+  const [configurationScenarioId, setConfigurationScenarioId] = useState<string | null>(null)
 
   function loadAndReturn(load: () => void) {
     load()
     onNavigateToSimulator()
+  }
+
+  function editCustomScenario(id: string) {
+    loadCustomScenario(id)
+    setConfigurationScenarioId(id)
+  }
+
+  function duplicateAndEdit(source: string, format: 'json' | 'yaml', name: string) {
+    const id = duplicateAsCustomScenario(source, format, name)
+    if (id) editCustomScenario(id)
+  }
+
+  if (configurationScenarioId) {
+    return (
+      <ScenarioConfigurationPage
+        scenarioId={configurationScenarioId}
+        onBack={() => setConfigurationScenarioId(null)}
+        onEditSource={() => {
+          setConfigurationScenarioId(null)
+          setEditorState({ open: true, scenarioId: configurationScenarioId })
+        }}
+        onNavigateToSimulator={onNavigateToSimulator}
+      />
+    )
   }
 
   return (
@@ -89,6 +142,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                 onDuplicate={() =>
                   setEditorState({ open: true, seedSource: scenario.source, seedName: `Copy of ${scenario.name}` })
                 }
+                onEdit={() => duplicateAndEdit(scenario.source, 'yaml', scenario.name)}
                 onExportJson={() => exportScenario(scenario.name, scenario.source, 'json')}
                 onExportYaml={() => exportScenario(scenario.name, scenario.source, 'yaml')}
                 onShareLink={() => shareScenario(scenario.source)}
@@ -116,11 +170,11 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                   meta={`Updated ${new Date(scenario.updatedAt).toLocaleString()}`}
                   onLoad={() => loadAndReturn(() => loadCustomScenario(scenario.id))}
                   onView={() => setPreviewState({ name: scenario.name, source: scenario.source })}
-                  onEdit={() => setEditorState({ open: true, scenarioId: scenario.id })}
+                  onEdit={() => editCustomScenario(scenario.id)}
                   onDuplicate={() => duplicateAsCustomScenario(scenario.source, scenario.format, scenario.name)}
-                  onExportJson={() => exportScenario(scenario.name, scenario.source, 'json')}
-                  onExportYaml={() => exportScenario(scenario.name, scenario.source, 'yaml')}
-                  onShareLink={() => shareScenario(scenario.source)}
+                  onExportJson={() => exportScenario(scenario.name, scenario.source, 'json', scenario.configuredVariables, scenario.configuredBrand)}
+                  onExportYaml={() => exportScenario(scenario.name, scenario.source, 'yaml', scenario.configuredVariables, scenario.configuredBrand)}
+                  onShareLink={() => shareScenario(scenario.source, scenario.configuredVariables, scenario.configuredBrand)}
                   onDelete={() => setConfirmDeleteId(scenario.id)}
                 />
               ))}

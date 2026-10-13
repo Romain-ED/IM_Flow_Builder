@@ -4,8 +4,9 @@ import { useSimulatorStore } from '../../store/simulatorStore'
 import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
 import { Avatar } from '../phone/Avatar'
+import { assetUrl } from '../../utils/assetUrl'
 
-/** Reads a picked file as a data: URL so it can be used as `brand.avatar` with no upload/hosting needed. */
+/** Reads a picked file as a data: URL so it can be used with no upload/hosting needed. */
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -19,12 +20,14 @@ export function BrandEditor() {
   const brand = useSimulatorStore((s) => s.configuredBrand)
   const updateConfiguredBrand = useSimulatorStore((s) => s.updateConfiguredBrand)
   const resetConfiguredBrand = useSimulatorStore((s) => s.resetConfiguredBrand)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
   const accent = sectionAccents.brand
 
-  async function handlePickFile(file: File) {
+  async function handlePickFile(file: File, field: 'avatar' | 'logo' | 'banner') {
     const dataUrl = await readFileAsDataUrl(file)
-    updateConfiguredBrand({ avatar: dataUrl })
+    updateConfiguredBrand({ [field]: dataUrl })
   }
 
   return (
@@ -40,34 +43,54 @@ export function BrandEditor() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2.5">
-        <Avatar src={brand.avatar} name={brand.name} size={40} />
-        <div className="flex flex-col gap-1">
+      <ImageField
+        label="Business profile image"
+        src={brand.avatar}
+        name={brand.name}
+        inputRef={avatarInputRef}
+        onPick={(file) => void handlePickFile(file, 'avatar')}
+        onRemove={() => updateConfiguredBrand({ avatar: undefined })}
+        accent={accent.text}
+      />
+      <ImageField
+        label="Account logo"
+        src={brand.logo}
+        name={brand.name}
+        inputRef={logoInputRef}
+        onPick={(file) => void handlePickFile(file, 'logo')}
+        onRemove={() => updateConfiguredBrand({ logo: undefined })}
+        accent={accent.text}
+      />
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[11.5px] text-slate-500">RCS business profile banner</span>
+        {brand.banner && <img src={assetUrl(brand.banner)} alt="" className="h-16 w-full rounded-md object-cover" />}
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => bannerInputRef.current?.click()}
             className={`flex items-center gap-1 text-[11.5px] font-medium ${accent.text} hover:underline cursor-pointer`}
           >
-            <Upload size={11} /> Upload picture
+            <Upload size={11} /> Upload banner
           </button>
-          {brand.avatar && (
+          {brand.banner && (
             <button
               type="button"
-              onClick={() => updateConfiguredBrand({ avatar: undefined })}
-              className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer text-left"
+              onClick={() => updateConfiguredBrand({ banner: undefined })}
+              className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
             >
               Remove
             </button>
           )}
         </div>
         <input
-          ref={fileInputRef}
+          ref={bannerInputRef}
           type="file"
           accept="image/*"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0]
-            if (file) void handlePickFile(file)
+            if (file) void handlePickFile(file, 'banner')
             e.target.value = ''
           }}
         />
@@ -119,7 +142,57 @@ export function BrandEditor() {
         </span>
       </label>
 
-      <p className="text-[10.5px] text-slate-400 mt-0.5 mb-0">Applies live — no need to restart.</p>
+      <p className="text-[10.5px] text-slate-400 mt-0.5 mb-0">Changes are saved to this scenario automatically.</p>
+    </div>
+  )
+}
+
+function ImageField({
+  label,
+  src,
+  name,
+  inputRef,
+  onPick,
+  onRemove,
+  accent,
+}: {
+  label: string
+  src?: string
+  name: string
+  inputRef: React.RefObject<HTMLInputElement | null>
+  onPick: (file: File) => void
+  onRemove: () => void
+  accent: string
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <Avatar src={src} name={name} size={40} />
+      <div className="flex flex-col gap-1">
+        <span className="text-[11.5px] text-slate-500">{label}</span>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className={`flex items-center gap-1 text-[11.5px] font-medium ${accent} hover:underline cursor-pointer`}
+        >
+          <Upload size={11} /> Upload picture
+        </button>
+        {src && (
+          <button type="button" onClick={onRemove} className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer text-left">
+            Remove
+          </button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) onPick(file)
+          e.target.value = ''
+        }}
+      />
     </div>
   )
 }

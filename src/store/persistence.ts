@@ -31,6 +31,9 @@ export interface CustomScenario {
   description?: string
   source: string
   format: FlowSourceFormat
+  /** Per-scenario runtime configuration; optional for older saved scenarios. */
+  configuredVariables?: VariableMap
+  configuredBrand?: unknown
   createdAt: number
   updatedAt: number
 }

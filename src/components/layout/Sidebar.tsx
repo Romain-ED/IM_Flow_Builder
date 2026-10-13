@@ -1,8 +1,6 @@
 import { ScenarioControls } from '../controls/ScenarioControls'
 import { ChannelSelector } from '../controls/ChannelSelector'
 import { PhonePlatformSelector } from '../controls/PhonePlatformSelector'
-import { BrandEditor } from '../controls/BrandEditor'
-import { VariablesEditor } from '../controls/VariablesEditor'
 import { DebugOptions } from '../controls/DebugOptions'
 import { PlaybackControls } from '../controls/PlaybackControls'
 import { LiveRcsControls } from '../controls/LiveRcsControls'
@@ -14,10 +12,6 @@ export function Sidebar({ onOpenEditor }: { onOpenEditor: () => void }) {
       <Divider />
       <ChannelSelector />
       <PhonePlatformSelector />
-      <Divider />
-      <BrandEditor />
-      <Divider />
-      <VariablesEditor />
       <Divider />
       <LiveRcsControls />
       <Divider />

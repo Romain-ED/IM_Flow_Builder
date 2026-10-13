@@ -12,6 +12,7 @@ import type { BrandDefinition, RcsProfile } from '../../schema/flow'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { ImageWithFallback } from '../common/ImageWithFallback'
 import { RcsAvatar } from '../../channels/rcs/RcsAvatar'
+import { assetUrl } from '../../utils/assetUrl'
 
 interface RcsBusinessProfileViewProps {
   brand: BrandDefinition
@@ -35,10 +36,10 @@ export function RcsBusinessProfileView({ brand, open, onClose }: RcsBusinessProf
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto thin-scrollbar">
-        <ProfileBanner profile={profile} />
+        <ProfileBanner profile={profile} banner={brand.banner} />
         <div className="relative -mt-8 px-4 pb-4 text-center">
           <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#f7f2ff] p-1.5 shadow-md ring-1 ring-[#d7c7e7]">
-            <RcsAvatar size={60} />
+            <RcsAvatar size={60} src={brand.logo ?? brand.avatar} name={brand.name} />
           </div>
           <h1 className="mt-2 text-[18px] font-semibold tracking-[-0.01em]">{profile.displayName}</h1>
           <p className="mt-0.5 text-[12px] text-slate-500">{profile.subtitle}</p>
@@ -85,11 +86,13 @@ export function RcsBusinessProfileView({ brand, open, onClose }: RcsBusinessProf
   )
 }
 
-function ProfileBanner({ profile }: { profile: RcsProfile }) {
+function ProfileBanner({ profile, banner }: { profile: RcsProfile; banner?: string }) {
   return (
     <div className="relative h-36 overflow-hidden bg-gradient-to-br from-[#157a55] via-[#229a66] to-[#74c46d] px-5 py-4 text-white">
-      <div className="absolute -right-9 -top-10 h-40 w-40 rounded-full border-[18px] border-white/15" />
-      <div className="absolute -bottom-16 left-20 h-44 w-44 rounded-full border-[24px] border-white/10" />
+      {banner && <img src={assetUrl(banner)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+      {banner && <div className="absolute inset-0 bg-black/25" />}
+      {!banner && <div className="absolute -right-9 -top-10 h-40 w-40 rounded-full border-[18px] border-white/15" />}
+      {!banner && <div className="absolute -bottom-16 left-20 h-44 w-44 rounded-full border-[24px] border-white/10" />}
       <div className="relative flex h-full flex-col justify-between">
         <div className="flex items-start justify-between">
           <div>

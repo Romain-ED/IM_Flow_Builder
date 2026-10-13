@@ -52,6 +52,7 @@ export const brandDefinitionSchema = z.object({
   shortName: profileText(80).optional(),
   avatar: z.string().optional(),
   logo: z.string().optional(),
+  banner: z.string().optional(),
   verified: z.boolean().optional(),
   /** Subtitle shown under the name in the chat header (e.g. "Customer support"). Defaults to a channel-appropriate label when omitted. */
   description: z.string().max(160).optional(),
@@ -67,6 +68,7 @@ export const editableBrandOverrideSchema = brandDefinitionSchema.pick({
   shortName: true,
   avatar: true,
   logo: true,
+  banner: true,
   verified: true,
   description: true,
   website: true,

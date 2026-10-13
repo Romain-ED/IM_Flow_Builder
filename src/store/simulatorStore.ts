@@ -87,6 +87,7 @@ export interface SimulatorState {
   flowSourceFormat: FlowSourceFormat
   validation: FlowValidationResult | null
   customScenarios: CustomScenario[]
+  activeCustomScenarioId: string | null
 
   channel: ChannelId
   phonePlatform: PhonePlatform
@@ -144,6 +145,7 @@ export interface SimulatorState {
     format: FlowSourceFormat,
     variablesOverride?: VariableMap,
     brandOverride?: unknown,
+    customScenarioId?: string,
   ) => void
   loadScenarioSource: (source: string, format?: FlowSourceFormat) => boolean
   loadBuiltInScenario: (id: string) => void
@@ -224,9 +226,41 @@ function persistScenario(state: SimulatorState) {
     configuredVariables: state.configuredVariables,
     configuredBrand: state.configuredBrand,
   })
+  if (state.activeCustomScenarioId) {
+    const customScenarios = state.customScenarios.map((scenario) =>
+      scenario.id === state.activeCustomScenarioId
+        ? {
+            ...scenario,
+            configuredVariables: state.configuredVariables,
+            configuredBrand: state.configuredBrand,
+            updatedAt: Date.now(),
+          }
+        : scenario,
+    )
+    saveCustomScenarios(customScenarios)
+  }
 }
 
 export const useSimulatorStore = create<SimulatorState>((set, get) => {
+  function persistCurrentScenario() {
+    const state = get()
+    persistScenario(state)
+    if (state.activeCustomScenarioId) {
+      set({
+        customScenarios: state.customScenarios.map((scenario) =>
+          scenario.id === state.activeCustomScenarioId
+            ? {
+                ...scenario,
+                configuredVariables: state.configuredVariables,
+                configuredBrand: state.configuredBrand,
+                updatedAt: Date.now(),
+              }
+            : scenario,
+        ),
+      })
+    }
+  }
+
   function pushSnapshot() {
     const s = get()
     const snapshot: Snapshot = {
@@ -296,6 +330,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     flowSourceFormat: 'yaml',
     validation: null,
     customScenarios: loadCustomScenarios(),
+    activeCustomScenarioId: null,
 
     channel: 'rcs',
     phonePlatform: DEFAULT_PHONE_PLATFORM,
@@ -381,7 +416,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       }
     },
 
-    loadFlow: (flow, sourceText, format, variablesOverride, brandOverride) => {
+    loadFlow: (flow, sourceText, format, variablesOverride, brandOverride, customScenarioId) => {
       if (get().liveSessionActive) return
       const configuredVariables = variablesOverride ?? { ...(flow.variables ?? {}) }
       const configuredBrand = resolveConfiguredBrand(flow.brand, brandOverride)
@@ -392,10 +427,11 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         validation: { success: true, flow, warnings: [] },
         configuredVariables,
         configuredBrand,
+        activeCustomScenarioId: customScenarioId ?? null,
         channel: flow.metadata.channel ?? s.channel,
         startNodeOverride: null,
       }))
-      persistScenario(get())
+      persistCurrentScenario()
       get().restart()
     },
 
@@ -496,7 +532,24 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     loadCustomScenario: (id) => {
       const match = get().customScenarios.find((sc) => sc.id === id)
-      if (match) get().loadScenarioSource(match.source, match.format)
+      if (!match || get().liveSessionActive) return
+      const parsed = parseFlowSource(match.source, match.format)
+      if (!parsed.success) {
+        set({ validation: { success: false, errors: [{ message: parsed.message }] } })
+        return
+      }
+      const validation = validateFlow(parsed.data)
+      set({ validation })
+      if (validation.success) {
+        get().loadFlow(
+          validation.flow,
+          match.source,
+          parsed.format,
+          match.configuredVariables,
+          match.configuredBrand,
+          match.id,
+        )
+      }
     },
 
     goToNode: async (nodeId, hops = 0) => {
@@ -844,14 +897,14 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     updateConfiguredVariable: (key, value) => {
       if (get().liveSessionActive) return
       set((s) => ({ configuredVariables: { ...s.configuredVariables, [key]: value } }))
-      persistScenario(get())
+      persistCurrentScenario()
     },
     resetConfiguredVariables: () => {
       const s = get()
       if (s.liveSessionActive) return
       if (!s.flow) return
       set({ configuredVariables: { ...(s.flow.variables ?? {}) } })
-      persistScenario(get())
+      persistCurrentScenario()
     },
 
     updateConfiguredBrand: (patch) => {
@@ -867,7 +920,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         return false
       }
       set({ configuredBrand: { ...s.configuredBrand, ...parsed.data, rcsProfile: s.flow.brand.rcsProfile } })
-      persistScenario(get())
+      persistCurrentScenario()
       return true
     },
     resetConfiguredBrand: () => {
@@ -875,7 +928,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       if (s.liveSessionActive) return
       if (!s.flow) return
       set({ configuredBrand: { ...s.flow.brand } })
-      persistScenario(get())
+      persistCurrentScenario()
     },
   }
 })
