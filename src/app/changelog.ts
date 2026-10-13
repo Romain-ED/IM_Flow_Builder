@@ -11,6 +11,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.18.0',
+    date: '2026-10-13',
+    changes: [
+      'New: documented RCS Business Messaging limits and validation rules locally, including support for up to 11 suggestion chips and up to 4 rich-card or carousel buttons without splitting compatible content across messages.',
+      'New: added Domino\'s Singapore RCS scenarios, richer platform profiles, live RCS diagnostics, Vonage transport integration, and deployment-ready assets and operations documentation.',
+      'Enhancement: aligned built-in scenarios, channel capabilities, payload normalization, and live preflight checks with official WhatsApp and RCS structural constraints.',
+    ],
+  },
+  {
     version: '0.17.7',
     date: '2026-10-07',
     changes: [
