@@ -80,6 +80,11 @@ just add typed shortcuts into that same graph. If nothing matches (and no
 `input` message is currently active either), the message just sends with
 no automatic response — that's expected, not a bug to work around.
 
+To accept a typed comment without analysing or storing it (e.g. a final
+"anything to add?" survey question), set `freeTextNext: <node_id>` on the
+node. While that node is current, any typed text sends as a bubble and moves
+to that node — taking priority over `triggers`. Keep the chips as quick options.
+
 ## Node fields
 
 | Field | Meaning |

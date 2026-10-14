@@ -62,6 +62,7 @@ export function validateFlow(raw: unknown): FlowValidationResult {
     checkRef(node.id, node.next, '"next"')
     checkRef(node.id, node.then, '"then"')
     checkRef(node.id, node.else, '"else"')
+    checkRef(node.id, node.freeTextNext, '"freeTextNext"')
 
     for (const action of node.actions ?? []) {
       checkRef(node.id, action.next, `action "${action.label}"`)

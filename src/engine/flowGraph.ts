@@ -47,6 +47,7 @@ export function outgoingEdges(node: FlowNode): GraphEdge[] {
     add(node.else, 'condition-else')
   }
   add(node.next, 'flow')
+  add(node.freeTextNext, 'flow')
   for (const action of node.actions ?? []) add(action.next, 'flow')
 
   for (const message of node.messages ?? []) {

@@ -780,6 +780,15 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId || !text.trim()) return
 
+      // A node-level `freeTextNext` swallows any typed text (even a global
+      // trigger keyword): the text is sent and the flow moves on, unanalysed.
+      const freeTextNext = findNode(s.flow, s.currentNodeId)?.freeTextNext
+      if (freeTextNext) {
+        pushSnapshot()
+        applyInteractionResult(resolveFreeText(s.currentNodeId, text, { keywords: [], next: freeTextNext }))
+        return
+      }
+
       // A global keyword trigger wins even over an active structured `input`
       // field — it's meant as an "anytime" escape hatch (e.g. "type CANCEL
       // anytime"), matching how real bots typically implement keyword

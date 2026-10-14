@@ -105,7 +105,6 @@ variables:
   npsGarlicBread: 0
   npsCola: 0
   npsScore: 0
-  npsComment: "No comment"
 
 triggers:
   - keywords: [hi, hello, start, menu]
@@ -1149,28 +1148,23 @@ nodes:
 
   - id: survey_comment
     label: "NPS Survey — What Could We Improve"
+    freeTextNext: survey_score_router
     messages:
       - type: text
-        text: "💬 Question 7 of 7\nWhat could we improve?\n\nPick the closest one 👇"
+        text: "💬 Question 7 of 7\nWhat could we improve? Type your feedback below, or pick a quick option 👇"
       - type: suggested_replies
         options:
           - label: "🛵 Faster delivery"
-            set: { npsComment: "Faster delivery" }
             next: survey_score_router
           - label: "🍕 Food quality"
-            set: { npsComment: "Food quality" }
             next: survey_score_router
           - label: "💰 Better prices"
-            set: { npsComment: "Better prices" }
             next: survey_score_router
           - label: "📞 Customer service"
-            set: { npsComment: "Customer service" }
             next: survey_score_router
           - label: "👍 Nothing, all good!"
-            set: { npsComment: "Nothing, all good!" }
             next: survey_score_router
           - label: "⏭️ Skip"
-            set: { npsComment: "No comment" }
             next: survey_score_router
 
   - id: survey_score_router
@@ -1216,7 +1210,7 @@ nodes:
     label: "NPS Survey — Recap"
     messages:
       - type: text
-        text: "🙏 Here's your feedback:\n\n🛵 Delivery: {{npsDelivery}}/5 ⭐\n🍕 Pepperoni Pizza (Large): {{npsPizza}}/5 ⭐\n🍗 Chicken Drumlets (6 pcs): {{npsDrumlets}}/5 ⭐\n🧄 Garlic Bread: {{npsGarlicBread}}/5 ⭐\n🥤 Coca-Cola 1.5L: {{npsCola}}/5 ⭐\n📣 Recommend score: {{npsScore}}/10\n💬 To improve: {{npsComment}}\n\nSee you at the next pizza night! 🍕"
+        text: "🙏 Here's your feedback:\n\n🛵 Delivery: {{npsDelivery}}/5 ⭐\n🍕 Pepperoni Pizza (Large): {{npsPizza}}/5 ⭐\n🍗 Chicken Drumlets (6 pcs): {{npsDrumlets}}/5 ⭐\n🧄 Garlic Bread: {{npsGarlicBread}}/5 ⭐\n🥤 Coca-Cola 1.5L: {{npsCola}}/5 ⭐\n📣 Recommend score: {{npsScore}}/10\n\nThanks for your feedback, we'll take it into account 🙏\nSee you at the next pizza night! 🍕"
       - type: suggested_replies
         options:
           - label: "🏠 Main Menu"

@@ -122,6 +122,8 @@ export const flowNodeSchema = z.object({
   else: z.string().optional(),
   /** Automatic transition once messages finish (used when no interaction). */
   next: z.string().optional(),
+  /** While this node is current, any typed text (even a global trigger keyword) is sent and moves the flow here. */
+  freeTextNext: z.string().optional(),
   /** Marks this node as a deliberate end of the scenario. */
   end: z.boolean().optional(),
 })
