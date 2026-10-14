@@ -169,8 +169,8 @@ nodes:
                   promoCode: "Everyday Value $5.99"
                 next: choose_crust
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-everyday-large
             image: "{{promoEverydayLargeImage}}"
             title: "$9.99 — Everyday Value: 1 Large Pizza"
@@ -186,8 +186,8 @@ nodes:
                   promoCode: "Everyday Value $9.99"
                 next: choose_crust
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-50off-1-regular
             image: "{{promo50Off1RegularImage}}"
             title: "50% Off 1 Regular Pizza"
@@ -204,8 +204,8 @@ nodes:
                   promoCode: "50% Off Regular"
                 next: choose_crust
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-50off-2-regular
             image: "{{promo50Off2RegularImage}}"
             title: "50% Off 2 Regular Pizzas"
@@ -222,8 +222,8 @@ nodes:
                   promoCode: "50% Off 2 Regular"
                 next: choose_crust
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-50off-2-large
             image: "{{promo50Off2LargeImage}}"
             title: "50% Off 2 Large Pizzas"
@@ -240,8 +240,8 @@ nodes:
                   promoCode: "50% Off 2 Large"
                 next: choose_crust
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-3-pizza-3-sides
             image: "{{promo3Pizza3SidesImage}}"
             title: "3 Pizzas + 3 Sides (Cheese & Steak)"
@@ -259,8 +259,8 @@ nodes:
                   promoCode: "Group bundle"
                 next: cart_review
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-4-pizza-3-sides
             image: "{{promo4Pizza3SidesImage}}"
             title: "4 Pizzas + 3 Sides (Cheese & Steak)"
@@ -278,8 +278,8 @@ nodes:
                   promoCode: "Family bundle"
                 next: cart_review
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-cheese-volcano
             image: "{{promoCheeseVolcanoImage}}"
             title: "🌋 2 Cheese Volcano + 6 Sides"
@@ -297,8 +297,8 @@ nodes:
                   promoCode: "Cheese Volcano bundle"
                 next: cart_review
               - type: reply
-                label: "See All Deals"
-                next: promotions
+                label: "🍕 Full Menu"
+                next: menu_categories
           - id: promo-pizza-puff
             image: "{{promoPizzaPuffImage}}"
             title: "🆕 NEW Pizza Puff + Drumlets"
