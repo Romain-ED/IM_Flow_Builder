@@ -102,9 +102,6 @@ variables:
   npsDelivery: 0
   npsPizza: 0
   npsDrumlets: 0
-  npsGarlicBread: 0
-  npsCola: 0
-  npsScore: 0
 
 triggers:
   - keywords: [hi, hello, start, menu]
@@ -994,7 +991,7 @@ nodes:
       - type: text
         text: "⭐ Let's rate your last order, {{customerName}}! It only takes a minute. 🙏"
       - type: text
-        text: "🛵 Question 1 of 7\nHow was your delivery?\n\nTap a star rating (1 = poor, 5 = great) 👇"
+        text: "🛵 Question 1 of 4\nHow was your delivery?\n\nTap a star rating (1 = poor, 5 = great) 👇"
       - type: suggested_replies
         options:
           - label: "⭐"
@@ -1017,7 +1014,7 @@ nodes:
     label: "NPS Survey — Pepperoni Pizza"
     messages:
       - type: text
-        text: "🍕 Question 2 of 7\nHow was your Pepperoni Pizza (Large)?\n\nTap a star rating (1 = poor, 5 = great) 👇"
+        text: "🍕 Question 2 of 4\nHow was your Pepperoni Pizza (Large)?\n\nTap a star rating (1 = poor, 5 = great) 👇"
       - type: suggested_replies
         options:
           - label: "⭐"
@@ -1040,177 +1037,51 @@ nodes:
     label: "NPS Survey — Chicken Drumlets"
     messages:
       - type: text
-        text: "🍗 Question 3 of 7\nHow were your Chicken Drumlets (6 pcs)?\n\nTap a star rating (1 = poor, 5 = great) 👇"
+        text: "🍗 Question 3 of 4\nHow were your Chicken Drumlets (6 pcs)?\n\nTap a star rating (1 = poor, 5 = great) 👇"
       - type: suggested_replies
         options:
           - label: "⭐"
             set: { npsDrumlets: 1 }
-            next: survey_item_garlic_bread
+            next: survey_comment
           - label: "⭐⭐"
             set: { npsDrumlets: 2 }
-            next: survey_item_garlic_bread
+            next: survey_comment
           - label: "⭐⭐⭐"
             set: { npsDrumlets: 3 }
-            next: survey_item_garlic_bread
+            next: survey_comment
           - label: "⭐⭐⭐⭐"
             set: { npsDrumlets: 4 }
-            next: survey_item_garlic_bread
+            next: survey_comment
           - label: "⭐⭐⭐⭐⭐"
             set: { npsDrumlets: 5 }
-            next: survey_item_garlic_bread
-
-  - id: survey_item_garlic_bread
-    label: "NPS Survey — Garlic Bread"
-    messages:
-      - type: text
-        text: "🧄 Question 4 of 7\nHow was your Garlic Bread?\n\nTap a star rating (1 = poor, 5 = great) 👇"
-      - type: suggested_replies
-        options:
-          - label: "⭐"
-            set: { npsGarlicBread: 1 }
-            next: survey_item_cola
-          - label: "⭐⭐"
-            set: { npsGarlicBread: 2 }
-            next: survey_item_cola
-          - label: "⭐⭐⭐"
-            set: { npsGarlicBread: 3 }
-            next: survey_item_cola
-          - label: "⭐⭐⭐⭐"
-            set: { npsGarlicBread: 4 }
-            next: survey_item_cola
-          - label: "⭐⭐⭐⭐⭐"
-            set: { npsGarlicBread: 5 }
-            next: survey_item_cola
-
-  - id: survey_item_cola
-    label: "NPS Survey — Coca-Cola"
-    messages:
-      - type: text
-        text: "🥤 Question 5 of 7\nHow was your Coca-Cola 1.5L?\n\nTap a star rating (1 = poor, 5 = great) 👇"
-      - type: suggested_replies
-        options:
-          - label: "⭐"
-            set: { npsCola: 1 }
-            next: survey_nps
-          - label: "⭐⭐"
-            set: { npsCola: 2 }
-            next: survey_nps
-          - label: "⭐⭐⭐"
-            set: { npsCola: 3 }
-            next: survey_nps
-          - label: "⭐⭐⭐⭐"
-            set: { npsCola: 4 }
-            next: survey_nps
-          - label: "⭐⭐⭐⭐⭐"
-            set: { npsCola: 5 }
-            next: survey_nps
-
-  - id: survey_nps
-    label: "NPS Survey — Recommend Score"
-    messages:
-      - type: text
-        text: "📣 Question 6 of 7\nHow likely are you to recommend Domino's to a friend or colleague?\n\n0 = not at all likely, 10 = extremely likely 👇"
-      - type: suggested_replies
-        options:
-          - label: "0"
-            set: { npsScore: 0 }
-            next: survey_comment
-          - label: "1"
-            set: { npsScore: 1 }
-            next: survey_comment
-          - label: "2"
-            set: { npsScore: 2 }
-            next: survey_comment
-          - label: "3"
-            set: { npsScore: 3 }
-            next: survey_comment
-          - label: "4"
-            set: { npsScore: 4 }
-            next: survey_comment
-          - label: "5"
-            set: { npsScore: 5 }
-            next: survey_comment
-          - label: "6"
-            set: { npsScore: 6 }
-            next: survey_comment
-          - label: "7"
-            set: { npsScore: 7 }
-            next: survey_comment
-          - label: "8"
-            set: { npsScore: 8 }
-            next: survey_comment
-          - label: "9"
-            set: { npsScore: 9 }
-            next: survey_comment
-          - label: "10"
-            set: { npsScore: 10 }
             next: survey_comment
 
   - id: survey_comment
     label: "NPS Survey — What Could We Improve"
-    freeTextNext: survey_score_router
+    freeTextNext: survey_recap
     messages:
       - type: text
-        text: "💬 Question 7 of 7\nWhat could we improve? Type your feedback below, or pick a quick option 👇"
+        text: "💬 Question 4 of 4\nWhat could we improve? Type your feedback below, or pick a quick option 👇"
       - type: suggested_replies
         options:
           - label: "🛵 Faster delivery"
-            next: survey_score_router
+            next: survey_recap
           - label: "🍕 Food quality"
-            next: survey_score_router
+            next: survey_recap
           - label: "💰 Better prices"
-            next: survey_score_router
+            next: survey_recap
           - label: "📞 Customer service"
-            next: survey_score_router
+            next: survey_recap
           - label: "👍 Nothing, all good!"
-            next: survey_score_router
+            next: survey_recap
           - label: "⏭️ Skip"
-            next: survey_score_router
-
-  - id: survey_score_router
-    label: "NPS Survey — Score Router (Promoter?)"
-    condition:
-      variable: npsScore
-      operator: greater_than
-      value: 8
-    then: survey_promoter
-    else: survey_score_router_passive
-
-  - id: survey_score_router_passive
-    label: "NPS Survey — Score Router (Passive?)"
-    condition:
-      variable: npsScore
-      operator: greater_than
-      value: 6
-    then: survey_passive
-    else: survey_detractor
-
-  - id: survey_promoter
-    label: "NPS Survey — Promoter Thanks"
-    messages:
-      - type: text
-        text: "🎉 Thank you so much, {{customerName}}! We're thrilled you loved it!"
-    next: survey_recap
-
-  - id: survey_passive
-    label: "NPS Survey — Passive Thanks"
-    messages:
-      - type: text
-        text: "🙂 Thanks for your feedback, {{customerName}}! We'll keep working to impress you."
-    next: survey_recap
-
-  - id: survey_detractor
-    label: "NPS Survey — Detractor Thanks"
-    messages:
-      - type: text
-        text: "😟 We're really sorry we fell short, {{customerName}}. A team member will reach out to make it right."
-    next: survey_recap
+            next: survey_recap
 
   - id: survey_recap
     label: "NPS Survey — Recap"
     messages:
       - type: text
-        text: "🙏 Here's your feedback:\n\n🛵 Delivery: {{npsDelivery}}/5 ⭐\n🍕 Pepperoni Pizza (Large): {{npsPizza}}/5 ⭐\n🍗 Chicken Drumlets (6 pcs): {{npsDrumlets}}/5 ⭐\n🧄 Garlic Bread: {{npsGarlicBread}}/5 ⭐\n🥤 Coca-Cola 1.5L: {{npsCola}}/5 ⭐\n📣 Recommend score: {{npsScore}}/10\n\nThanks for your feedback, we'll take it into account 🙏\nSee you at the next pizza night! 🍕"
+        text: "🙏 Here's your feedback:\n\n🛵 Delivery: {{npsDelivery}}/5 ⭐\n🍕 Pepperoni Pizza (Large): {{npsPizza}}/5 ⭐\n🍗 Chicken Drumlets (6 pcs): {{npsDrumlets}}/5 ⭐\n\nThanks for your feedback, we'll take it into account 🙏\nSee you at the next pizza night! 🍕"
       - type: suggested_replies
         options:
           - label: "🏠 Main Menu"
