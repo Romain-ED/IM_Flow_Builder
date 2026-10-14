@@ -102,6 +102,7 @@ variables:
   npsDelivery: 0
   npsPizza: 0
   npsDrumlets: 0
+  npsComment: "No additional comments provided."
 
 triggers:
   - keywords: [hi, hello, start, menu]
@@ -1081,7 +1082,7 @@ nodes:
     label: "NPS Survey — Recap"
     messages:
       - type: text
-        text: "🙏 Here's your feedback:\n\n🛵 Delivery: {{npsDelivery}}/5 ⭐\n🍕 Pepperoni Pizza (Large): {{npsPizza}}/5 ⭐\n🍗 Chicken Drumlets (6 pcs): {{npsDrumlets}}/5 ⭐\n\nThanks for your feedback, we'll take it into account 🙏\nSee you at the next pizza night! 🍕"
+        text: "🙏 Here's your feedback:\n\n🛵 Delivery: {{npsDelivery}}/5 ⭐\n🍕 Pepperoni Pizza (Large): {{npsPizza}}/5 ⭐\n🍗 Chicken Drumlets (6 pcs): {{npsDrumlets}}/5 ⭐\n💬 Comment: {{npsComment}}\n\nThanks for your feedback, we'll take it into account 🙏\nSee you at the next pizza night! 🍕"
       - type: suggested_replies
         options:
           - label: "🏠 Main Menu"

@@ -785,7 +785,11 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       const freeTextNext = findNode(s.flow, s.currentNodeId)?.freeTextNext
       if (freeTextNext) {
         pushSnapshot()
-        applyInteractionResult(resolveFreeText(s.currentNodeId, text, { keywords: [], next: freeTextNext }))
+        const result = resolveFreeText(s.currentNodeId, text, { keywords: [], next: freeTextNext })
+        if (s.currentNodeId === 'survey_comment') {
+          result.setVariables = { npsComment: text }
+        }
+        applyInteractionResult(result)
         return
       }
 
