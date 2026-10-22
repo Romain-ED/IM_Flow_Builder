@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add the normalized RCS profile contract, safe image validation, deterministic fallback profiles, unconditional RCS profile reachability, renderer/editor/store behavior, and focused component/schema tests.",
+  "status": "completed",
+  "steps": [
+    "Update src/schema/flow.ts validators and rcsProfileSchema defaults/invariants; add focused rejection and fallback-contract tests.",
+    "Create src/channels/rcs/profile.ts with authored precedence and deterministic .example fallback contacts.",
+    "Normalize all RCS headers and route every RCS brand through RcsBusinessProfileView while preserving the WhatsApp branch.",
+    "Refactor RcsBusinessProfileView to render normalized identity/banner/details/controls without hard-coded brand copy.",
+    "Handle rejected BrandEditor FileReader reads and add banner-aware validated store patch persistence while preserving flow-owned rcsProfile.",
+    "Run focused unit/component/store validation and record evidence in findings."
+  ],
+  "acceptance_criteria": [
+    "A brand without rcsProfile opens an RCS Info & options view with deterministic reserved .example contacts and a neutral/shared banner.",
+    "Authored profile fields take precedence, shared banner/verified fields are projected, and both authored/fallback headers omit video and call buttons.",
+    "Unsafe image sources and invalid gallery count combinations are rejected while valid app-relative, HTTPS, and bounded editor image data are accepted.",
+    "V Bank/profile-specific hard-coded Romain, Vonage, pizza, and demo content is absent from the renderer, and WhatsApp rendering remains generic."
+  ],
+  "verification": [
+    "npx vitest run src/channels/rcs/profile.test.ts src/components/phone/RcsBusinessProfileView.test.tsx src/components/phone/BusinessProfileView.test.tsx src/channels/rcs/RcsHeader.test.tsx src/store/simulatorStore.test.ts"
+  ],
+  "blocked_reason": null,
+  "findings": "Implemented normalized RCS profile fallback/authored precedence in src/channels/rcs/profile.ts; fallback contacts use deterministic .example domains, support mailboxes, and reserved +1 202 555 01## numbers. Added safeExternalUrl, safeImageSource, safeEditorImageSource, gallery defaults/invariants, and focused schema rejection coverage in src/schema/flow.ts and src/schema/flow.test.ts. RCS headers now always normalize and expose back/more only; all RCS profile overlays route through the normalized renderer while WhatsApp remains unchanged. Renderer has dynamic banner/identity/contacts/gallery/policy controls with neutral fallback and no hard-coded profile copy. BrandEditor catches FileReader rejection with the stable toast; store accepts banner patches and preserves flow-owned rcsProfile. Validation: npx vitest run /Users/romain/scripts/IM_Flow_Builder/src/channels/rcs/profile.test.ts /Users/romain/scripts/IM_Flow_Builder/src/components/phone/RcsBusinessProfileView.test.tsx /Users/romain/scripts/IM_Flow_Builder/src/components/phone/BusinessProfileView.test.tsx /Users/romain/scripts/IM_Flow_Builder/src/channels/rcs/RcsHeader.test.tsx /Users/romain/scripts/IM_Flow_Builder/src/store/simulatorStore.test.ts — PASS (5 files, 12 tests); npx vitest run /Users/romain/scripts/IM_Flow_Builder/src/schema/flow.test.ts — PASS (2 tests); npx tsc -b — PASS; npm run build — PASS; npm test — PASS (32 files, 285 tests); npx oxlint . — PASS with two pre-existing warnings in src/app/ChannelContext.tsx and src/components/scenarios/CustomScenarioEditorModal.tsx. No package-lock.json or docs/HISTORY.md changes; no deploy/push performed."
+}

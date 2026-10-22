@@ -26,7 +26,7 @@ function websiteLabel(website: string) {
 }
 
 export function BusinessProfileView({ brand, channel, open, onClose }: BusinessProfileViewProps) {
-  if (channel === 'rcs' && brand.rcsProfile) {
+  if (channel === 'rcs') {
     return <RcsBusinessProfileView brand={brand} open={open} onClose={onClose} />
   }
   if (!open) return null

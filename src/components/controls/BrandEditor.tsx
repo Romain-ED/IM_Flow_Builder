@@ -20,14 +20,19 @@ export function BrandEditor() {
   const brand = useSimulatorStore((s) => s.configuredBrand)
   const updateConfiguredBrand = useSimulatorStore((s) => s.updateConfiguredBrand)
   const resetConfiguredBrand = useSimulatorStore((s) => s.resetConfiguredBrand)
+  const showToast = useSimulatorStore((s) => s.showToast)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
   const accent = sectionAccents.brand
 
   async function handlePickFile(file: File, field: 'avatar' | 'logo' | 'banner') {
-    const dataUrl = await readFileAsDataUrl(file)
-    updateConfiguredBrand({ [field]: dataUrl })
+    try {
+      const dataUrl = await readFileAsDataUrl(file)
+      updateConfiguredBrand({ [field]: dataUrl })
+    } catch {
+      showToast('Could not read that image file.')
+    }
   }
 
   return (

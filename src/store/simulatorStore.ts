@@ -20,7 +20,7 @@ import {
   resolveInputSubmission,
   resolveListRow,
 } from '../engine/ConversationEngine'
-import { matchTrigger } from '../engine/triggerMatcher'
+import { matchTrigger, matchesScenarioTrigger } from '../engine/triggerMatcher'
 import type { InteractionResult, NodeOutcome, NormalizedMessage } from '../engine/types'
 import { consumeRcsTrailingSuggestions } from '../engine/messageAttachment'
 import { diffVariableEvents, type ConversationEvent } from '../engine/eventStore'
@@ -34,6 +34,7 @@ import { findActiveInput } from '../utils/selectors'
 import { projectLiveSnapshot, type LiveProjection } from '../live/liveSessionProjection'
 import { hasShareHash, readSharedPlatform, readSharedSource } from '../utils/shareLink'
 import { BUILT_IN_SCENARIOS, DEFAULT_SCENARIO, REMOVED_SCENARIO_IDS } from '../scenarios'
+import { findRcsTriggerConflict } from '../scenarios/triggerRegistry'
 import {
   loadCustomScenarios,
   loadLastScenario,
@@ -76,6 +77,7 @@ const EDITABLE_BRAND_KEYS = new Set([
   'shortName',
   'avatar',
   'logo',
+  'banner',
   'verified',
   'description',
   'website',
@@ -156,7 +158,7 @@ export interface SimulatorState {
     customScenarioId?: string,
   ) => void
   loadScenarioSource: (source: string, format?: FlowSourceFormat) => boolean
-  loadBuiltInScenario: (id: string) => void
+  loadBuiltInScenario: (id: string, startImmediately?: boolean) => void
 
   importCustomScenario: (
     source: string,
@@ -496,10 +498,21 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       return false
     },
 
-    loadBuiltInScenario: (id) => {
+    loadBuiltInScenario: (id, startImmediately = false) => {
       if (get().liveSessionActive || isLocked()) return
       const match = BUILT_IN_SCENARIOS.find((sc) => sc.id === id)
-      if (match) get().loadScenarioSource(match.source, 'yaml')
+      if (!match) return
+      if (!startImmediately) {
+        get().loadScenarioSource(match.source, 'yaml')
+        return
+      }
+      const parsed = parseFlowSource(match.source, 'yaml')
+      if (!parsed.success) return
+      const validation = validateFlow(parsed.data)
+      if (!validation.success || validation.flow.metadata.channel !== 'rcs') return
+      get().loadFlow(validation.flow, match.source, 'yaml')
+      set({ startNodeOverride: validation.flow.start })
+      get().restart()
     },
 
     importCustomScenario: (source, formatHint, nameOverride) => {
@@ -510,6 +523,10 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       const validation = validateFlow(parsed.data)
       if (!validation.success) {
         return { success: false, error: validation.errors[0]?.message ?? 'Invalid flow.' }
+      }
+      const conflict = findRcsTriggerConflict(validation.flow, get().customScenarios)
+      if (conflict) {
+        return { success: false, error: `RCS trigger is already used by scenario "${conflict.name}".` }
       }
       const now = Date.now()
       const entry: CustomScenario = {
@@ -543,6 +560,10 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         if (!validation.success) {
           return { success: false, error: validation.errors[0]?.message ?? 'Invalid flow.' }
         }
+        const conflict = findRcsTriggerConflict(validation.flow, s.customScenarios, id)
+        if (conflict) {
+          return { success: false, error: `RCS trigger is already used by scenario "${conflict.name}".` }
+        }
       }
 
       const customScenarios = s.customScenarios.map((sc) =>
@@ -562,6 +583,15 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     duplicateAsCustomScenario: (source, format, baseName) => {
       if (get().liveSessionActive || isLocked()) return ''
+      const parsed = parseFlowSource(source, format)
+      if (!parsed.success) return ''
+      const validation = validateFlow(parsed.data)
+      if (!validation.success) return ''
+      const conflict = findRcsTriggerConflict(validation.flow, get().customScenarios)
+      if (conflict) {
+        get().showToast(`RCS trigger is already used by scenario "${conflict.name}".`)
+        return ''
+      }
       const now = Date.now()
       const entry: CustomScenario = {
         id: createId('scenario'),
@@ -588,6 +618,11 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       const validation = validateFlow(parsed.data)
       set({ validation })
       if (validation.success) {
+        const conflict = findRcsTriggerConflict(validation.flow, get().customScenarios, match.id)
+        if (conflict) {
+          set({ validation: { success: false, errors: [{ message: `RCS trigger is already used by scenario "${conflict.name}".` }] } })
+          return
+        }
         get().loadFlow(
           validation.flow,
           match.source,
@@ -709,6 +744,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         activeListSheet: null,
         boardingPassPreview: null,
       })
+      if (s.flow.metadata.channel === 'rcs' && s.flow.metadata.trigger && !s.startNodeOverride) return
       void get().goToNode(s.startNodeOverride ?? s.flow.start)
     },
 
@@ -757,6 +793,11 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       const s = get()
       if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
+      if (action.type === 'reply' && action.startScenarioId) {
+        if (!BUILT_IN_SCENARIOS.some((scenario) => scenario.id === action.startScenarioId)) return
+        get().loadBuiltInScenario(action.startScenarioId, true)
+        return
+      }
       if (action.type !== 'reply') {
         const history = s.channel === 'rcs' ? consumeRcsTrailingSuggestions(s.history, s.currentNodeId) : s.history
         set((state) => ({
@@ -784,8 +825,21 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
 
     handleFreeText: (text) => {
       const s = get()
-      if (s.liveSessionActive) return
-      if (!s.flow || !s.currentNodeId || !text.trim()) return
+      if (s.liveSessionActive || !s.flow || !text.trim()) return
+
+      if (!s.currentNodeId) {
+        const trigger = s.flow.metadata.trigger
+        if (s.flow.metadata.channel !== 'rcs' || !trigger || !matchesScenarioTrigger(trigger, text)) return
+        const entryNodeId = s.startNodeOverride ?? s.flow.start
+        const entryMessage = resolveFreeText(entryNodeId, text, null).userMessage
+        if (!entryMessage) return
+        set((state) => ({
+          history: [...state.history, entryMessage],
+          events: [...state.events, { type: 'user_action', at: Date.now(), nodeId: entryNodeId, label: text }],
+        }))
+        void get().goToNode(entryNodeId)
+        return
+      }
 
       // A node-level `freeTextNext` swallows any typed text (even a global
       // trigger keyword): the text is sent and the flow moves on, unanalysed.

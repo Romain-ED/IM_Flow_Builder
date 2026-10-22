@@ -9,13 +9,15 @@ export const flowMetadataSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   channel: channelIdSchema.optional(),
+  /** Exact inbound message required to enter an RCS scenario. */
+  trigger: z.string().optional(),
   tags: z.array(z.string()).optional(),
   /** Variable keys explicitly safe to include in the presenter live snapshot. */
   livePublicVariables: z.array(z.string()).optional(),
 })
 export type FlowMetadata = z.infer<typeof flowMetadataSchema>
 
-const safeExternalUrl = z
+export const safeExternalUrl = z
   .string()
   .min(1)
   .max(2048)
@@ -30,6 +32,19 @@ const safeExternalUrl = z
     }
   }, 'URL must be HTTPS or app-relative')
 
+const imageDataUrl = /^data:image\/(?:png|jpeg|jpg|gif|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/
+
+export const safeImageSource = safeExternalUrl
+
+export const safeEditorImageSource = z
+  .string()
+  .min(1)
+  .max(2048)
+  .refine((value) => !/\s/.test(value), 'Image source must not contain whitespace')
+  .refine((value) => value.startsWith('/') || /^https:\/\/[^/]+/i.test(value) || imageDataUrl.test(value), 'Image source must be app-relative, HTTPS, or a bounded image data URL')
+  .refine((value) => !value.startsWith('//') && !/^blob:|^javascript:|^http:/i.test(value), 'Unsafe image source')
+  .refine((value) => !value.startsWith('data:') || imageDataUrl.test(value), 'Image data must be a valid base64 image')
+
 const profileText = (max: number) => z.string().min(1).max(max)
 
 export const rcsProfileSchema = z.object({
@@ -40,19 +55,26 @@ export const rcsProfileSchema = z.object({
   websiteLabel: profileText(2048),
   websiteUrl: safeExternalUrl,
   email: z.string().email().max(254),
-  imageCount: z.number().int().nonnegative(),
-  imageUrls: z.array(safeExternalUrl).min(3).max(12),
+  imageCount: z.number().int().nonnegative().default(0),
+  imageUrls: z.array(safeImageSource).max(12).default([]),
   privacyPolicyUrl: safeExternalUrl.optional(),
   termsUrl: safeExternalUrl.optional(),
+}).superRefine((profile, context) => {
+  if ((profile.imageCount === 0) !== (profile.imageUrls.length === 0)) {
+    context.addIssue({ code: 'custom', path: ['imageCount'], message: 'imageCount and imageUrls must both be empty or populated' })
+  }
+  if (profile.imageCount < profile.imageUrls.length) {
+    context.addIssue({ code: 'custom', path: ['imageCount'], message: 'imageCount cannot be less than imageUrls length' })
+  }
 })
 export type RcsProfile = z.infer<typeof rcsProfileSchema>
 
 export const brandDefinitionSchema = z.object({
   name: profileText(80),
   shortName: profileText(80).optional(),
-  avatar: z.string().optional(),
-  logo: z.string().optional(),
-  banner: z.string().optional(),
+  avatar: safeEditorImageSource.optional(),
+  logo: safeEditorImageSource.optional(),
+  banner: safeEditorImageSource.optional(),
   verified: z.boolean().optional(),
   /** Subtitle shown under the name in the chat header (e.g. "Customer support"). Defaults to a channel-appropriate label when omitted. */
   description: z.string().max(160).optional(),
