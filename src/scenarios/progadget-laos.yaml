@@ -16,8 +16,24 @@ brand:
   shortName: "Pro Gadget"
   avatar: "/assets/progadget-laos/brand-avatar-progadget.svg"
   verified: true
-  website: "https://progadget.tech"
-  supportPhone: "+856 20 5515 5569"
+  website: "https://progadget-laos.example"
+  supportPhone: "+1 202 555 0134"
+  description: "Orders, products, and delivery support"
+  email: "support@progadget-laos.example"
+  banner: "/assets/progadget-laos/garmin_cirqa.jpeg"
+  rcsProfile:
+    displayName: "Pro Gadget Laos"
+    subtitle: "Orders, products, and delivery support"
+    brandLabel: "Pro Gadget Laos"
+    phone: "+1 202 555 0134"
+    websiteLabel: "progadget-laos.example"
+    websiteUrl: "https://progadget-laos.example"
+    email: "support@progadget-laos.example"
+    imageCount: 1
+    imageUrls:
+      - "/assets/progadget-laos/garmin_cirqa.jpeg"
+    privacyPolicyUrl: "https://progadget-laos.example/privacy"
+    termsUrl: "https://progadget-laos.example/terms"
 
 defaults:
   messageDelayMs: 500

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">RCS Business Messaging</title>
+  <desc id="desc">Neutral blue gradient banner for business messaging</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d4ed8" />
+      <stop offset="1" stop-color="#0f766e" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#background)" />
+  <circle cx="980" cy="70" r="220" fill="#ffffff" opacity=".12" />
+  <circle cx="1080" cy="360" r="280" fill="#ffffff" opacity=".08" />
+  <path d="M160 235h360a44 44 0 0 1 44 44v34a44 44 0 0 1-44 44H326l-62 44 12-44h-116a44 44 0 0 1-44-44v-34a44 44 0 0 1 44-44Z" fill="#fff" opacity=".9" />
+  <circle cx="210" cy="296" r="12" fill="#1d4ed8" /><circle cx="270" cy="296" r="12" fill="#1d4ed8" /><circle cx="330" cy="296" r="12" fill="#1d4ed8" />
+</svg>

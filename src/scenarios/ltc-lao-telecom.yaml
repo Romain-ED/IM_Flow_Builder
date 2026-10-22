@@ -14,8 +14,25 @@ brand:
   name: "Lao Telecom"
   shortName: "LaoTel"
   avatar: "/assets/ltc-lao-telecom/brand-avatar-lao-telecom.svg"
-  description: "Account notifications"
+  description: "Mobile account and service support"
   verified: true
+  website: "https://laotelecom.example"
+  supportPhone: "+1 202 555 0143"
+  email: "support@laotelecom.example"
+  banner: "/assets/ltc-lao-telecom/banner.jpeg"
+  rcsProfile:
+    displayName: "Lao Telecom"
+    subtitle: "Mobile account and service support"
+    brandLabel: "Lao Telecom"
+    phone: "+1 202 555 0143"
+    websiteLabel: "laotelecom.example"
+    websiteUrl: "https://laotelecom.example"
+    email: "support@laotelecom.example"
+    imageCount: 1
+    imageUrls:
+      - "/assets/ltc-lao-telecom/banner.jpeg"
+    privacyPolicyUrl: "https://laotelecom.example/privacy"
+    termsUrl: "https://laotelecom.example/terms"
 
 defaults:
   messageDelayMs: 600

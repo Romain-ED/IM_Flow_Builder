@@ -1,0 +1,70 @@
+version: "1.0"
+
+metadata:
+  id: rcs-demo-menu
+  name: "RCS Business Messaging Menu"
+  description: "Select a business messaging scenario to start."
+  channel: rcs
+  trigger: "RCS MENU"
+  tags: [rcs, menu]
+
+brand:
+  name: "RCS Business Messaging"
+  shortName: "RCS Business Messaging"
+  description: "Explore business messaging experiences"
+  verified: true
+  banner: "/assets/rcs-demo-menu/profile-banner.svg"
+  website: "https://rcs-messaging.example"
+  supportPhone: "+1 202 555 0192"
+  email: "support@rcs-messaging.example"
+  rcsProfile:
+    displayName: "RCS Business Messaging"
+    subtitle: "Explore business messaging experiences"
+    brandLabel: "RCS Business Messaging"
+    phone: "+1 202 555 0192"
+    websiteLabel: "rcs-messaging.example"
+    websiteUrl: "https://rcs-messaging.example"
+    email: "support@rcs-messaging.example"
+    imageCount: 0
+    imageUrls: []
+    privacyPolicyUrl: "https://rcs-messaging.example/privacy"
+    termsUrl: "https://rcs-messaging.example/terms"
+
+defaults:
+  messageDelayMs: 0
+  typingDurationMs: 0
+  showTimestamps: true
+
+start: welcome
+
+nodes:
+  - id: welcome
+    label: "Choose a business messaging scenario"
+    messages:
+      - type: carousel
+        mediaHeight: medium
+        cards:
+          - id: singapore-airlines
+            image: "/assets/singapore-airlines/brand-logo.png"
+            title: "Singapore Airlines"
+            description: "Check-in, seat selection, and a digital boarding pass."
+            actions:
+              - type: reply
+                label: "Start airline experience"
+                startScenarioId: singapore-airlines
+          - id: dominos-singapore-rcs-demo
+            image: "/assets/dominos-singapore-rcs-demo/imgi_17_app-icon.png"
+            title: "Domino's Pizza Singapore"
+            description: "Promotions, menu browsing, ordering, and customer care."
+            actions:
+              - type: reply
+                label: "Start Domino's experience"
+                startScenarioId: dominos-singapore-rcs-demo
+          - id: vbank-multifinance-first-repayment
+            image: "/assets/V%20Bank/logo.jpg"
+            title: "V Bank"
+            description: "Explore lending options through first repayment."
+            actions:
+              - type: reply
+                label: "Start V Bank experience"
+                startScenarioId: vbank-multifinance-first-repayment

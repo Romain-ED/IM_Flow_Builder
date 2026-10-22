@@ -14,6 +14,24 @@ brand:
   shortName: "Beerlao"
   avatar: "/assets/beerlao/beerlao_logo.png"
   verified: true
+  description: "Account access and event information"
+  website: "https://beerlao.example"
+  supportPhone: "+1 202 555 0125"
+  email: "support@beerlao.example"
+  banner: "/assets/beerlao/event-boun-souang-heua-promo.png"
+  rcsProfile:
+    displayName: "Beerlao"
+    subtitle: "Account access and event information"
+    brandLabel: "Beerlao"
+    phone: "+1 202 555 0125"
+    websiteLabel: "beerlao.example"
+    websiteUrl: "https://beerlao.example"
+    email: "support@beerlao.example"
+    imageCount: 1
+    imageUrls:
+      - "/assets/beerlao/event-boun-souang-heua-promo.png"
+    privacyPolicyUrl: "https://beerlao.example/privacy"
+    termsUrl: "https://beerlao.example/terms"
 
 defaults:
   messageDelayMs: 500

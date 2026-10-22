@@ -4,6 +4,7 @@ metadata:
   name: "V Bank: From just curious to first repayment"
   description: "Discovery → indicative eligibility → Personal Loan application → first repayment."
   channel: rcs
+  trigger: "VBANK START"
   tags: [fsi, multifinance, lending, rcs]
 brand:
   name: "V Bank"
@@ -13,6 +14,24 @@ brand:
   banner: "/assets/V%20Bank/banner%20wide.jpg"
   verified: true
   description: "Personal banking and lending"
+  website: "https://vbank.example"
+  supportPhone: "+1 202 555 0183"
+  email: "care@vbank.example"
+  rcsProfile:
+    displayName: "V Bank"
+    subtitle: "Personal banking and lending"
+    brandLabel: "V Bank"
+    phone: "+1 202 555 0183"
+    websiteLabel: "vbank.example"
+    websiteUrl: "https://vbank.example"
+    email: "care@vbank.example"
+    imageCount: 3
+    imageUrls:
+      - "/assets/V%20Bank/2.jpg"
+      - "/assets/V%20Bank/car%20loan.jpg"
+      - "/assets/V%20Bank/home%20mortgage.jpg"
+    privacyPolicyUrl: "https://vbank.example/privacy"
+    termsUrl: "https://vbank.example/terms"
 defaults:
   messageDelayMs: 0
   typingDurationMs: 700

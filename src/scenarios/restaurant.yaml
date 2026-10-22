@@ -7,15 +7,30 @@ metadata:
   name: "Restaurant table reservation"
   description: "Reservation reminder through table confirmation and pre-order."
   channel: whatsapp
-  tags: [restaurant, reservation, demo]
+  tags: [restaurant, reservation]
 
 brand:
-  name: "Riverside Bistro (Demo)"
-  shortName: "Riverside"
+  name: "Riverside Bistro"
+  shortName: "Riverside Bistro"
   avatar: "/assets/restaurant/brand-avatar-restaurant.svg"
   verified: false
-  website: "https://example.com"
-  supportPhone: "+1 555 0188"
+  description: "Reservations and dining support"
+  website: "https://riverside-bistro.example"
+  supportPhone: "+1 202 555 0116"
+  email: "hello@riverside-bistro.example"
+  banner: "/assets/restaurant/restaurant-table.svg"
+  rcsProfile:
+    displayName: "Riverside Bistro"
+    subtitle: "Reservations and dining support"
+    brandLabel: "Riverside Bistro"
+    phone: "+1 202 555 0116"
+    websiteLabel: "riverside-bistro.example"
+    websiteUrl: "https://riverside-bistro.example"
+    email: "hello@riverside-bistro.example"
+    imageCount: 0
+    imageUrls: []
+    privacyPolicyUrl: "https://riverside-bistro.example/privacy"
+    termsUrl: "https://riverside-bistro.example/terms"
 
 defaults:
   messageDelayMs: 450

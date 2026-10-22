@@ -31,13 +31,28 @@ metadata:
   name: "My Scenario"
   description: "One line describing the journey."
   channel: whatsapp         # rcs | whatsapp — the channel it opens in by default
+  trigger: "ORDER START"    # required for RCS; omit for WhatsApp if desired
   tags: [demo]
 brand:
   name: "Acme Airlines"      # required
-  shortName: "Acme"           # optional, shown in the header instead of name
-  avatar: "/assets/singapore-airlines/brand-avatar.svg"   # optional; omit rather than invent a real URL
-  description: "Customer support"       # optional header subtitle; defaults to a channel label
+  shortName: "Acme"           # optional
+  avatar: "/assets/acme/avatar.svg"
+  logo: "/assets/acme/logo.svg"
+  banner: "/assets/acme/banner.svg"
+  description: "Customer support"
   verified: true
+  rcsProfile:                 # optional exact RCS profile projection
+    displayName: "Acme Airlines"
+    subtitle: "Travel support and flight services"
+    brandLabel: "Acme Airlines"
+    phone: "+1 202 555 0100"
+    websiteLabel: "acme.example"
+    websiteUrl: "https://acme.example"
+    email: "support@acme.example"
+    imageCount: 0
+    imageUrls: []
+    privacyPolicyUrl: "https://acme.example/privacy"
+    termsUrl: "https://acme.example/terms"
 defaults:
   messageDelayMs: 500        # pause before each message appears
   typingDurationMs: 900      # typing indicator duration before a business message
@@ -53,10 +68,22 @@ nodes:
     # ...
 ```
 
+## RCS profiles and image sources
+
+Set `brand.rcsProfile` when the RCS Info & options view needs authored identity and contact details. It contains `displayName`, `subtitle`, `brandLabel`, `phone`, `websiteLabel`, `websiteUrl`, `email`, `imageCount`, `imageUrls`, and optional `privacyPolicyUrl`/`termsUrl`. Use `.example` domains and mailboxes for authored simulator data. `imageCount: 0` requires `imageUrls: []`; otherwise it must be at least the number of previews, with no more than 12 URLs. `brand.banner` is the shared banner fallback.
+
+Image sources are app-relative paths (`/assets/...`) or HTTPS image URLs. Keep local profile banners, logos, avatars, and galleries in the owning `public/assets/<brand>` directory; never hotlink or cross-reference another brand. Failed image loads retain a neutral visual and do not remove profile contacts. RCS derives a deterministic normalized profile when `rcsProfile` is omitted; WhatsApp profile rendering remains unchanged.
+
+Every flow with `metadata.channel: rcs` must define a non-empty `metadata.trigger`. The browser simulator and Live RCS session wait for this message before entering `start`. Normalize only by Unicode NFC, trimming surrounding whitespace, and deterministic `toLowerCase()` casing; then require full-string equality. Internal whitespace, punctuation, and all other characters are significant. Do not use keyword, substring, regex, or fuzzy matching. Entry triggers must be unique across built-in and saved custom scenarios; duplicate normalized values are rejected. WhatsApp flows may omit this field and retain their existing automatic start behavior.
+
+This field is separate from the optional top-level `triggers` array below. Top-level triggers are legacy in-flow keyword shortcuts checked after the scenario has started; they are not scenario selectors.
+
 ## Free text & triggers
 
-The user's composer is always typable, not just when an `input` message is
-active — whatever they type always sends as an outgoing bubble. `triggers`
+The user's composer is always typable after an RCS entry trigger has been
+accepted, not just when an `input` message is active — whatever they type then
+sends as an outgoing bubble. Before startup, unmatched RCS text is ignored;
+only the exact entry trigger starts the flow. `triggers`
 (top-level, sibling of `nodes`) are global keyword routes checked against
 every free-text send, regardless of the current node:
 
@@ -158,6 +185,10 @@ Discriminated by `type`:
   next: next_node
   set: { confirmed: true }
 
+- type: reply            # start a registered built-in RCS scenario
+  label: "Open demo"
+  startScenarioId: rcs-scenario-id
+
 - type: open_url          # opens an external link, no reply message sent
   label: "Pay now"
   url: "https://example.com/pay"
@@ -166,6 +197,10 @@ Discriminated by `type`:
   label: "Call support"
   phoneNumber: "{{supportPhone}}"
 ```
+
+A `reply` action may use `startScenarioId` instead of `next` to start a registered built-in RCS scenario immediately. The target must be a built-in RCS registry id; it is not an in-flow node reference, and `startScenarioId` and `next` are mutually exclusive.
+
+The built-in RCS Demo Menu uses this action to route its authored cards. Custom scenarios are saved in browser `localStorage`, so they cannot safely populate that authored YAML menu; adding a custom scenario requires selecting it through the normal scenario controls instead.
 
 `location`/`calendar`/`custom` action types also exist but have no real
 WhatsApp/RCS button-type equivalent — prefer `reply`/`open_url`/`call`.

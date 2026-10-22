@@ -73,7 +73,7 @@ export function ManualPage() {
             rows={[
               ['Scenario', 'Shows the loaded flow\'s name, a dropdown of built-in examples, "Edit flow" (opens the quick JSON/YAML editor for the live flow), "Export" (downloads the current flow as YAML), and "Copy share link" (encodes the flow into a URL — opening it loads the same scenario in a restricted viewer, no file needed; see "Presenter mode" below).'],
               ['Channel', 'Switches the rendering between RCS and WhatsApp. The same flow definition renders through each channel\'s own visual language and capability set. "Compare all channels" shows both at once, driven by the same live conversation — tap a button in either and the other follows.'],
-              ['Brand', 'Edit the business profile shown in the header: name, short name, picture (upload a file or paste a URL), description subtitle, and the verified checkmark. Applies immediately, no restart needed — useful for re-skinning a demo without touching the scenario file. "Reset" reverts to the loaded flow\'s own brand block.'],
+              ['Brand', 'Edit the business profile shown in the header: name, short name, picture, banner, description subtitle, and the verified checkmark. RCS also shows an authored `rcsProfile` in Info & options when provided; otherwise it derives a safe deterministic fallback. Image values must be local `/assets/...` paths or HTTPS images, and authored gallery previews must stay in the owning brand directory. Applies immediately, no restart needed — useful for re-skinning a scenario without touching the scenario file. "Reset" reverts to the loaded flow\'s own brand block.'],
               ['Variables', 'Editable list of the flow\'s top-level variables (e.g. customer name, booking reference, seat). Edits apply on the next Restart, not live — this lets a presenter line up several fields before restarting the demo.'],
               ['Debug options', '"Fast demo mode" shrinks all typing/message delays; "Show capability warnings" toggles the inline notes shown when a message type falls back to a generic rendering on a channel that doesn\'t natively support it; "Flow inspector panel" toggles the right-hand debug drawer; "Start node" overrides which node Restart jumps to.'],
               ['Playback', 'Restart (replays from the start node using the current variable values), Back (undoes the last user interaction using a state snapshot), Pause/Resume (freezes automatic playback), Clear (same as Restart).'],
@@ -89,7 +89,8 @@ export function ManualPage() {
           <P>A flow is a YAML or JSON document with this top-level shape:</P>
           <CodeBlock>{`version: "1.0"
 metadata: { id, name, description?, channel?, tags? }
-brand: { name, shortName?, avatar?, logo?, verified?, description?, website?, supportPhone? }
+brand: { name, shortName?, avatar?, logo?, banner?, verified?, description?, website?, supportPhone?, email?, rcsProfile? }
+rcsProfile: { displayName, subtitle, brandLabel, phone, websiteLabel, websiteUrl, email, imageCount, imageUrls, privacyPolicyUrl?, termsUrl? }
 defaults: { messageDelayMs?, typingDurationMs?, locale?, timezone?, showTimestamps? }
 variables: { ...any key/value pairs used by {{templating}} }
 triggers: [ ...{ keywords, next, set? } ]  // optional global keyword routes

@@ -1,35 +1,36 @@
 version: "1.0"
 metadata:
   id: dominos-singapore-rcs-demo
-  name: "Domino's Pizza Singapore — RCS Demo Flow"
-  description: "End-to-end RCS demo covering promotions, menu browsing, order building, store discovery, tracking, customer care, and checkout handoff."
+  name: "Domino's Pizza Singapore — RCS Messaging Flow"
+  description: "Promotions, menu browsing, ordering, store discovery, tracking, and customer care."
   channel: rcs
+  trigger: "DOMINOS START"
   tags: [Domino's, Singapore, promotions, menu, ordering, stores, tracking, customer-care]
 brand:
-  name: "Romain RCS Demo Agent"
-  shortName: "Romain RCS Demo Agent"
+  name: "Domino's Pizza Singapore"
+  shortName: "Domino's Pizza Singapore"
   avatar: "/assets/dominos-singapore-rcs-demo/imgi_17_app-icon.png"
   banner: "/assets/dominos-singapore-rcs-demo/image-4.png"
-  description: "Romain demo"
+  description: "Pizza delivery, takeaway, and customer care"
   verified: true
-  website: "https://www.vonage.com"
-  supportPhone: "9750 2284"
-  email: "romain.edin@vonage.com"
+  website: "https://dominos-sg.example"
+  supportPhone: "+1 202 555 0174"
+  email: "care@dominos-sg.example"
   rcsProfile:
-    displayName: "Romain RCS Demo Agent"
-    subtitle: "Romain demo"
-    brandLabel: "Vonage"
-    phone: "9750 2284"
-    websiteLabel: "www.vonage.com"
-    websiteUrl: "https://www.vonage.com"
-    email: "romain.edin@vonage.com"
+    displayName: "Domino's Pizza Singapore"
+    subtitle: "Pizza delivery, takeaway, and customer care"
+    brandLabel: "Domino's Pizza Singapore"
+    phone: "+1 202 555 0174"
+    websiteLabel: "dominos-sg.example"
+    websiteUrl: "https://dominos-sg.example"
+    email: "care@dominos-sg.example"
     imageCount: 44
     imageUrls:
       - "/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg"
       - "/assets/dominos-singapore-rcs-demo/imgi_5_SG_460691_en_MenuImage_17096.jpg"
       - "/assets/dominos-singapore-rcs-demo/imgi_13_SG_50R1_en_MenuImage_16018.jpg"
-    privacyPolicyUrl: "https://www.vonage.com/legal/privacy-policy/"
-    termsUrl: "https://www.vonage.com/legal/terms-of-use/"
+    privacyPolicyUrl: "https://dominos-sg.example/privacy"
+    termsUrl: "https://dominos-sg.example/terms"
 
 defaults:
   messageDelayMs: 450
@@ -39,7 +40,7 @@ defaults:
 # Singapore-specific uploaded media. The Cheese Volcano product card still uses
 # the existing uploaded Singapore menu image because no replacement was added.
 variables:
-  customerName: Romain
+  customerName: Casey
   fallbackChannel: sms
   fallbackMessage: "Hi! Check out Domino's Singapore latest deals and order online: https://order.dominos.com.sg"
   heroImage: "/assets/dominos-singapore-rcs-demo/image-4.png"

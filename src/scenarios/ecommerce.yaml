@@ -7,15 +7,30 @@ metadata:
   name: "E-commerce order & delivery tracking"
   description: "Order shipped notification through delivery preferences to confirmation."
   channel: whatsapp
-  tags: [ecommerce, delivery, demo]
+  tags: [ecommerce, delivery]
 
 brand:
-  name: "Northwind Store (Demo)"
-  shortName: "Northwind"
+  name: "Northwind Store"
+  shortName: "Northwind Store"
   avatar: "/assets/ecommerce/brand-avatar-shop.svg"
   verified: true
-  website: "https://example.com"
-  supportPhone: "+1 555 0100"
+  description: "Order tracking and delivery support"
+  website: "https://northwind-store.example"
+  supportPhone: "+1 202 555 0107"
+  email: "support@northwind-store.example"
+  rcsProfile:
+    displayName: "Northwind Store"
+    subtitle: "Order tracking and delivery support"
+    brandLabel: "Northwind Store"
+    phone: "+1 202 555 0107"
+    websiteLabel: "northwind-store.example"
+    websiteUrl: "https://northwind-store.example"
+    email: "support@northwind-store.example"
+    imageCount: 0
+    imageUrls: []
+    privacyPolicyUrl: "https://northwind-store.example/privacy"
+    termsUrl: "https://northwind-store.example/terms"
+  banner: "/assets/ecommerce/package.svg"
 
 defaults:
   messageDelayMs: 450

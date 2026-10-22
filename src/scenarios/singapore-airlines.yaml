@@ -9,19 +9,37 @@ metadata:
   id: singapore-airlines-boarding-pass
   name: "Singapore Airlines — Check-in & Boarding Pass"
   description: >-
-    Interactive airline check-in journey demonstrating RCS/WhatsApp rich
+    Interactive airline check-in journey showing RCS/WhatsApp rich
     messaging, seat selection and boarding-pass delivery.
   channel: rcs
-  tags: [airline, travel, check-in, boarding-pass, demo]
+  trigger: "SIA START"
+  tags: [airline, travel, check-in, boarding-pass]
 
 brand:
-  name: "Singapore Airlines (Demo)"
-  shortName: "SIA Demo"
+  name: "Singapore Airlines"
+  shortName: "Singapore Airlines"
   avatar: "/assets/singapore-airlines/brand-avatar.svg"
   logo: "/assets/singapore-airlines/brand-logo.svg"
+  banner: "/assets/singapore-airlines/aircraft-a350.png"
   verified: true
-  website: "https://www.singaporeair.com"
-  supportPhone: "+65 6223 8888"
+  description: "Travel support and flight services"
+  website: "https://singaporeair.example"
+  supportPhone: "+1 202 555 0165"
+  rcsProfile:
+    displayName: "Singapore Airlines"
+    subtitle: "Travel support and flight services"
+    brandLabel: "Singapore Airlines"
+    phone: "+1 202 555 0165"
+    websiteLabel: "singaporeair.example"
+    websiteUrl: "https://singaporeair.example"
+    email: "care@singaporeair.example"
+    imageCount: 3
+    imageUrls:
+      - "/assets/singapore-airlines/aircraft-a350.png"
+      - "/assets/singapore-airlines/seat-window.png"
+      - "/assets/singapore-airlines/seat-aisle.png"
+    privacyPolicyUrl: "https://singaporeair.example/privacy"
+    termsUrl: "https://singaporeair.example/terms"
 
 defaults:
   messageDelayMs: 600
@@ -31,7 +49,7 @@ defaults:
   showTimestamps: true
 
 variables:
-  customerName: Romain
+  customerName: Jordan
   lastName: Martin
   bookingReference: ABC123
   flightNumber: SQ634

@@ -149,13 +149,27 @@ metadata:
   id: my-scenario
   name: "My scenario"
   channel: rcs            # rcs | whatsapp — used as the initial channel
-  tags: [demo]
+  trigger: "SIA START"    # required for RCS; exact scenario-entry message
 brand:
-  name: "Acme Airlines"
-  shortName: "Acme"                    # optional, shown in the header instead of name
-  avatar: "/assets/singapore-airlines/brand-avatar.svg"
-  description: "Customer support"      # optional header subtitle; defaults to a channel label
+  name: "Acme Airlines"           # required
+  shortName: "Acme"               # optional header name
+  avatar: "/assets/acme/avatar.svg" # optional local/HTTPS image
+  logo: "/assets/acme/logo.svg"     # optional
+  banner: "/assets/acme/banner.svg" # optional RCS profile banner
+  description: "Customer support"   # optional header subtitle
   verified: true
+  rcsProfile:                       # optional authored RCS business profile
+    displayName: "Acme Airlines"
+    subtitle: "Travel support and flight services"
+    brandLabel: "Acme Airlines"
+    phone: "+1 202 555 0100"
+    websiteLabel: "acme.example"
+    websiteUrl: "https://acme.example"
+    email: "support@acme.example"
+    imageCount: 0
+    imageUrls: []
+    privacyPolicyUrl: "https://acme.example/privacy"
+    termsUrl: "https://acme.example/terms"
 defaults:
   messageDelayMs: 500      # pause before each message appears
   typingDurationMs: 900    # typing indicator duration before a business message
@@ -176,13 +190,21 @@ nodes:
         next: next_node
 ```
 
-### Brand
+### RCS business profiles and images
 
-The `brand` block (name, short name, avatar picture, description subtitle, verified tick) is also editable live from the sidebar's **Brand** section — no YAML editing needed, applies immediately with no restart, and persists per-browser like the Variables section. "Reset" reverts to whatever the loaded flow's own `brand` block specifies. Useful for quickly re-skinning a demo (a different company name/logo) without touching the scenario file.
+RCS profiles may be authored with `brand.rcsProfile` to provide the exact display name, subtitle, brand label, phone, website label/URL, email, verification state, gallery count/previews, and optional privacy/terms links shown in **Info & options**. Use simulator-safe `.example` domains and mailboxes for built-in or fictional brands. `imageCount` must be `0` with `imageUrls: []`, or at least the number of local/HTTPS preview URLs (up to 12); a zero-gallery profile omits the Images section. `brand.banner` supplies the shared banner when no authored banner is present.
+
+Image fields accept app-relative paths such as `/assets/acme/banner.svg` or HTTPS image URLs. Authored gallery paths must point into the owning brand directory under `public/assets/<brand>`. Do not hotlink, embed arbitrary data, or reuse another brand's artwork. Missing images use the neutral fallback without hiding profile contacts or navigation. When `rcsProfile` is absent, RCS derives a deterministic safe fallback from the brand; WhatsApp continues to use its own profile rendering.
+
+### Scenario entry triggers
+
+An RCS scenario must define one unique `metadata.trigger` message. The simulator and Live RCS wait for that message before entering `start`. Matching is exact after only these deterministic normalization steps: Unicode NFC normalization, trimming surrounding whitespace, and `String.prototype.toLowerCase()` casing. Internal whitespace, punctuation, and all other characters remain significant, so this is not keyword, substring, regex, or fuzzy matching. A trigger such as `SIA START` therefore accepts ` sia start ` and `SIA START`, but not `SIA START please`.
+
+RCS entry triggers are unique across built-in and locally saved custom scenarios; imports and edits with a normalized duplicate are rejected. The existing top-level `triggers` array remains an optional in-flow keyword shortcut after startup and does not select scenarios. WhatsApp scenarios may omit `metadata.trigger` for backward compatibility and keep their existing automatic-start behavior.
 
 ### Free text & keyword triggers
 
-The composer is always typable — not just when an `input` message is active — so the user side of a demo can be driven by actually typing, not only tapping buttons. Whatever's typed always shows up as an outgoing bubble.
+The composer is always typable — after an RCS scenario's entry trigger has been accepted, not just when an `input` message is active — so the user side of a demo can be driven by actually typing, not only tapping buttons. Before that entry message, unmatched RCS text is ignored and does not start or record a scenario.
 
 `triggers` at the flow's top level are global keyword routes, independent of whatever node is currently active: `{ keywords: [...], next: "<node id>", set?: {...} }`. A trigger matches when any of its keywords appears as a **whole word** in the typed text (case-insensitive by default; substring-inside-another-word doesn't count, so `cat` won't fire on "category") — the first matching trigger wins. This is meant as an "anytime" escape hatch, e.g. "type CANCEL anytime" or "type HELP anytime", the way real WhatsApp/RCS bots often implement keyword commands, and it takes priority even over a currently-active `input` field. If nothing matches and there's no active `input` field either, the typed message still sends — it just sits there with no automatic response, the same as a real bot that doesn't recognize what you typed.
 

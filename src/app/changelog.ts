@@ -11,6 +11,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.25.0',
+    date: '2026-10-16',
+    changes: [
+      'New: all built-in scenarios now have brand-safe RCS profile details, owned local banners and galleries, deterministic fallback coverage, and synchronized authoring documentation.',
+    ],
+  },
+  {
     version: '0.24.0',
     date: '2026-10-15',
     changes: [
