@@ -1,0 +1,15 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {"severity":"HIGH","title":"Preflight and payload contracts conflict","fix":"Define one exact result shape with warnings, payload nullability, issue codes/paths, and deterministic revision semantics."},
+    {"severity":"HIGH","title":"Delivery/read/typing states lack projection and UI contract","fix":"Define a versioned event/status union, server emission and provider mapping, rendering component, and stale/unknown-state behavior."},
+    {"severity":"HIGH","title":"Persistence can violate shared-link guarantees and lacks hash lifecycle","fix":"Specify source/hash ownership, shared-link guards, async hash readiness, queued writes, and invariant tests."},
+    {"severity":"HIGH","title":"Aspect-ratio authoring and rendering path is incomplete","fix":"Define schema, normalized types, carousel/card precedence, invalid-ratio gate, and end-to-end fixtures."},
+    {"severity":"HIGH","title":"Error envelope and reset recovery are underspecified","fix":"Define exact client/server error mapping, malformed-response fallback, polling expiry, and reset/loading transitions."},
+    {"severity":"MEDIUM","title":"Selector keyboard and compare behavior is ambiguous","fix":"Specify independent group keyboard/state tables, compare behavior, descriptions, and focus restoration."},
+    {"severity":"MEDIUM","title":"Official logo requirement is not met by official-looking paths","fix":"Identify approved local assets and provenance, and define BrandIcon semantic API and tests."},
+    {"severity":"MEDIUM","title":"Responsive and 200% zoom behavior lacks concrete layout contract","fix":"Name the owning layout, define panel/control reflow and overflow constraints, and list manual verification outcomes."},
+    {"severity":"MEDIUM","title":"Validation boundary and compatibility claims conflict","fix":"Add a matrix assigning structural, channel, live-warning, and payload issues to exact gates and channels."},
+    {"severity":"NIT","title":"Phone copy does not document accepted plus/separator grammar","fix":"Align copy and client validation with normalized server recipient grammar."}
+  ]
+}

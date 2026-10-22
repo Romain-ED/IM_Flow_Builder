@@ -3,6 +3,7 @@ import { List, Waypoints } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { computeFlowGraphLayout } from '../../engine/flowGraph'
 import { FlowGraphView, FlowGraphLegend } from './FlowGraphView'
+import { buildRcsPayload } from '../../channels/rcs/payload'
 
 export function DebugDrawer() {
   const flow = useSimulatorStore((s) => s.flow)
@@ -12,7 +13,10 @@ export function DebugDrawer() {
   const validation = useSimulatorStore((s) => s.validation)
   const events = useSimulatorStore((s) => s.events)
   const jumpToNode = useSimulatorStore((s) => s.jumpToNode)
+  const history = useSimulatorStore((s) => s.history)
+  const channel = useSimulatorStore((s) => s.channel)
   const [nodesView, setNodesView] = useState<'list' | 'graph'>('graph')
+  const rcsPayload = useMemo(() => (channel === 'rcs' ? buildRcsPayload(history) : null), [channel, history])
 
   const layout = useMemo(() => (flow ? computeFlowGraphLayout(flow) : null), [flow])
 
@@ -109,6 +113,18 @@ export function DebugDrawer() {
           )
         )}
       </Section>
+
+      {rcsPayload && (
+        <Section title="RCS payload">
+          <p className="m-0 mb-2 text-[11px] text-slate-500">RBM-shaped preview of the messages currently shown in the phone.</p>
+          {rcsPayload.warnings.length > 0 && (
+            <div className="mb-2 flex flex-col gap-1">
+              {rcsPayload.warnings.map((warning, i) => <p key={i} className="m-0 rounded-md bg-amber-50 px-2 py-1 text-[11px] text-amber-800">{warning}</p>)}
+            </div>
+          )}
+          <pre className="max-h-96 overflow-auto rounded-lg bg-slate-900 p-2.5 text-[10px] leading-relaxed text-slate-100 whitespace-pre-wrap break-words">{JSON.stringify(rcsPayload.messages, null, 2)}</pre>
+        </Section>
+      )}
 
       {validation && !validation.success && (
         <Section title="Validation errors">

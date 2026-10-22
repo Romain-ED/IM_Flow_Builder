@@ -21,7 +21,7 @@ export function RcsHeader({ brand, onBrandClick }: RcsHeaderProps) {
         <button
           type="button"
           aria-label="Back navigation"
-          onClick={() => showToast('Back navigation is not available in this demo.')}
+          onClick={() => showToast('Back navigation is unavailable.')}
           className="flex h-9 w-8 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-[#f0f4f9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0b57d0] cursor-pointer"
         >
           <ArrowLeft size={20} />
@@ -54,7 +54,7 @@ export function RcsHeader({ brand, onBrandClick }: RcsHeaderProps) {
           <button
             type="button"
             aria-label="More conversation options"
-            onClick={() => showToast('More conversation options are not available in this demo.')}
+            onClick={() => showToast('More conversation options are unavailable.')}
             className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#f0f4f9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0b57d0] cursor-pointer"
           >
             <MoreVertical size={18} />

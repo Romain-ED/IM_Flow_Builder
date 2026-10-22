@@ -53,8 +53,8 @@ export function Composer() {
     <div className={`shrink-0 px-3 py-2.5 ${channel === 'rcs' ? theme.chromeBg : 'border-t border-slate-200 bg-white'}`}>
       {liveSessionActive ? (
         <div className="flex items-center justify-between gap-2">
-          <p className="m-0 py-1.5 text-center text-[12px] text-indigo-500">Live RCS is active · reply from the test phone</p>
-          <button type="button" onClick={() => void restartLiveFlow()} disabled={isRestarting} aria-label="Restart flow on test phone" className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100 disabled:cursor-wait disabled:opacity-50">
+          <p className="m-0 py-1.5 text-center text-[12px] text-indigo-500">Live RCS is active · reply from the destination phone</p>
+          <button type="button" onClick={() => void restartLiveFlow()} disabled={isRestarting} aria-label="Restart flow on destination phone" className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100 disabled:cursor-wait disabled:opacity-50">
             {isRestarting ? <LoaderCircle size={12} className="animate-spin" /> : <RotateCcw size={12} />} Restart flow
           </button>
         </div>

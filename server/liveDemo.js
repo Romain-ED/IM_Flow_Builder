@@ -18,8 +18,13 @@ export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()
   const allowedFlowIds = (env.LIVE_RCS_ALLOWED_FLOW_IDS ?? '').split(',').map((value) => value.trim()).filter(Boolean)
   const storageDurable = enabled(env.LIVE_RCS_STORAGE_DURABLE)
   const demoEphemeralStorage = enabled(env.LIVE_RCS_DEMO_EPHEMERAL_STORAGE)
+  const configuredRecipient = validRecipient(env.LIVE_RCS_TEST_RECIPIENT)
+  const configuredAdditionalRecipients = (env.LIVE_RCS_ALLOWED_RECIPIENTS ?? '').split(',').map((value) => value.trim()).filter(Boolean)
+  const invalidAdditionalRecipients = configuredAdditionalRecipients.filter((value) => !validRecipient(value))
+  const allowedRecipients = [...new Set([configuredRecipient, ...configuredAdditionalRecipients.map(validRecipient).filter(Boolean)])]
   const errors = []
-  if (mode !== 'disabled' && !env.LIVE_RCS_TEST_RECIPIENT) errors.push('LIVE_RCS_TEST_RECIPIENT is required.')
+  if (mode !== 'disabled' && !configuredRecipient) errors.push('LIVE_RCS_TEST_RECIPIENT must be a 7 to 15 digit phone number.')
+  if (invalidAdditionalRecipients.length > 0) errors.push('LIVE_RCS_ALLOWED_RECIPIENTS contains an invalid phone number.')
   if (mode !== 'disabled' && !env.LIVE_RCS_OPERATOR_TOKEN) errors.push('LIVE_RCS_OPERATOR_TOKEN is required.')
   if (mode !== 'disabled' && allowedFlowIds.length === 0) errors.push('LIVE_RCS_ALLOWED_FLOW_IDS is required.')
   if (mode === 'vonage') {
@@ -39,6 +44,7 @@ export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()
     configured: mode !== 'disabled' && errors.length === 0,
     errors,
     recipient: env.LIVE_RCS_TEST_RECIPIENT ?? null,
+    allowedRecipients,
     allowedFlowIds,
     operatorToken: env.LIVE_RCS_OPERATOR_TOKEN ?? '',
     vonageJwt: env.LIVE_RCS_VONAGE_JWT ?? '',
@@ -63,7 +69,7 @@ export function publicLiveDemoDiagnostics(config) {
       ? config.storageDurable
         ? 'durable'
         : config.demoEphemeralStorage
-          ? 'single-instance demo — sessions are lost on restart'
+          ? 'single-instance storage — sessions are lost on restart'
           : 'not configured'
       : 'development file store',
     errors: config.errors,
@@ -79,22 +85,27 @@ function normalizedAddress(value) {
   return /^\+?\d+$/.test(normalized) ? normalized.replace(/^\+/, '') : normalized
 }
 
-function assertVonageInboundIdentity(config, payload) {
+function validRecipient(value) {
+  const normalized = normalizedAddress(value)
+  return /^\d{7,15}$/.test(normalized) ? `+${normalized}` : null
+}
+
+function assertVonageInboundIdentity(config, payload, recipient = config.recipient) {
   if (config.mode !== 'vonage') return
   if (payload.channel !== 'rcs') throw new Error('Webhook channel is not RCS.')
-  if (normalizedAddress(payload.from) !== normalizedAddress(config.recipient)) {
-    throw new Error('Inbound webhook sender does not match the configured test recipient.')
+  if (normalizedAddress(payload.from) !== normalizedAddress(recipient)) {
+    throw new Error('Inbound webhook sender does not match the configured recipient.')
   }
   if (normalizedAddress(payload.to) !== normalizedAddress(config.rcsAgentId)) {
     throw new Error('Inbound webhook destination does not match the configured RCS agent.')
   }
 }
 
-function assertVonageStatusIdentity(config, payload) {
+function assertVonageStatusIdentity(config, payload, recipient = config.recipient) {
   if (config.mode !== 'vonage') return
   if (payload.channel !== 'rcs') throw new Error('Webhook channel is not RCS.')
-  if (normalizedAddress(payload.to) !== normalizedAddress(config.recipient)) {
-    throw new Error('Status webhook destination does not match the configured test recipient.')
+  if (normalizedAddress(payload.to) !== normalizedAddress(recipient)) {
+    throw new Error('Status webhook destination does not match the configured recipient.')
   }
   if (normalizedAddress(payload.from) !== normalizedAddress(config.rcsAgentId)) {
     throw new Error('Status webhook sender does not match the configured RCS agent.')
@@ -189,14 +200,14 @@ export class VonageRcsGateway {
     this.fetch = fetchImpl
   }
 
-  async send(content) {
+  async send(content, recipient = this.config.recipient) {
     const response = await this.fetch(this.config.vonageApiUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${createApplicationJwt(this.config)}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(toVonageRcsMessage(content, this.config)),
+      body: JSON.stringify(toVonageRcsMessage(content, { ...this.config, recipient })),
       signal: AbortSignal.timeout(10_000),
     })
     const payload = await response.json().catch(() => ({}))
@@ -357,7 +368,7 @@ function presenterSnapshot(session) {
     schemaVersion: LIVE_SCHEMA_VERSION,
     id: session.id,
     status: session.status,
-    recipient: session.recipient,
+    recipient: maskRecipient(session.recipient),
     currentNodeId: session.currentNodeId ?? null,
     pendingInput: session.pendingInput ? { nodeId: session.pendingInput.nodeId, inputType: session.pendingInput.inputType } : null,
     variables: presenterVariables(session),
@@ -531,7 +542,7 @@ function sessionDiagnosticsView(session) {
   return {
     id: session.id,
     status: session.status,
-    recipient: session.recipient,
+    recipient: maskRecipient(session.recipient),
     currentNodeId: session.currentNodeId ?? null,
     createdAt: session.createdAt,
     updatedAt: session.updatedAt,
@@ -589,13 +600,17 @@ export class LiveDemoService {
     return Boolean(this.config.operatorToken) && token === this.config.operatorToken
   }
 
-  async createSession({ flow, variables = {}, publicBaseUrl }) {
+  async createSession({ flow, variables = {}, recipient, publicBaseUrl }) {
     if (!this.config.configured) throw new Error('Live RCS is not configured.')
+    const selectedRecipient = recipient === undefined || recipient === '' ? validRecipient(this.config.recipient) : validRecipient(recipient)
+    if (!selectedRecipient) throw new Error('Destination phone number must be 7 to 15 digits, optionally prefixed with +.')
+    const allowedRecipients = this.config.allowedRecipients ?? [validRecipient(this.config.recipient)].filter(Boolean)
+    if (!allowedRecipients.includes(selectedRecipient)) throw new Error('Destination phone number is not authorized for Live RCS.')
     if (!flow?.metadata?.id || flow.metadata.channel !== 'rcs') throw new Error('A validated RCS flow is required.')
     if (!this.config.allowedFlowIds.includes(flow.metadata.id)) throw new Error('This flow is not allowlisted for Live RCS.')
     if (!Array.isArray(flow.nodes) || !flow.start) throw new Error('Flow is missing nodes or start state.')
     if (this.store.list().some((session) => session.status === 'starting' || session.status === 'awaiting_reply')) {
-      throw new Error('A Live RCS session is already active for the fixed test recipient.')
+      throw new Error('A Live RCS session is already active for the selected recipient.')
     }
 
     const session = {
@@ -603,7 +618,7 @@ export class LiveDemoService {
       createdAt: now(),
       updatedAt: now(),
       status: 'starting',
-      recipient: maskRecipient(this.config.recipient),
+      recipient: selectedRecipient,
       publicBaseUrl,
       flow,
       variables: { ...(flow.variables ?? {}), ...variables },
@@ -687,7 +702,7 @@ export class LiveDemoService {
 
     const { content, pendingInput } = collectContent(session, node, session.variables)
     for (const item of content) {
-      const result = await this.gateway.send(item)
+      const result = await this.gateway.send(item, session.recipient)
       const outbound = { id: randomUUID(), providerMessageId: result.providerMessageId, nodeId, content: item, status: result.status, at: now() }
       session.outbound.push(outbound)
       appendTimeline(session, { sender: 'business', nodeId, message: liveMessageFromContent(item, 'business', session), at: outbound.at })
@@ -723,20 +738,20 @@ export class LiveDemoService {
   async handleInbound(payload) {
     const payloadSummary = summarizeInboundPayload(payload)
     this.recordDiagnostic({ type: 'inbound_received', ...payloadSummary })
-    try {
-      assertVonageInboundIdentity(this.config, payload)
-    } catch (error) {
-      this.recordDiagnostic({ type: 'inbound_rejected', eventId: payloadSummary.eventId, error: error instanceof Error ? error.message : 'Identity validation failed.' })
-      throw error
-    }
     const eventId = payloadSummary.eventId
     if (!eventId) throw new Error('Inbound callback has no event identifier.')
     const postbackId = payloadSummary.postbackId
     const text = payload.text ?? payload.message?.text
-    const session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || candidate.status === 'awaiting_reply')
+    const session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || (candidate.status === 'awaiting_reply' && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
     if (!session) {
       this.recordDiagnostic({ type: 'inbound_unmatched_session', eventId, postbackId })
       throw new Error('No active Live RCS session matches this inbound event.')
+    }
+    try {
+      assertVonageInboundIdentity(this.config, payload, session.recipient)
+    } catch (error) {
+      this.recordDiagnostic({ type: 'inbound_rejected', eventId: payloadSummary.eventId, error: error instanceof Error ? error.message : 'Identity validation failed.' })
+      throw error
     }
     if (session.processedInbound.includes(eventId)) {
       this.recordDiagnostic({ type: 'inbound_duplicate', sessionId: session.id, eventId, postbackId })
@@ -801,12 +816,12 @@ export class LiveDemoService {
   }
 
   handleStatus(payload) {
-    assertVonageStatusIdentity(this.config, payload)
     const providerMessageId = payload.message_uuid ?? payload.uuid ?? payload.message_id
     const status = payload.status ?? payload.message_status
     if (!providerMessageId || !status) throw new Error('Status callback has no provider message identifier or status.')
     const session = this.store.list().find((candidate) => candidate.outbound.some((outbound) => outbound.providerMessageId === providerMessageId))
     if (!session) throw new Error('No Live RCS session matches this status callback.')
+    assertVonageStatusIdentity(this.config, payload, session.recipient)
     const outbound = session.outbound.find((entry) => entry.providerMessageId === providerMessageId)
     const normalizedStatus = normalizedProviderStatus(status)
     outbound.status = normalizedStatus

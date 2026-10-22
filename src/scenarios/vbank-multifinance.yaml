@@ -1,0 +1,742 @@
+version: "1.0"
+metadata:
+  id: vbank-multifinance-first-repayment
+  name: "V Bank: From just curious to first repayment"
+  description: "Discovery → indicative eligibility → Personal Loan application → first repayment."
+  channel: rcs
+  tags: [fsi, multifinance, lending, rcs]
+brand:
+  name: "V Bank"
+  shortName: "V Bank"
+  avatar: "/assets/V%20Bank/logo.jpg"
+  logo: "/assets/V%20Bank/logo.jpg"
+  banner: "/assets/V%20Bank/banner%20wide.jpg"
+  verified: true
+  description: "Personal banking and lending"
+defaults:
+  messageDelayMs: 0
+  typingDurationMs: 700
+  showTimestamps: true
+variables:
+  customerName: Nadia
+  selectedProduct: none
+  productRate: ""
+  productDescription: ""
+  consentGiven: false
+  incomeBand: unset
+  employmentStatus: unset
+  existingRepayments: unset
+  indicativeLimit: "Rp 150,000,000"
+  selectedAmount: "Not selected"
+  termMonths: 0
+  estimatedInstallment: "Not calculated"
+  amountTermStatus: not_selected
+  ktpReceived: false
+  payslipReceived: false
+  documentsStatus: "0 of 2"
+  identityStatus: pending
+  contractStatus: pending
+  disbursementStatus: pending
+  paymentMethod: none
+  paymentStatus: unpaid
+  virtualAccount: "8800 2611 0108 42"
+triggers:
+  - keywords: [help, bantuan]
+    next: help
+  - keywords: [cancel, stop]
+    next: cancelled
+start: welcome
+nodes:
+  - id: welcome
+    label: "Discovery carousel"
+    messages:
+      - type: text
+        text: "Hi {{customerName}} 👋 Welcome to V Bank. Explore borrowing options and find a repayment plan that fits your needs. Review product details, rates, fees, and eligibility requirements before applying."
+      - type: rich_card
+        image: "/assets/V%20Bank/logo.jpg"
+        mediaHeight: medium
+        title: "V Bank · banking clarity for your next move"
+        description: "Explore V Bank lending options and review product terms before applying."
+      - type: carousel
+        mediaHeight: medium
+        cards:
+          - id: personal-loan
+            image: "/assets/V%20Bank/2.jpg"
+            title: "Personal Loan"
+            subtitle: "From 12% p.a."
+            description: "Make room for your next chapter. Indicative rate subject to eligibility, product terms, and credit assessment."
+            actions:
+              - type: reply
+                label: "Check eligibility"
+                set:
+                  selectedProduct: personal_loan
+                  productRate: "From 12% p.a."
+                  productDescription: "Personal Loan"
+                next: consent
+              - type: reply
+                label: "View details"
+                next: details_personal
+          - id: car-loan
+            image: "/assets/V%20Bank/car%20loan.jpg"
+            title: "Car Loan"
+            subtitle: "From 6% p.a."
+            description: "Your next move, your own wheels. Indicative rates and terms depend on vehicle details and credit assessment."
+            actions:
+              - type: reply
+                label: "Check eligibility"
+                set:
+                  selectedProduct: car_loan
+                  productRate: "From 6% p.a."
+                  productDescription: "Car Loan"
+                next: car_eligibility
+              - type: reply
+                label: "View details"
+                next: details_car
+          - id: home-mortgage
+            image: "/assets/V%20Bank/home%20mortgage.jpg"
+            title: "Home Mortgage"
+            subtitle: "Intro rate from 5% p.a."
+            description: "A place to call yours. Introductory rate subject to eligibility, property details, and credit assessment."
+            actions:
+              - type: reply
+                label: "Check eligibility"
+                set:
+                  selectedProduct: home_mortgage
+                  productRate: "Intro rate from 5% p.a."
+                  productDescription: "Home Mortgage"
+                next: home_eligibility
+              - type: reply
+                label: "View details"
+                next: details_home
+
+  - id: details_personal
+    label: "Personal Loan details"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/2.jpg"
+        mediaHeight: medium
+        title: "Personal Loan details"
+        description: "From 12% p.a. indicative rate. Review the applicable terms, fees, and eligibility requirements before applying."
+        actions:
+          - type: reply
+            label: "Check eligibility"
+            set:
+              selectedProduct: personal_loan
+              productRate: "From 12% p.a."
+              productDescription: "Personal Loan"
+            next: consent
+          - type: reply
+            label: "Back to options"
+            next: welcome
+
+  - id: details_car
+    label: "Car Loan details"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/car%20loan.jpg"
+        mediaHeight: medium
+        title: "Car Loan details"
+        description: "From 6% p.a. indicative rate. Your rate and repayment terms depend on the vehicle, application details, and credit assessment."
+        actions:
+          - type: reply
+            label: "Personal Loan instead"
+            set:
+              selectedProduct: personal_loan
+              productRate: "From 12% p.a."
+              productDescription: "Personal Loan"
+            next: consent
+          - type: reply
+            label: "Back to options"
+            next: welcome
+
+  - id: details_home
+    label: "Home Mortgage details"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/home%20mortgage.jpg"
+        mediaHeight: medium
+        title: "Home Mortgage details"
+        description: "Intro rate from 5% p.a. Your rate and repayment terms depend on the property, application details, and credit assessment."
+        actions:
+          - type: reply
+            label: "Personal Loan instead"
+            set:
+              selectedProduct: personal_loan
+              productRate: "From 12% p.a."
+              productDescription: "Personal Loan"
+            next: consent
+          - type: reply
+            label: "Back to options"
+            next: welcome
+
+  - id: car_eligibility
+    label: "Car Loan product outcome"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/car%20loan.jpg"
+        mediaHeight: medium
+        title: "Car Loan options"
+        description: "Car Loan eligibility depends on vehicle details, income, documentation, and credit assessment. Continue with Personal Loan to review its options."
+        actions:
+          - type: reply
+            label: "Personal Loan instead"
+            set:
+              selectedProduct: personal_loan
+              productRate: "From 12% p.a."
+              productDescription: "Personal Loan"
+            next: consent
+          - type: reply
+            label: "Back to options"
+            next: welcome
+
+  - id: home_eligibility
+    label: "Home Mortgage product outcome"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/home%20mortgage.jpg"
+        mediaHeight: medium
+        title: "Home Mortgage options"
+        description: "Home Mortgage eligibility depends on property details, income, documentation, and credit assessment. Continue with Personal Loan to review its options."
+        actions:
+          - type: reply
+            label: "Personal Loan instead"
+            set:
+              selectedProduct: personal_loan
+              productRate: "From 12% p.a."
+              productDescription: "Personal Loan"
+            next: consent
+          - type: reply
+            label: "Back to options"
+            next: welcome
+
+  - id: consent
+    label: "Initial assessment consent"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/initial eligibility.jpg"
+        mediaHeight: medium
+        title: "Before we check options"
+        description: "May we use your answers and existing V Bank account information for an initial, indicative assessment of this Personal Loan? This does not commit you to borrow. Final eligibility and terms require document review and credit checks."
+        actions:
+          - type: reply
+            label: "Agree & continue"
+            set:
+              consentGiven: true
+            next: income_question
+          - type: reply
+            label: "Not now"
+            next: not_now
+
+  - id: not_now
+    label: "Consent declined"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/2.jpg"
+        mediaHeight: medium
+        title: "No problem, Nadia"
+        description: "No assessment answers were collected. You can return to product options when you're ready."
+        actions:
+          - type: reply
+            label: "Browse options"
+            next: welcome
+          - type: reply
+            label: "Close"
+            next: cancelled
+
+  - id: income_question
+    label: "Income question"
+    messages:
+      - type: text
+        text: "What is your monthly income? Choose a broad range."
+      - type: suggested_replies
+        options:
+          - label: "Under Rp 10m"
+            set:
+              incomeBand: under_10m
+            next: employment_question
+          - label: "Rp 10–20m"
+            set:
+              incomeBand: 10_to_20m
+            next: employment_question
+          - label: "Over Rp 20m"
+            set:
+              incomeBand: over_20m
+            next: employment_question
+
+  - id: employment_question
+    label: "Employment question"
+    messages:
+      - type: text
+        text: "What is your employment status? Choose the category that best describes you."
+      - type: suggested_replies
+        options:
+          - label: "Permanent Employee"
+            set:
+              employmentStatus: permanent
+            next: repayment_question
+          - label: "Contract Employee"
+            set:
+              employmentStatus: contract
+            next: repayment_question
+          - label: "Self-employed"
+            set:
+              employmentStatus: self_employed
+            next: repayment_question
+
+  - id: repayment_question
+    label: "Existing repayments question"
+    messages:
+      - type: text
+        text: "How much do you repay monthly on existing loans and credit cards? Choose a broad category."
+      - type: suggested_replies
+        options:
+          - label: "No Repayments"
+            set:
+              existingRepayments: none
+            next: eligibility_result
+          - label: "Under Rp 3m"
+            set:
+              existingRepayments: under_3m
+            next: eligibility_result
+          - label: "Rp 3m or More"
+            set:
+              existingRepayments: 3m_or_more
+            next: eligibility_result
+
+  - id: eligibility_result
+    label: "Indicative qualification"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/you may qualify.jpg"
+        mediaHeight: medium
+        title: "Indicative eligibility: up to {{indicativeLimit}}"
+        description: "{{productDescription}} · {{productRate}}. This is an initial eligibility indication based on the information provided. Final approval and terms require documents and credit checks. Borrow only what you need and review the full terms before accepting."
+        actions:
+          - type: open_url
+            label: "Choose amount & term"
+            url: "https://secure.vbank.com/apply/amount-term"
+          - type: reply
+            label: "I've chosen"
+            set:
+              selectedAmount: "Rp 60,000,000"
+              termMonths: 24
+              estimatedInstallment: "Rp 2,824,408"
+              amountTermStatus: selected
+            next: documents_ktp
+          - type: reply
+            label: "Not now"
+            next: not_now
+
+  - id: documents_ktp
+    label: "KTP document"
+    set:
+      documentsStatus: "0 of 2"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/secure document upload.jpg"
+        mediaHeight: medium
+        title: "Application documents · {{documentsStatus}}"
+        description: "KTP identity card ⏳ · Latest payslip ⏳. Use the secure document portal to submit the required files."
+        actions:
+          - type: open_url
+            label: "Upload KTP"
+            url: "https://secure.vbank.com/secure-upload/ktp"
+          - type: reply
+            label: "KTP uploaded"
+            set:
+              ktpReceived: true
+            next: documents_payslip
+          - type: reply
+            label: "Later"
+            next: pause_ktp
+          - type: reply
+            label: "Help"
+            next: help
+
+  - id: documents_payslip
+    label: "Payslip document"
+    set:
+      documentsStatus: "1 of 2"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/secure document upload.jpg"
+        mediaHeight: medium
+        title: "Application documents · {{documentsStatus}}"
+        description: "KTP identity card ✅ · Latest payslip ⏳. Use the secure document portal to submit the remaining file."
+        actions:
+          - type: open_url
+            label: "Upload payslip"
+            url: "https://secure.vbank.com/secure-upload/payslip"
+          - type: reply
+            label: "Payslip uploaded"
+            set:
+              payslipReceived: true
+            next: documents_complete
+          - type: reply
+            label: "Later"
+            next: pause_payslip
+          - type: reply
+            label: "Help"
+            next: help
+
+  - id: documents_complete
+    label: "Documents complete"
+    set:
+      documentsStatus: "2 of 2"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/secure document upload.jpg"
+        mediaHeight: medium
+        title: "Application documents · {{documentsStatus}}"
+        description: "KTP identity card ✅ · Latest payslip ✅. Your documents are ready for identity verification."
+        actions:
+          - type: reply
+            label: "Start identity check"
+            next: identity_intro
+          - type: reply
+            label: "Later"
+            next: pause_documents_complete
+          - type: reply
+            label: "Help"
+            next: help
+
+  - id: pause_ktp
+    label: "Pause before KTP"
+    messages:
+      - type: rich_card
+        title: "Application paused"
+        description: "Your application is paused. Resume when you're ready."
+        actions:
+          - type: reply
+            label: "Resume application"
+            next: documents_ktp
+          - type: reply
+            label: "Browse options"
+            next: welcome
+          - type: reply
+            label: "Close application"
+            next: cancelled
+
+  - id: pause_payslip
+    label: "Pause before payslip"
+    messages:
+      - type: rich_card
+        title: "Application paused"
+        description: "Your application is paused. Resume when you're ready."
+        actions:
+          - type: reply
+            label: "Resume application"
+            next: documents_payslip
+          - type: reply
+            label: "Browse options"
+            next: welcome
+          - type: reply
+            label: "Close application"
+            next: cancelled
+
+  - id: pause_documents_complete
+    label: "Pause before identity"
+    messages:
+      - type: rich_card
+        title: "Application paused"
+        description: "Your documents are ready for identity verification. Resume when you're ready."
+        actions:
+          - type: reply
+            label: "Resume application"
+            next: documents_complete
+          - type: reply
+            label: "Browse options"
+            next: welcome
+          - type: reply
+            label: "Close application"
+            next: cancelled
+
+  - id: identity_intro
+    label: "Identity handoff"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/identity check.jpg"
+        mediaHeight: medium
+        title: "Identity verification"
+        description: "Have your camera ready for secure identity verification. Follow the instructions, then return here when complete."
+        actions:
+          - type: open_url
+            label: "Open secure check"
+            url: "https://secure.vbank.com/secure-identity/liveness"
+          - type: reply
+            label: "Identity complete"
+            set:
+              identityStatus: verified
+            next: approval_card
+          - type: reply
+            label: "Couldn't complete"
+            set:
+              identityStatus: failed
+            next: identity_retry
+          - type: reply
+            label: "Help"
+            next: help
+
+  - id: identity_retry
+    label: "Identity retry"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/identity check.jpg"
+        mediaHeight: medium
+        title: "Identity check not completed"
+        description: "Try secure identity verification again, or pause your application."
+        actions:
+          - type: open_url
+            label: "Open secure check"
+            url: "https://secure.vbank.com/secure-identity/liveness"
+          - type: reply
+            label: "Try again"
+            set:
+              identityStatus: pending
+            next: identity_intro
+          - type: reply
+            label: "Stop"
+            next: pause_identity
+          - type: reply
+            label: "Help"
+            next: help
+
+  - id: pause_identity
+    label: "Pause identity"
+    messages:
+      - type: rich_card
+        title: "Identity step paused"
+        description: "Identity verification is paused. Resume when you're ready."
+        actions:
+          - type: reply
+            label: "Resume"
+            next: identity_intro
+          - type: reply
+            label: "Browse options"
+            next: welcome
+          - type: reply
+            label: "Close application"
+            next: cancelled
+
+  - id: approval_card
+    label: "Loan offer"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/review before signing.jpg"
+        mediaHeight: medium
+        title: "Review your Personal Loan offer"
+        description: "Principal {{selectedAmount}} · rate 12% p.a. · monthly instalment {{estimatedInstallment}} · fees Rp 1,200,000 · total instalments Rp 67,785,792 · total cost including fees Rp 68,985,792 · reference VB-PL-261101-0842. Review the full terms before signing."
+        actions:
+          - type: open_url
+            label: "Review & sign"
+            url: "https://secure.vbank.com/secure-contract/review-sign/VB-PL-261101-0842"
+          - type: reply
+            label: "Contract signed"
+            set:
+              contractStatus: signed
+            next: disbursement
+          - type: reply
+            label: "Couldn't sign"
+            set:
+              contractStatus: failed
+            next: contract_retry
+          - type: reply
+            label: "Help"
+            next: help
+
+  - id: contract_retry
+    label: "Contract retry"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/review before signing.jpg"
+        mediaHeight: medium
+        title: "Contract signing not completed"
+        description: "Review your agreement in the secure document portal and return here when signing is complete."
+        actions:
+          - type: open_url
+            label: "Review & sign"
+            url: "https://secure.vbank.com/secure-contract/review-sign/VB-PL-261101-0842"
+          - type: reply
+            label: "Try again"
+            set:
+              contractStatus: pending
+            next: approval_card
+          - type: reply
+            label: "Contract signed"
+            set:
+              contractStatus: signed
+            next: disbursement
+          - type: reply
+            label: "Not now"
+            next: pause_contract
+
+  - id: pause_contract
+    label: "Pause contract"
+    messages:
+      - type: rich_card
+        title: "Signing paused"
+        description: "Contract signing is paused. Resume when you're ready."
+        actions:
+          - type: reply
+            label: "Resume"
+            next: approval_card
+          - type: reply
+            label: "Browse options"
+            next: welcome
+          - type: reply
+            label: "Close application"
+            next: cancelled
+
+  - id: disbursement
+    label: "Contract and disbursement"
+    set:
+      disbursementStatus: confirmed
+    messages:
+      - type: text
+        text: "Contract signed ✅ Your Personal Loan funds have been transferred to your V Bank account."
+      - type: rich_card
+        image: "/assets/V%20Bank/fund transferred.jpg"
+        mediaHeight: medium
+        title: "Personal Loan · transfer confirmed"
+        description: "Reference VB-PL-261101-0842 · View your contract or repayment schedule."
+        actions:
+          - type: open_url
+            label: "View contract"
+            url: "https://secure.vbank.com/contract/VB-PL-261101-0842"
+          - type: open_url
+            label: "Repayment schedule"
+            url: "https://secure.vbank.com/repayment-schedule/VB-PL-261101-0842"
+    next: repayment_reminder
+
+  - id: repayment_reminder
+    label: "First repayment reminder"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/payment reminder.jpg"
+        mediaHeight: medium
+        title: "Your first repayment"
+        description: "Amount: Rp 2,824,408\nDue: 6 December 2026\nChoose a payment method to view instructions."
+      - type: suggested_replies
+        options:
+          - label: "BCA"
+            set:
+              paymentMethod: bca
+            next: payment_instructions
+          - label: "Mandiri"
+            set:
+              paymentMethod: mandiri
+            next: payment_instructions
+          - label: "BRI"
+            set:
+              paymentMethod: bri
+            next: payment_instructions
+          - label: "Alfamart"
+            set:
+              paymentMethod: alfamart
+            next: payment_instructions
+          - label: "Pay later"
+            next: payment_later
+          - label: "Help"
+            next: help
+
+  - id: payment_instructions
+    label: "Payment instructions"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/payment options.jpg"
+        mediaHeight: medium
+        title: "{{paymentMethod}} payment instructions"
+        description: "Virtual account: {{virtualAccount}}\nExact amount: Rp 2,824,408\nDue: 6 December 2026\nFollow {{paymentMethod}} instructions to complete your repayment."
+        actions:
+          - type: reply
+            label: "I've Already Paid"
+            set:
+              paymentStatus: checking
+            next: payment_checking
+          - type: reply
+            label: "Pay later"
+            next: payment_later
+          - type: reply
+            label: "Help"
+            next: help
+
+  - id: payment_checking
+    label: "Payment pending"
+    messages:
+      - type: text
+        text: "Thanks, Nadia. Your payment is being checked. We'll update your repayment status once the payment is confirmed."
+      - type: suggested_replies
+        options:
+          - label: "Payment confirmed"
+            set:
+              paymentStatus: received
+            next: payment_received
+          - label: "Not yet"
+            set:
+              paymentStatus: unpaid
+            next: payment_later
+          - label: "Need help"
+            next: help
+
+  - id: payment_received
+    label: "Payment received"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/payment received.jpg"
+        mediaHeight: medium
+        title: "Payment received · Rp 2,824,408"
+        description: "Payment received ✅ Your repayment has been recorded."
+        actions:
+          - type: open_url
+            label: "View receipt"
+            url: "https://secure.vbank.com/receipt/VB-PL-261101-0842"
+          - type: reply
+            label: "Done"
+            next: complete
+
+  - id: payment_later
+    label: "Payment later"
+    messages:
+      - type: rich_card
+        title: "Payment remains unpaid"
+        description: "Your payment is still outstanding. Resume payment when you're ready, browse other products, or close your application."
+        actions:
+          - type: reply
+            label: "Resume payment"
+            next: repayment_reminder
+          - type: reply
+            label: "Browse options"
+            next: welcome
+          - type: reply
+            label: "Close application"
+            next: cancelled
+
+  - id: help
+    label: "V Bank support"
+    messages:
+      - type: rich_card
+        image: "/assets/V%20Bank/logo.jpg"
+        mediaHeight: medium
+        title: "V Bank support"
+        description: "I can help with product options, document upload, identity verification, contract signing, and repayments. Choose an option below."
+        actions:
+          - type: reply
+            label: "Back to options"
+            next: welcome
+          - type: reply
+            label: "Close"
+            next: cancelled
+
+  - id: complete
+    label: "Complete"
+    messages:
+      - type: text
+        text: "Your application and first repayment are complete. Thanks for banking with V Bank, Nadia."
+    end: true
+
+  - id: cancelled
+    label: "Cancelled"
+    messages:
+      - type: text
+        text: "Your V Bank application has been closed. No further action is required."
+    end: true

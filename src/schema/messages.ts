@@ -167,9 +167,14 @@ export const carouselCardSchema = z.object({
 })
 export type CarouselCard = z.infer<typeof carouselCardSchema>
 
+export const mediaHeightSchema = z.enum(['short', 'medium', 'tall'])
+export type MediaHeight = z.infer<typeof mediaHeightSchema>
+
 export const carouselMessageSchema = z.object({
   type: z.literal('carousel'),
   ...messageBase,
+  /** Responsive RCS media density; defaults to medium in the renderer. */
+  mediaHeight: mediaHeightSchema.optional(),
   cards: z.array(carouselCardSchema).min(1),
 })
 

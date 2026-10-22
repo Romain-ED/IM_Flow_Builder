@@ -12,6 +12,12 @@ export default defineConfig(() => {
 
   return {
     base,
+    // Local short-link testing: run `SHARE_STORE_PATH=/tmp/shares.json npm start`
+    // (port 3000) next to `npm run dev`. Without it the proxy fails, the share
+    // POST errors and "Copy share link" falls back to the long #flow= link.
+    server: {
+      proxy: { '/api/share': `http://127.0.0.1:${process.env.SHARE_API_PORT || 3000}` },
+    },
     plugins: [
       react(),
       tailwindcss(),

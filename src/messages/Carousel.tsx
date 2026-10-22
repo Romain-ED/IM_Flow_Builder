@@ -2,13 +2,25 @@ import { useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
-import type { CarouselCard } from '../schema/messages'
+import type { CarouselCard, MediaHeight } from '../schema/messages'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { FormattedText } from '../components/common/FormattedText'
 import { ActionButton } from '../components/phone/ActionButton'
 import { channelThemes } from '../channels/theme'
 import { assetUrl } from '../utils/assetUrl'
 import { RCS_ACTION_STACK } from '../channels/rcs/cardStyles'
+
+/**
+ * RCS carousel media is fluid in Google Messages rather than a fixed
+ * simulator pixel box. These ratios preserve the short/medium/tall density
+ * choices while allowing a phone-width card to scale beyond the 112/168/264
+ * DP standalone-card heights; object-cover keeps Google's centered crop.
+ */
+const RCS_CAROUSEL_MEDIA_RATIOS: Record<MediaHeight, string> = {
+  short: '2.5 / 1',
+  medium: '1.82 / 1',
+  tall: '1.5 / 1',
+}
 
 interface CarouselProps {
   message: NormalizedMessage
@@ -20,7 +32,7 @@ export function Carousel({ message, channel, interactive }: CarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   if (message.message.type !== 'carousel') return null
-  const { cards } = message.message
+  const { cards, mediaHeight = 'medium' } = message.message
   const theme = channelThemes[channel]
   const isRcs = channel === 'rcs'
   function scrollBy(direction: 1 | -1) {
@@ -47,6 +59,7 @@ export function Carousel({ message, channel, interactive }: CarouselProps) {
               interactive={interactive}
               radiusClass={theme.cardRadius}
               onImageClick={() => setSelectedIndex(index)}
+              mediaHeight={mediaHeight}
             />
           ))}
         </div>
@@ -90,6 +103,7 @@ function CarouselCardView({
   interactive,
   radiusClass,
   onImageClick,
+  mediaHeight,
 }: {
   card: CarouselCard
   cardIndex: number
@@ -97,6 +111,7 @@ function CarouselCardView({
   interactive: boolean
   radiusClass: string
   onImageClick: () => void
+  mediaHeight: MediaHeight
 }) {
   const isRcs = channel === 'rcs'
 
@@ -104,7 +119,7 @@ function CarouselCardView({
     <div
       role="listitem"
       className={`relative shrink-0 snap-start overflow-hidden ${isRcs ? 'bg-[#f0f4f9]' : 'border border-slate-200 bg-white shadow-sm'} ${radiusClass} flex flex-col ${!interactive ? 'opacity-60' : ''}`}
-      style={{ width: isRcs ? 'min(calc(100% - 40px), 296px)' : '200px' }}
+      style={{ width: isRcs ? 'min(calc(100% - 16px), 418px)' : '200px' }}
     >
       {card.image && (
         <button
@@ -113,7 +128,12 @@ function CarouselCardView({
           onClick={channel === 'rcs' ? onImageClick : undefined}
           className={`block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#7350a3] ${channel === 'rcs' ? 'cursor-zoom-in' : ''}`}
         >
-          <ImageWithFallback src={card.image} alt={card.title} className={`block ${isRcs ? 'h-[112px]' : 'h-28'} w-full object-cover`} />
+          <ImageWithFallback
+            src={card.image}
+            alt={card.title}
+            className={`block ${isRcs ? 'w-full object-cover' : 'h-28 w-full object-cover'}`}
+            style={isRcs ? { aspectRatio: RCS_CAROUSEL_MEDIA_RATIOS[mediaHeight] } : undefined}
+          />
         </button>
       )}
       <div className={`flex flex-1 flex-col ${isRcs ? 'gap-1 px-4 pb-2 pt-4' : 'gap-1 p-3'}`}>

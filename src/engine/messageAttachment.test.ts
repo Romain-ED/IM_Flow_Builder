@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { NormalizedMessage } from './types'
-import { computeMessageAttachments } from './messageAttachment'
+import { computeMessageAttachments, consumeRcsTrailingSuggestions } from './messageAttachment'
 
 let counter = 0
 function msg(nodeId: string, message: NormalizedMessage['message']): NormalizedMessage {
@@ -67,6 +67,15 @@ describe('computeMessageAttachments', () => {
     const replies = suggestedReplies('n1')
     const entries = computeMessageAttachments([text, replies], false)
     expect(entries).toEqual([{ message: text }, { message: replies }])
+  })
+
+  it('consumes only the trailing RCS suggestion row after selection', () => {
+    const text = businessText('n1')
+    const replies = suggestedReplies('n1')
+    const userReply = userText('n1', 'Yes')
+    expect(consumeRcsTrailingSuggestions([text, replies], 'n1')).toEqual([text])
+    expect(consumeRcsTrailingSuggestions([text, replies, userReply], 'n1')).toEqual([text, replies, userReply])
+    expect(consumeRcsTrailingSuggestions([text, suggestedReplies('n2')], 'n1')).toHaveLength(2)
   })
 
   it('handles multiple consecutive mergeable pairs without double-consuming messages', () => {

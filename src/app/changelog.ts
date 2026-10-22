@@ -11,6 +11,31 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.24.0',
+    date: '2026-10-15',
+    changes: [
+      'Enhancement: channel buttons now use recognizable WhatsApp and RCS logo marks, while phone platform buttons use the supplied Apple and Android artwork without distortion.',
+    ],
+  },
+  {
+    version: '0.23.0',
+    date: '2026-10-14',
+    changes: [
+      'New: improved Live Demo reliability with loading and error states, reset controls, persisted navigation state, demo-mode messaging, and more discoverable phone controls.',
+      'New: expanded RCS realism with rich cards, carousels, suggestions, typing and delivery states, image handling, long-message wrapping, compliance checks, and a technical JSON payload preview.',
+      'Enhancement: channel and platform selectors now use accessible full-color brand controls with reusable logos, stronger selected states, keyboard focus, tooltips, and a neutral fallback theme.',
+      'Enhancement: responsive and accessibility polish across the builder, including ARIA semantics, contrast improvements, reduced-motion support, and zoom-friendly layouts.',
+    ],
+  },
+  {
+    version: '0.22.0',
+    date: '2026-10-14',
+    changes: [
+      'New: "Copy share link" now makes short links. An unmodified built-in scenario becomes `#scenario=<id>`; anything else is stored on the server and becomes `#s=<id>`, so chat apps no longer truncate big scenarios. Short links are permanent and open in the same read-only viewer. If the server is unreachable, the long self-contained `#flow=` link is used instead, and old long links keep working.',
+      'Security: the new unauthenticated `POST /api/share` is limited to 1 MB per scenario, rate limited per IP, deduplicated by content hash and capped in total storage. Stored text is never run server-side.',
+    ],
+  },
+  {
     version: '0.21.0',
     date: '2026-10-14',
     changes: [

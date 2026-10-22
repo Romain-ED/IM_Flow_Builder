@@ -42,6 +42,24 @@ export function isAttachableTrailing(message: AttachableMessageLike): boolean {
   return message.type === 'suggested_replies' || message.type === 'suggested_actions'
 }
 
+/**
+ * Google Messages consumes the floating suggestion row after a user taps one
+ * of its options. Keep the content message and append the user's response,
+ * but remove only the trailing suggestion message that offered the choice.
+ */
+export function consumeRcsTrailingSuggestions(history: NormalizedMessage[], nodeId: string): NormalizedMessage[] {
+  const last = history[history.length - 1]
+  if (
+    last &&
+    last.nodeId === nodeId &&
+    (last.message.sender ?? 'business') === 'business' &&
+    isAttachableTrailing(last.message)
+  ) {
+    return history.slice(0, -1)
+  }
+  return history
+}
+
 export function isAttachableOwner(message: AttachableMessageLike): boolean {
   return message.type === 'text' && (message.sender ?? 'business') === 'business'
 }

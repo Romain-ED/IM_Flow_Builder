@@ -3,6 +3,7 @@ import { createServer } from 'node:http'
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getLiveDemoConfig, LiveDemoService, summarizeInboundPayload, verifyWebhook } from './liveDemo.js'
+import { createShareLinks } from './shareLinks.js'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDirectory = join(projectRoot, 'dist')
@@ -245,12 +246,13 @@ async function handleWebhook(request, response, url, liveDemo) {
   }
 }
 
-export function createApp({ env = process.env, liveDemo } = {}) {
+export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }) } = {}) {
   const config = liveDemo?.config ?? getLiveDemoConfig(env, projectRoot)
   const service = liveDemo ?? new LiveDemoService(config)
   return createServer(async (request, response) => {
     const url = new URL(request.url || '/', 'http://localhost')
     try {
+      if (await shareLinks.handle(request, response, url)) return
       if (url.pathname.startsWith('/api/live/') && await handleApi(request, response, url, service)) return
       if (url.pathname.startsWith('/webhooks/vonage/') && await handleWebhook(request, response, url, service)) return
     } catch (error) {

@@ -1,7 +1,7 @@
 {
   "name": "business-messaging-flow-simulator",
   "private": true,
-  "version": "0.21.0",
+  "version": "0.24.0",
   "main": "server/index.js",
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@vonage/vcr-sdk": "2.1.5",
     "js-yaml": "^5.2.3",
     "lucide-react": "^1.31.0",
     "react": "^19.2.8",

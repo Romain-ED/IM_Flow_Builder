@@ -1,0 +1,33 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "MEDIUM",
+      "location": "02-design.md: Presenter/live projection and server boundary; src/live/rcsPreflight.ts:resolvePublicUrl",
+      "problem": "The design claims the proposed server validator is defense in depth for an already-stricter preflight, but the current preflight accepts protocol-relative URLs such as //cdn.example/video.mp4 as HTTPS. The UI can therefore pass preflight and only fail after server session creation begins.",
+      "fix": "Use one shared or equivalent validation contract in preflight and server, rejecting protocol-relative and other unsafe values at both boundaries; add matching preflight tests. Alternatively document and test the intentional delayed server rejection instead of claiming preflight is stricter."
+    },
+    {
+      "id": 2,
+      "severity": "MEDIUM",
+      "location": "02-design.md: Asset, styling, and build integration; Validation and runtime smoke test",
+      "problem": "The design requires the base-path build to resolve /simulator/assets/... but also requires successful requests to both /assets/... and the base-prefixed URL. The unprefixed URL can legitimately fail in a non-root deployment.",
+      "fix": "Test /assets/... only for the root build and /simulator/assets/... only for the VITE_BASE_PATH=/simulator/ build; assert exactly one base prefix in the rendered source."
+    },
+    {
+      "id": 3,
+      "severity": "MEDIUM",
+      "location": "02-design.md: Presenter/live projection and server boundary; server/liveDemo.js:collectContent",
+      "problem": "resolveMediaUrl is currently shared by image, video, document, rich-card, and carousel branches. The proposed stricter resolver therefore has unspecified effects on existing non-video live media, conflicting with the requirement to preserve neighboring message behavior.",
+      "fix": "Use a video-specific resolver for the new source/poster contract, or explicitly declare a cross-media policy and add regression tests for all existing branches. Specify the fatal primary-source versus dropped optional-thumbnail behavior precisely."
+    },
+    {
+      "id": 4,
+      "severity": "NIT",
+      "location": "02-design.md: RCS rendering and interaction",
+      "problem": "The media region dimensions are specified, but the video element's own sizing/object-fit behavior is not. A native video may retain intrinsic dimensions and fail to fill the existing card region.",
+      "fix": "Specify exact player styling such as className=\"block h-full w-full object-cover\" (or an explicit object-contain choice), match the fallback sizing, and test the resulting media bounds or class."
+    }
+  ]
+}

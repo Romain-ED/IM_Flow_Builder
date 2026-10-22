@@ -5,6 +5,7 @@ import beerlaoSource from './beerlao.yaml?raw'
 import progadgetLaosSource from './progadget-laos.yaml?raw'
 import ltcLaoTelecomSource from './ltc-lao-telecom.yaml?raw'
 import dominosSingaporeRcsDemoSource from './dominos-singapore-rcs-demo.yaml?raw'
+import vbankMultifinanceSource from './vbank-multifinance.yaml?raw'
 
 export interface BuiltInScenario {
   id: string
@@ -55,6 +56,12 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
     name: "Domino's Pizza Singapore — RCS Demo Flow",
     description: 'Promotions → menu browsing → order builder → store finder → checkout, tracking, and customer care.',
     source: dominosSingaporeRcsDemoSource,
+  },
+  {
+    id: 'vbank-multifinance-first-repayment',
+    name: 'V Bank: From just curious to first repayment',
+    description: 'Discovery → indicative eligibility → Personal Loan application → first repayment.',
+    source: vbankMultifinanceSource,
   },
 ]
 

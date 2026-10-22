@@ -22,6 +22,7 @@ import {
 } from '../engine/ConversationEngine'
 import { matchTrigger } from '../engine/triggerMatcher'
 import type { InteractionResult, NodeOutcome, NormalizedMessage } from '../engine/types'
+import { consumeRcsTrailingSuggestions } from '../engine/messageAttachment'
 import { diffVariableEvents, type ConversationEvent } from '../engine/eventStore'
 import type { FlowValidationResult } from '../engine/flowValidator'
 import { validateFlowWithChannelCompliance as validateFlow } from '../channels/validateChannelCompliance'
@@ -31,7 +32,7 @@ import { createId } from '../utils/id'
 import { downloadBoardingPassImage } from '../utils/boardingPassFile'
 import { findActiveInput } from '../utils/selectors'
 import { projectLiveSnapshot, type LiveProjection } from '../live/liveSessionProjection'
-import { hasShareHash, readSharedPlatform, readShareHash } from '../utils/shareLink'
+import { hasShareHash, readSharedPlatform, readSharedSource } from '../utils/shareLink'
 import { BUILT_IN_SCENARIOS, DEFAULT_SCENARIO, REMOVED_SCENARIO_IDS } from '../scenarios'
 import {
   loadCustomScenarios,
@@ -96,7 +97,7 @@ export interface SimulatorState {
   presenterMode: boolean
   /**
    * True for the rest of this session once a scenario was loaded from a
-   * shared link's URL hash (see `initialize()`/`readShareHash`). Gates
+   * shared link's URL hash (see `initialize()`/`readSharedSource`). Gates
    * `App.tsx` down to just the phone + a Restart button — no Scenarios/
    * Manual pages, no scenario switcher, no brand/variable/channel/debug
    * controls — so a link recipient only ever sees the one scenario the
@@ -301,6 +302,10 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     let events = s.events
     let variables = s.variables
 
+    if (s.channel === 'rcs' && result.userMessage) {
+      history = consumeRcsTrailingSuggestions(history, nodeId)
+    }
+
     if (result.userMessage) {
       history = [...history, result.userMessage]
       const label =
@@ -393,7 +398,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         const fail = (message: string) =>
           set({ flow: null, validation: null, sharedLinkError: message })
         try {
-          const source = await readShareHash()
+          const source = await readSharedSource()
           const platform = readSharedPlatform()
           if (platform) set({ phonePlatform: platform })
           loadingSharedFlow = true
@@ -753,7 +758,9 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       if (s.liveSessionActive) return
       if (!s.flow || !s.currentNodeId) return
       if (action.type !== 'reply') {
+        const history = s.channel === 'rcs' ? consumeRcsTrailingSuggestions(s.history, s.currentNodeId) : s.history
         set((state) => ({
+          history,
           events: [...state.events, { type: 'external_action', at: Date.now(), action }],
           externalActionModal: action,
         }))
@@ -945,7 +952,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         const body = await response.json().catch(() => ({})) as { error?: string | { message?: string }; liveSnapshot?: unknown }
         if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : body.error?.message ?? `Could not restart the live session (${response.status}).`)
         get().syncLiveSnapshot(body)
-        get().showToast('Flow restarted on the test phone')
+        get().showToast('Flow restarted on the destination phone')
         return true
       } catch (error) {
         get().markLiveProjectionStale(error instanceof Error ? error.message : 'Could not restart the live session.')

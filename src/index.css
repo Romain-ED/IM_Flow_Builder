@@ -220,7 +220,26 @@ body {
   animation: toast-in 0.2s ease-out;
 }
 
-/* iPhone-like titanium edge, glass highlight, and tactile business-profile controls. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  [role='radio'][aria-checked='true'] {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+  [role='radio'][aria-checked='false'] {
+    border: 1px solid ButtonText;
+  }
+}
+
+
 .phone-device-shell {
   background: linear-gradient(135deg, #f4f6f8 0%, #a8b0ba 16%, #111827 34%, #020617 58%, #687382 82%, #eef1f4 100%);
   border: 1px solid rgba(255, 255, 255, 0.6);

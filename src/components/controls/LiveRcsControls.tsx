@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { CircleAlert, CircleCheck, LoaderCircle, Radio, Square, WifiOff } from 'lucide-react'
+import { CircleAlert, CircleCheck, LoaderCircle, Radio, RotateCcw, Square, WifiOff } from 'lucide-react'
 import { preflightLiveRcsFlow, type LiveRcsIssue } from '../../live/rcsPreflight'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import type { LiveProjection, LiveSnapshot } from '../../live/liveSessionProjection'
@@ -57,10 +57,24 @@ export function LiveRcsControls() {
   const setLiveSessionCredentials = useSimulatorStore((state) => state.setLiveSessionCredentials)
   const [diagnostics, setDiagnostics] = useState<LiveDiagnostics | null>(null)
   const [operatorToken, setOperatorToken] = useState('')
+  const [destinationPhone, setDestinationPhone] = useState('')
   const [session, setSession] = useState<LiveSession | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [offline, setOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
+  const isVBank = flow?.metadata.id === 'vbank-multifinance-first-repayment'
+  const persistenceKey = flow?.metadata.id ? `bmfs.live-demo.phone.${flow.metadata.id}` : 'bmfs.live-demo.phone'
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(persistenceKey)
+      if (saved !== null) setDestinationPhone(saved)
+    } catch { /* storage may be unavailable in private browsing */ }
+  }, [persistenceKey])
+
+  useEffect(() => {
+    try { window.localStorage.setItem(persistenceKey, destinationPhone) } catch { /* best effort persistence */ }
+  }, [destinationPhone, persistenceKey])
 
   const liveFlow = useMemo(() => flow ? { ...flow, variables: { ...(flow.variables ?? {}), ...configuredVariables } } : null, [configuredVariables, flow])
   const preflight = useMemo(() => liveFlow && liveFlow.metadata.channel === 'rcs'
@@ -113,13 +127,17 @@ export function LiveRcsControls() {
 
   async function start() {
     if (!liveFlow || !diagnostics?.ready || !preflight?.success || !operatorToken || offline) return
-    if (!window.confirm(`Start a live RCS demo to ${diagnostics.recipient}? This sends real messages when Vonage mode is configured.`)) return
+    const selectedRecipient = destinationPhone.trim() || diagnostics.recipient
+    const confirmation = isVBank
+      ? `Start a live RCS session for ${selectedRecipient}? This sends real messages when Vonage mode is configured.`
+      : `Start a live RCS demo to ${selectedRecipient}? This sends real messages when Vonage mode is configured.`
+    if (!window.confirm(confirmation)) return
     setIsLoading(true)
     setError(null)
     try {
       const started = await api<LiveSession>('/api/live/sessions', operatorToken, {
         method: 'POST',
-        body: JSON.stringify({ flow: liveFlow, variables: configuredVariables }),
+        body: JSON.stringify({ flow: liveFlow, variables: configuredVariables, ...(destinationPhone.trim() ? { recipient: destinationPhone.trim() } : {}) }),
       })
       setSession(started)
       setLiveSessionCredentials(started.id, operatorToken)
@@ -153,13 +171,32 @@ export function LiveRcsControls() {
     }
   }
 
+  async function resetDemo() {
+    setError(null)
+    setIsLoading(false)
+    setSession(null)
+    setLiveSessionActive(false)
+    setLiveSessionCredentials(null)
+    setDestinationPhone('')
+    try { window.localStorage.removeItem(persistenceKey) } catch { /* best effort */ }
+    useSimulatorStore.getState().clearLiveProjection()
+    useSimulatorStore.getState().restart()
+  }
+
   const issues: LiveRcsIssue[] = preflight?.errors ?? []
   const needsRcsScenario = Boolean(flow && flow.metadata.channel !== 'rcs')
   const canStart = Boolean(diagnostics?.ready && preflight?.success && operatorToken && !offline && !session && channel === 'rcs')
+  const vBankModeNotice = diagnostics?.mode === 'fake'
+    ? 'Messages remain in this browser until a live provider is configured.'
+    : 'Messages are sent through the configured RCS service when available.'
 
   return (
     <div className="flex flex-col gap-2.5">
-      <SectionHeading accent={sectionAccents.inspector} tone="dark">Live RCS demo</SectionHeading>
+      <SectionHeading accent={sectionAccents.inspector} tone="dark">{isVBank ? 'Live RCS' : 'Live RCS demo'}</SectionHeading>
+      <p className={`flex items-center gap-1.5 rounded-md border border-sky-400/30 bg-sky-400/10 px-2 py-1.5 text-[11.5px] leading-4 ${darkNotices.indigo}`} role="status">
+        <Radio size={13} aria-hidden="true" /> {isVBank ? vBankModeNotice : 'Demo mode — simulated interaction unless a live provider is configured.'}
+      </p>
+      {isLoading && <p className={`flex items-center gap-1.5 text-[12px] m-0 ${darkSurface.body}`} role="status" aria-live="polite"><LoaderCircle size={13} className="animate-spin" aria-hidden="true" /> Working…</p>}
       {offline && <Notice icon={WifiOff} tone="amber">Live mode requires a network connection.</Notice>}
       {!diagnostics && !error && <p className={`text-[12px] m-0 ${darkSurface.muted}`}>Checking server readiness…</p>}
       {diagnostics && !diagnostics.ready && (
@@ -170,7 +207,7 @@ export function LiveRcsControls() {
       {diagnostics?.ready && (
         <>
           <p className={`text-[12px] leading-4 m-0 ${darkSurface.body}`}>
-            <span className="font-medium text-white">{diagnostics.mode === 'fake' ? 'Fake transport' : 'Fixed test phone'}:</span>{' '}
+            <span className="font-medium text-white">{diagnostics.mode === 'fake' ? 'Fake transport' : isVBank ? 'Configured recipient' : 'Configured fallback number'}:</span>{' '}
             {diagnostics.recipient} · {diagnostics.storage}
           </p>
           {needsRcsScenario && <Notice icon={CircleAlert} tone="amber">Load an RCS-authored scenario before starting Live RCS.</Notice>}
@@ -182,18 +219,36 @@ export function LiveRcsControls() {
           )}
           {preflight?.success && !session && <Notice icon={CircleCheck} tone="emerald">Flow passes strict Live RCS preflight.</Notice>}
           {!session && (
-            <label className="flex flex-col gap-1">
-              <span className={`text-[11.5px] ${darkSurface.muted}`}>Operator access token (not stored)</span>
-              <input
-                type="password"
-                autoComplete="off"
-                value={operatorToken}
-                onChange={(event) => setOperatorToken(event.target.value)}
-                placeholder="Paste access token"
-                className={darkField}
-              />
-            </label>
+            <>
+              <label className="flex flex-col gap-1">
+                <span className={`text-[11.5px] ${darkSurface.muted}`}>Destination phone number</span>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={destinationPhone}
+                  onChange={(event) => setDestinationPhone(event.target.value)}
+                  placeholder="e.g. + country code + number"
+                  className={darkField}
+                />
+                <span className={`text-[11px] leading-4 ${darkSurface.muted}`}>{isVBank ? 'Enter a server-authorized recipient number. Leave blank to use the configured recipient.' : 'Enter any 7–15 digit testing-user number. Leave blank to use the server-configured fallback.'}</span>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className={`text-[11.5px] ${darkSurface.muted}`}>Operator access token (not stored)</span>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={operatorToken}
+                  onChange={(event) => setOperatorToken(event.target.value)}
+                  placeholder="Paste access token"
+                  className={darkField}
+                />
+              </label>
+            </>
           )}
+          <button type="button" onClick={() => void resetDemo()} disabled={isLoading} className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] font-medium ${darkTints.slate} ${darkFocusRing} disabled:opacity-40 cursor-pointer`}>
+            <RotateCcw size={13} /> {isVBank ? 'Reset session' : 'Reset demo'}
+          </button>
           {session ? (
             <>
               <div className={`rounded-md border px-2.5 py-2 text-[12px] ${darkNotices.indigo}`}>

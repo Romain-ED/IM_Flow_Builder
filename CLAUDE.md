@@ -1,839 +1,112 @@
 # CLAUDE.md — internal notes for future sessions
 
-This file is for whoever (human or Claude) picks this repo up next. The
-README and in-app Manual are the *public* docs — keep both in sync with
-any change described here. This file is for **decisions, gotchas, and
-conventions that aren't obvious from reading the code**.
+README and the in-app Manual are the *public* docs; keep both in sync with changes here. This file holds **decisions, gotchas, and conventions not obvious from the code**.
+
+Feature history and rationale live in docs/HISTORY.md; read it only when working on that specific feature.
 
 ## What this is
 
-"Business Messaging Flow Simulator" — a React/TS/Vite simulator with an opt-in VCR Node service for Live RCS. It plays back JSON/YAML-authored flows in an RCS/WhatsApp phone UI by default; Live RCS is disabled unless server-only configuration enables one allowlisted test-recipient session. See `docs/LIVE_RCS_DEMO.md` for the operation and safety contract.
+"Business Messaging Flow Simulator": React/TS/Vite simulator plus an opt-in VCR Node service for Live RCS. It plays JSON/YAML flows in an RCS/WhatsApp phone UI; Live RCS is off unless server-only config enables one allowlisted test-recipient session. See `docs/LIVE_RCS_DEMO.md`.
 
-A third "Generic" channel existed through 0.7.0 and was removed in 0.8.0
-at the user's explicit request, once the goal shifted to matching the
-real WhatsApp/RCS platforms as closely as possible — a channel-neutral
-fallback renderer worked against that goal. If you're tempted to
-reintroduce a generic/neutral channel, don't, unless the user asks again.
+- The "Generic" channel (through 0.7.0) was removed in 0.8.0 at the user's request. Don't reintroduce a generic channel unless asked. Details: docs/HISTORY.md#what-this-is
 
 ## Architecture (read this before changing anything)
 
-Strict layering, enforced by convention not tooling:
+Strict layering by convention: `schema/` (Zod unions, the ONLY source of message shapes/types; add a variant here first) → `engine/` (pure, timer-free, no React: computeNodePlan, flowValidator, flowGraph, templateRenderer, conditionEvaluator) → `store/` (the ONE place engine plans become timed playback; Zustand: pause, back/restart snapshots, localStorage) → `channels/` (per-channel `capabilities.ts` + header/chrome renderers) → `messages/` (one component per type, dispatched by a switch in `MessageRenderer.tsx`) → `components/` (chrome, sidebar, inspector, pages).
 
-```
-schema/    Zod discriminated unions — the ONLY source of truth for message
-           shapes, both validation and TS types. Adding a message type
-           means adding a schema variant here first.
-engine/    Pure, timer-free functions (computeNodePlan, flowValidator,
-           flowGraph, templateRenderer, conditionEvaluator). No React, no
-           wall-clock timers, no side effects. Fully unit-testable.
-store/     The ONE place that turns an engine plan into real timed
-           playback (Zustand). Fast mode, pause/resume, back/restart via
-           snapshots, localStorage persistence all live here.
-channels/  Per-channel capabilities (capabilities.ts: which message types
-           + what structural limits) and renderers (header/chrome only).
-           Content components are channel-agnostic; only chrome +
-           capability rules differ per channel.
-messages/  One component per message type, dispatched by
-           MessageRenderer.tsx's switch. No scenario-specific logic here.
-components/ Phone chrome, sidebar controls, flow inspector, Scenarios/
-           Manual pages.
-```
-
-The engine never imports React. No message component hardcodes a specific
-scenario's content. Adding a scenario = adding a YAML file; adding a
-message type = schema variant + renderer component + one `case` in
-`MessageRenderer.tsx` — nothing else should need to change (see the "add
-a message type" checklist in the README if it does).
+- The engine never imports React. No message component hardcodes scenario content.
+- New scenario = a YAML file. New message type = schema variant + renderer + one `case` in `MessageRenderer.tsx`; nothing else should change.
+- Original: docs/HISTORY.md#architecture
 
 ## Official vs. invented message types — the most important open decision
 
-All built-in scenarios were audited against the real WhatsApp
-Cloud API (interactive messages guide, interactive message templates,
-commerce/product-sharing guide) and Google's RCS Business Messaging spec,
-and use **only types with a real platform equivalent** — none of them
-should ever show the "not officially supported" capability-warning note
-on WhatsApp or RCS. This was a deliberate, user-directed rewrite — see the
-CHANGELOG entries for the exact commit and rationale. `beerlao.yaml`
-initially used the simulator-only `otp` segmented-entry component for its
-code-verification step and did show that warning; the user explicitly
-asked for it to be removed, so it was swapped for `input` instead — same
-typed-code-with-validation behavior (wrong code → error → retry loop),
-but `input` renders as a plain text bubble backed by the ordinary
-composer, which real WhatsApp genuinely has, so it carries no warning.
-If you're tempted to add a message type that has no real WhatsApp/RCS
-basis to any built-in scenario, don't — that's exactly what this rewrite
-removed, twice now.
+Built-in scenarios use **only types with a real WhatsApp Cloud API / Google RCS equivalent**; none may show the "not officially supported" note. User-directed rewrite (Beerlao `otp` → `input`). Never add a type with no real basis to a built-in; removed twice already.
 
-**Verified official** (keep using these; they map to a real payload):
-- `text`, `image`/`video`/`document` — direct equivalents on both
-  platforms. A top-level `location` message is WhatsApp/RCS simulator
-  fallback here; RCS native location behavior is a suggested action.
-- `rich_card` ≈ a real WhatsApp interactive message (header image + body +
-  footer + up to 3 buttons) and a real RCS rich card.
-- `carousel` ≈ WhatsApp's **Carousel Template** (Meta-approved, up to 10
-  cards, **2 buttons per card**) and a real RCS carousel (2–10 cards,
-  **4 buttons per card**). Don't confuse the WhatsApp and RCS button caps —
-  they're genuinely different (`maxCarouselCardButtons` in
-  `capabilities.ts`).
-- `suggested_replies` ≈ WhatsApp reply buttons (max 3) / RCS suggestion
-  chips (max 11).
-- `list` — real on WhatsApp (native list picker). **RCS has NO list/menu
-  type at all** — Google's spec only defines text / file / rich card
-  content. `list` is intentionally absent from RCS's `supportedMessageTypes`
-  (this was a real bug: it used to be listed as supported with a dead,
-  unreachable fallback note — fixed).
-- `product_catalog` ≈ WhatsApp catalog/multi-product message.
-- `whatsapp_flow` ≈ real WhatsApp Flows (`interactive.type: "flow"`) —
-  correctly WhatsApp-only.
-- `system_action`, `typing`, `delay` aren't message types at all and don't
-  need to be — `system_action` represents a local device/app action (not
-  sent by the business), `typing`/`delay` are pseudo-messages never stored
-  in history. They don't violate "official types only" because they never
-  claimed to be a platform message.
+- Official: `text`, `image`/`video`/`document`, `rich_card`, `carousel` (WhatsApp 2 buttons/card, RCS 4; `maxCarouselCardButtons`; don't confuse), `suggested_replies` (WhatsApp 3 / RCS 11), `list` (WhatsApp only; **RCS has NO list type**, keep it out of RCS `supportedMessageTypes`), `product_catalog`, `whatsapp_flow` (WhatsApp only). `system_action`/`typing`/`delay` aren't platform messages.
+- No official basis (schema only, never in built-ins): `flight_card`, `boarding_pass` (real: `document`+`text`+`suggested_replies`), `otp` (real: Authentication Template with Copy Code; code never typed back), `payment_request` (real: `rich_card`+`open_url`), `calendar_event` (real: `text`+`suggested_replies`). **Don't delete these types/components**; they are honest simulator extensions (fallback notes in `channels/*/capabilities.ts`). Add new ones only after verifying a real doc.
+- `suggested_actions` `call`/`location`/`calendar` are native RCS, but the Live adapter maps only `reply`/`open_url`; `custom` is simulator-only (`docs/RCS_SPEC_REFERENCE.md`).
+- Guard: `scenarios.test.ts` fails if a built-in type is in **neither** channel's `supportedMessageTypes` (OR, not AND; don't make it stricter). `typing`/`delay` exempt. The authoring guide must keep saying `input`, not `otp`. Details: docs/HISTORY.md#guard-0121, docs/HISTORY.md#official
 
-**No official basis on any platform** (still in the schema for custom
-scenarios, but the built-in demos no longer use them — see fallback notes
-in `channels/*/capabilities.ts` for the honest "here's what a real
-integration would send instead" explanation):
-- `flight_card`, `boarding_pass` → real equivalent is `document` (PDF) +
-  `text` summary + `suggested_replies`.
-- `otp` → the segmented code-*entry* UI is invented; WhatsApp's real
-  pattern is an Authentication Template: fixed text + a **Copy Code**
-  button. The code is never typed back into the chat.
-- `payment_request` → real equivalent is a `rich_card` with an `open_url`
-  button (opens an external payment link).
-- `calendar_event` → real equivalent is plain `text` + a `suggested_replies`
-  "Add to calendar" option.
+## Enforcement mechanisms (know these before editing)
 
-**Don't delete these types/components.** They're legitimate as *simulator
-extensions* for someone prototyping a business story that doesn't map
-cleanly to a real primitive — just be honest about it (fallback notes
-already do this) and don't add new ones without the same rigor (verify
-against a real doc, not vibes).
+### `getCapabilityWarning` (advisory, soft)
+`channels/capabilities.ts` declares real per-channel limits (from docs, not guessed); `getCapabilityWarning` checks content live (inline amber note, "Show capability warnings"). A new verified limit goes into `ChannelCapabilities`, both channel files, AND the `getCapabilityWarning` switch; never document a number without wiring it.
 
-`suggested_actions`' `call`/`location`/`calendar` subtypes map to native RCS
-suggested actions, but the current Live RCS provider adapter only maps
-`reply`/`open_url`; `custom` remains simulator-only. WhatsApp's native
-button subset is narrower. Keep this provider limitation distinct from the
-RCS specification; see `docs/RCS_SPEC_REFERENCE.md`.
+### `normalize.ts` hard validation (0.8.0)
+- `channels/{whatsapp,rcs}/normalize.ts` mirror each platform's real payload and return hard errors; `validateChannelCompliance.ts` makes `[WhatsApp]`/`[RCS]` issues. **Use `validateFlowWithChannelCompliance`, never `validateFlow` directly**, wherever scenario loading is gated. Don't move it into `engine/flowValidator.ts` (engine can't depend on channels/).
+- Only count/structural checks (button counts, missing body, carousel size) are hard errors; length limits stay soft (`{{variables}}` vary). **Don't make "unsupported type" a hard error.**
+- RCS ownership is deliberately broader than WhatsApp's (suggestions may follow any RCS content message; WhatsApp needs body `text`). `rcs/normalize.ts` has its own predicate; don't unify with `isAttachableOwner` (`engine/messageAttachment.ts`).
+- A `rich_card`/`carousel` followed by `suggested_*` needs a short `text` between them or WhatsApp load fails; a node opening with bare `suggested_*` usually needs a preceding `text`.
+- Details: docs/HISTORY.md#normalize-080
 
-## Automated guard against built-ins regressing to invented types (0.12.1)
+### `node.actions` renders inline (never a pinned bar)
+- `ActionBar.tsx` was deleted. **Don't reintroduce a pinned/fixed action bar.**
+- Attach decision: `engine/messageAttachment.ts` (`computeMessageAttachments`, pure). Wiring: `ConversationView.tsx`. Footer: `MessageShell.tsx` (`trailingActions`).
+- Attach only for `'stacked'` chips (WhatsApp) when the last message is business `text`; RCS chips deliberately stay a separate pill row. Decide explicitly per new `chipStyle`. `RichCard`/`Carousel` keep `actions` in their own card.
+- Details: docs/HISTORY.md#node-actions
 
-The Beerlao `otp`→`input` fix (see the CHANGELOG's 0.12.1 entry) happened
-because nothing actually *enforced* the "built-ins only use official types"
-rule above — it was a promise kept by memory alone, and it broke the first
-time a scenario was added without re-deriving it. After the user explicitly
-asked that the tool never again allow/invent unsupported types in a
-built-in, `src/scenarios/scenarios.test.ts` gained a second describe block,
-`built-in scenarios use only officially-supported message types`, that
-walks every node of every `BUILT_IN_SCENARIOS` entry and fails the test
-suite if any message's `type` is absent from **both**
-`whatsappCapabilities.supportedMessageTypes` and
-`rcsCapabilities.supportedMessageTypes` (i.e. one of the 5 "no official
-basis on any platform" types — `otp`, `flight_card`, `boarding_pass`,
-`payment_request`, `calendar_event`). `typing`/`delay` are exempted (pseudo-
-messages, never passed through `isMessageTypeSupported` at render time
-either).
+## Feature rules (invariants; rationale in docs/HISTORY.md)
 
-**Deliberately not "supported on both channels"**: the check uses OR across
-the two capability lists, not AND. `list` (WhatsApp-only, real native list
-picker) and `whatsapp_flow` (WhatsApp-only by definition) are genuine
-single-platform official types — they correctly still show an honest
-fallback note when a built-in is cross-viewed on the *other* channel via
-the sidebar's channel toggle, and that's accurate platform-difference
-reporting, not a bug to chase away. An earlier draft of this test required
-both channels and immediately (correctly) failed on `list`/`whatsapp_flow`/
-`input` — don't reintroduce that stricter version; it would force every
-built-in message into the intersection of WhatsApp's and RCS's primitives,
-which is not what "officially supported" means here.
+- **AI authoring (0.9.0):** keep hand-maintained `docs/SCENARIO_AUTHORING_GUIDE.md` (imported via `?raw`) in sync with `schema/*.ts` and `channels/*/capabilities.ts`. BYO Anthropic key, client-side only; VCR must never see it. Retry exactly once. No test uses the network. Details: docs/HISTORY.md#ai-090
+- **Brand editing (0.10.0):** `configuredBrand` mirrors `configuredVariables`; edits apply immediately, no "Hit Restart" caveat. Details: docs/HISTORY.md#brand-0100
+- **Free text (0.11.0):** composer submits go through `handleFreeText`; `flow.triggers` win even over an active `input`; **no "didn't understand" auto-reply**; whole-word `matchTrigger`. Details: docs/HISTORY.md#free-text-0110
+- **`rich_card`/`list` header/footer (0.13.0):** WhatsApp-only (gated on `channel`); `rich_card` header is text OR image, never both (hard error). Details: docs/HISTORY.md#header-footer-0130
+- **`input` (0.15.1):** plain unannotated text; no icon, colour, hint. Details: docs/HISTORY.md#input-0151
+- **Formatting (0.16.0):** `FormattedText` for prose fields only (not titles, headers, button labels, `document`). **Never nest `**_x_**`.** Details: docs/HISTORY.md#formatting-0160
+- **Phone sizing (0.16.1):** `.phone-viewport`/`.phone-frame-fit` keep 9:19; Compare mode's 260px columns stay unchanged unless asked. Details: docs/HISTORY.md#phone-sizing-0161
+- **Pro Gadget Laos (0.15.0/0.16.3):** copy from a real spec PDF; real Garmin CIRQA; `product_launch` is a promo. No "new arrival" without a second real product. Details: docs/HISTORY.md#progadget-0150, docs/HISTORY.md#progadget-0163
+- **Beerlao assets (0.13.1):** pasted chat images are unreachable; have the user commit binaries to `public/assets/`; run `file <path>` if one misbehaves. Leave unreferenced `public/assets/38198693_*.jpg` alone; ask first. Details: docs/HISTORY.md#beerlao-assets-0131
 
-**This also caught a second, pre-existing bug** while being written:
-`rcsCapabilities.supportedMessageTypes` incorrectly listed `calendar_event`
-as RCS-native — checked against Google's RCS docs (`AgentContentMessage` is
-text/file/rich-card only; a calendar event is a *suggested action* subtype,
-`CreateCalendarEventAction`, not a standalone content message), so it was
-removed and given the same honest `fallbackNotes.calendar_event` entry
-WhatsApp already had. No built-in used it, so this was a latent gap, not a
-visible regression — but it means a custom scenario using `calendar_event`
-on RCS is now correctly flagged instead of silently rendering as if it were
-real.
+## Shared-link mode (0.14.0)
 
-**`docs/SCENARIO_AUTHORING_GUIDE.md` had the same misconception baked into
-the AI system prompt**: it listed `input` under "Simulator-only types — no
-official WhatsApp/RCS payload equivalent," which is what the Beerlao bug
-itself disproved — `input` is real on WhatsApp. Since this file *is* the
-system prompt for `aiScenarioGenerator.ts` and the "copy prompt" fallback,
-leaving it wrong meant the AI-authoring path was being steered toward
-`otp` for exactly the "typed code with validation" case it should reach for
-`input` instead. Moved `input` into the official-types section with a
-worked example, and reworded the simulator-only section to explicitly say
-"a generic request like 'add an OTP step' must use `input`, not `otp`" —
-don't undo this pairing if you touch that file again.
-
-## `getCapabilityWarning` — the enforcement mechanism
-
-`channels/capabilities.ts` declares real numeric/length limits per channel
-(sourced from the docs above, not guessed) and `getCapabilityWarning`
-checks authored content against them live, surfaced via the same
-inline amber note UI as `getFallbackNote` (`MessageRenderer.tsx`, gated by
-"Show capability warnings" debug toggle). When adding a new structural
-limit you've verified, add it to the `ChannelCapabilities` interface and
-both channel files, then extend the switch in `getCapabilityWarning` —
-don't just document a number without wiring the check (that was a real
-bug: the original `max*` fields were declared but never enforced anywhere
-until this was fixed).
-
-## Real-payload-shaped hard validation (`normalize.ts`, 0.8.0)
-
-`getCapabilityWarning` above is *advisory* — content still renders with an
-amber note. On top of that, `channels/whatsapp/normalize.ts` and
-`channels/rcs/normalize.ts` each define a `WhatsAppNormalizedMessage` /
-`RcsNormalizedMessage` type mirroring that platform's actual payload shape
-(Meta's Cloud API interactive-message shape; Google's `AgentMessage`
-text/file/rich-card model) and a `normalize*(messages)` function that
-walks one node's raw authored messages and either builds one of these or
-returns a hard error. `channels/validateChannelCompliance.ts` runs both
-normalizers over every node and turns errors into `[WhatsApp]`/`[RCS]`-
-prefixed `ValidationIssue`s, composed with `engine/flowValidator.ts`'s
-structural checks via `validateFlowWithChannelCompliance` — **use this**,
-not `validateFlow` directly, at every call site that gates scenario
-loading (store, the two scenario editor/preview modals, `flowSource.ts`
-already do). A flow that's structurally fine but violates a real
-WhatsApp/RCS limit now fails to load at all, same as a dangling `next`
-reference — this is what "matches the real platforms" means in practice:
-non-compliant content can't even load, not just render with a note.
-
-**Why this isn't in `engine/flowValidator.ts`**: that would make
-`engine/` depend on `channels/` (for `ChannelCapabilities`), backward from
-this file's documented layering (`schema/ → engine/ → store/ → channels/
-→ ...`). `engine/flowValidator.ts` stays pure and channel-agnostic;
-`channels/validateChannelCompliance.ts` is the composing layer, since
-channels/ is allowed to depend on engine/, not the reverse.
-
-**Scope, deliberately**: only count/structural checks (button counts,
-missing body text, carousel size) are hard errors — they don't depend on
-variable values. *Length* limits (label/title/description length) stay
-`getCapabilityWarning`'s live soft check, since a `{{variable}}` can
-change a length per run and this validation happens once at load time,
-pre-interpolation. Also deliberately NOT validated here: using a message
-type a channel has no official basis for at all (`otp`,
-`payment_request`, etc.) — that's an intentional, already-handled soft
-fallback (`supportedMessageTypes` + `getFallbackNote`), not a structural
-violation of a type the channel claims to support. Don't make "unsupported
-type" a hard error — that would break the legitimate simulator-extension
-use case described earlier in this file.
-
-**RCS's ownership rule is broader than WhatsApp's, on purpose**: a
-`suggested_replies`/`suggested_actions` message may attach to *any*
-preceding RCS content message (text, image/video/document, rich_card,
-carousel) — Google's `AgentContentMessage` allows suggestions on any of
-these. WhatsApp requires body **text** specifically. `rcs/normalize.ts`
-defines its own broader ownership predicate rather than reusing
-`engine/messageAttachment.ts`'s `isAttachableOwner` (which is correctly
-WhatsApp-specific, used both for that file's live-render merge and
-`whatsapp/normalize.ts`'s hard validation) — reusing the narrower
-WhatsApp rule for RCS would incorrectly flag valid RCS content (e.g. a
-`rich_card` immediately followed by `suggested_replies`, no text needed)
-as an error. If you touch either ownership rule, keep this asymmetry;
-don't try to unify them.
-
-**This caught real bugs on first run**: wiring this up immediately failed
-4 nodes across `ecommerce.yaml` and `singapore-airlines.yaml` —
-`rich_card`/`carousel` messages immediately followed by a `suggested_replies`
-with no owning text, which is invalid on WhatsApp (fine on RCS, per the
-asymmetry above). Fixed by adding a short connecting text message before
-each — same pattern as the `help`/`confirmed` fixes in the previous
-section. If you add a new node that ends a `rich_card`/`carousel` with a
-follow-up `suggested_replies`/`suggested_actions`, add a one-line text
-message between them for WhatsApp's sake, or expect load to fail.
-
-## `node.actions` renders inline, not as a floating bar
-
-`ActionBar.tsx` was **deleted**. A node's `actions:` (the lightweight way
-to author a button row without writing a full `suggested_replies`
-message) renders attached to the message it logically follows, scrolling
-with it. This was a real bug fix in two stages:
-
-1. First pass (0.5.1): moved the button row out of a bar pinned above the
-   composer and into `ConversationView`, as the last scrolled item —
-   correct in that it now scrolled with history, but it still rendered as
-   its own DOM sibling below the last message's card, with a visible gap.
-   Real WhatsApp/RCS interactive buttons are part of the *same message
-   object* that offered them, not a second one.
-2. Second pass (0.6.1): closed that gap for WhatsApp specifically. A
-   `trailingActions?: { choices, onSelect }` prop was threaded
-   `ConversationView` → `MessageRenderer` → `TextMessage` →
-   `MessageShell.tsx`, which now renders it as a divided footer *inside*
-   the same bubble/card — flush, `border-t`-divided between content and
-   buttons and between each button, no independent background/shadow/
-   timestamp on the button row. `ConversationView` decides per-render
-   whether to attach: only when the channel's chip style is `'stacked'`
-   (WhatsApp — one full-width row per button) **and** the last history
-   message is `type: 'text'` with `sender: 'business'`. Otherwise it falls
-   back to the pre-existing separate `ChoiceChips` pill row.
-
-   **This RCS/WhatsApp split is deliberate, not a shortcut**: real RCS
-   suggestion chips genuinely do float as their own pill row below the
-   card (confirmed against Google's RCS spec) — unifying the two would
-   have made RCS *less* accurate to fix WhatsApp. If you add a new
-   `chipStyle`, decide explicitly which behavior it should get; don't
-   assume "attach" is universally more correct.
-
-3. Third pass (0.7.0): the exact same "floating with a gap" bug existed for
-   standalone `suggested_replies`/`suggested_actions` *messages*, not just
-   node-level `actions`. A real WhatsApp interactive message can't be
-   buttons with no body text at all — so when one of these messages
-   immediately follows a business `text` message in the same node, it now
-   merges into that text message's card instead of rendering as its own
-   `SuggestedReplies`/`SuggestedActions` component. The merge decision was
-   pulled out of the component into a pure, unit-tested function —
-   `computeMessageAttachments` in `engine/messageAttachment.ts` — matching
-   this file's "engine is pure and testable" rule, rather than growing
-   more inline conditionals in `ConversationView.tsx`. `MessageShell`'s
-   `trailingActions` prop was generalized from `{ choices, onSelect }`
-   (`Choice`-only) to `TrailingActionItem[]` (`{ key, label, icon?,
-   onClick }`) so it can represent either a `Choice` (always navigate) or
-   an `Action` (may `open_url`/`call`/etc. via the store's existing
-   `handleAction`, with the same icon `ActionButton` already used — now
-   shared via `utils/actionIcons.ts`).
-
-   This pass also found and fixed two scenario-content bugs it makes
-   newly visible: `ecommerce.yaml`'s `help` and `confirmed` nodes each
-   opened with a bare `suggested_actions`/`suggested_replies` message and
-   nothing else — not just unattached, but genuinely no real WhatsApp/RCS
-   equivalent (buttons always need body text on the wire, not just in our
-   UI). Both nodes now open with a short text message first. If you add a
-   new node whose first message is `suggested_replies`/`suggested_actions`,
-   ask whether that's realistic — it usually needs a preceding `text`.
-
-   **Verified, not changed**: `RichCard`/`Carousel` already correctly keep
-   their `actions` buttons scoped inside their own card (each carousel
-   card owns its buttons) — they don't have this bug and didn't need
-   touching.
-
-   **Still deliberately out of scope**: a `WhatsAppNormalizedMessage`/
-   `template` schema discriminator or dedicated normalization layer
-   (would fork the unified cross-channel schema this architecture
-   depends on — see the top of this file), and schema-level rejection of
-   hypothetical floating-button top-level types (moot: `messageSchema`'s
-   discriminated union already only permits the types listed in
-   `schema/messages.ts` — there's nothing to reject). Per-button-type
-   handler semantics (`url` opens a link with no reply sent, `call`
-   simulates dialing, `reply` sends a reply and navigates) already existed
-   before this pass, in the store's `handleAction` — not something this
-   pass needed to add.
-
-**Don't reintroduce a pinned/fixed action bar.** If you need to touch
-this: the merge/attach decision lives in `engine/messageAttachment.ts`
-(pure, testable — extend its tests before changing its rules), the
-per-render wiring (building `TrailingActionItem[]` from a `Choice[]` or
-`Action[]`, deciding node-level `actions` fallback) lives in
-`ConversationView.tsx`, and the footer rendering lives in
-`MessageShell.tsx` (`trailingActions`).
-
-## AI-assisted scenario authoring (0.9.0) — the app's one exception to "nothing is sent to a server"
-
-`docs/SCENARIO_AUTHORING_GUIDE.md` is the canonical, hand-written spec for
-what a scenario can contain (schema reference, every message type's exact
-shape, real WhatsApp/RCS limits, the attachment rule). **Keep it in sync
-by hand** if `schema/*.ts` or `channels/*/capabilities.ts` change — there's
-no generator, it's maintained the same way this file is. It's imported
-into the app verbatim via Vite's `?raw` suffix
-(`src/utils/scenarioAuthoringGuide.ts`) — the same pattern
-`scenarios/index.ts` already used for the built-in YAML files — so the
-in-app system prompt and the "copy this into any AI tool" text can never
-drift apart; there is exactly one copy of this spec.
-
-**Why BYO-API-key, client-side, no Anthropic proxy**: although Live RCS now has a small VCR server, it must never receive or proxy an author's Anthropic API key. Anthropic's API supports direct browser calls via the `anthropic-dangerous-direct-browser-access` header specifically for tools like this one. `src/utils/aiScenarioGenerator.ts` calls it with a
-key the user pastes in and `store/persistence.ts` stores client-side
-(`loadAiApiKey`/`saveAiApiKey`/`clearAiApiKey`, same pattern as
-`loadPreferences`) — sent only to Anthropic, never to any server of
-ours. This is confirmed with the user (see the AskUserQuestion exchange
-in session history) as an accepted trade-off, not a silent assumption:
-a visitor without their own key can't use in-app generation, but always
-has the "Copy prompt instead" path in the same modal.
-
-**Bounded self-correction, not an agent loop**: `generateScenarioWithAI`
-runs the model's output through the app's own
-`validateFlowWithChannelCompliance` (the same validator scenario loading
-uses) and, if invalid, retries **exactly once** with the validation
-errors fed back, then returns whatever it gets regardless of whether
-that's now valid. Don't make this loop open-ended — the editor's existing
-live validation preview (`CustomScenarioEditorModal.tsx`) already shows
-remaining errors on whatever lands in the draft, so an imperfect result
-is still visible and fixable, not a dead end that needs infinite retries
-to be useful. `fetch` is an injectable parameter specifically so
-`aiScenarioGenerator.test.ts` can test the retry/give-up logic without
-ever hitting the real network (no test in this repo hits a real network
-— keep it that way).
-
-## Live brand editing (0.10.0) — `configuredBrand`, mirrors `configuredVariables`
-
-The sidebar's **Brand** section (`components/controls/BrandEditor.tsx`) lets
-a user override name/shortName/avatar/description/verified per session,
-without touching the scenario's YAML. This is a separate store field,
-`configuredBrand: BrandDefinition`, seeded from `flow.brand` on load
-(`loadFlow`'s new `brandOverride` param) and persisted per-scenario in
-`localStorage` (`StoredScenario.configuredBrand`) — same shape as the
-pre-existing `configuredVariables`/`updateConfiguredVariable`/
-`resetConfiguredVariables` pattern, follow that one if extending this.
-
-**One deliberate difference from Variables**: brand edits apply
-*immediately*, not "on next Restart". Variables are baked into message
-text at plan-computation time (`computeNodePlan`), so an edit can't
-retroactively change already-rendered history without a replay — hence
-Variables' "Hit Restart to apply" caveat. The brand block only drives the
-header chrome (`PhoneScreen.tsx` passes `configuredBrand`, not
-`flow.brand`, into the channel renderer), which re-renders live from
-store state on every change like any other prop — there's nothing to
-replay. Don't add a "Hit Restart" caveat to `BrandEditor.tsx`; it would be
-inaccurate.
-
-`brand.description` is a new schema field (the header subtitle, e.g.
-"Business Account" on WhatsApp / "Business messaging" on RCS) — both
-header components fall back to their historical hardcoded string via
-`brand.description || '<default>'` when it's unset, so this is fully
-backward-compatible with every existing scenario.
-
-Picture upload reads a local file into a `data:` URL
-(`BrandEditor.tsx`'s `readFileAsDataUrl`) rather than uploading anywhere —
-consistent with this app having no backend. `assetUrl.ts` already passes
-non-`/`-prefixed strings through unchanged, so a `data:` URL just works as
-`brand.avatar` with no special-casing needed.
-
-## Free text + keyword triggers (0.11.0)
-
-The composer (`components/phone/Composer.tsx`) used to be disabled except
-when a node's `type: input` message was actively awaiting entry
-(placeholder: "Tap a suggestion above"). It's now always typable — real
-WhatsApp/RCS composers never lock like that, and this is what "simulated
-free texting" means. Every submit goes through one new store action,
-`handleFreeText`, instead of calling `handleInputSubmit` directly:
-
-1. Check `flow.triggers` (new, global, top-level — `engine/triggerMatcher.ts`'s
-   `matchTrigger`) first. **This wins even over an active `input` field** —
-   deliberate, so a keyword like "cancel"/"help" works as an anytime escape
-   hatch that can interrupt structured input capture, matching how real
-   bots commonly implement keyword commands. If you're tempted to make
-   active-input capture take priority instead, don't — that would make
-   "type CANCEL anytime" unreliable exactly when it matters most (mid-form).
-2. If no trigger matches, fall back to the pre-existing active-`input`
-   capture (`handleInputSubmit`) unchanged.
-3. If neither applies, `resolveFreeText` (in `ConversationEngine.ts`,
-   alongside the other `resolve*` functions) still records the typed text
-   as an outgoing user bubble via `applyInteractionResult`, just with no
-   `nextNodeId` — `applyInteractionResult` already handles an undefined
-   `nextNodeId` safely (message is added, no navigation), so this is not a
-   special case requiring new plumbing. **Don't add a "sorry, I didn't
-   understand" auto-reply for the no-match case** — a real bot silently not
-   responding to unrecognized input is the realistic behavior being
-   simulated, not a gap to paper over.
-
-Matching (`matchTrigger`) is whole-word (`\b`-bounded regex per keyword,
-case-insensitive unless `caseSensitive: true`), not raw substring — "cat"
-must not fire on "category". This is a pure, timer-free function like
-`conditionEvaluator.ts`, not folded into `ConversationEngine.ts` itself,
-following that file's existing separation of "matching algorithm" from
-"resolve into an InteractionResult".
-
-`flowValidator.ts` checks `trigger.next` for dangling references, same as
-every other `next`-like field — triggers are global (no owning node), so
-that one check doesn't go through the node-scoped `checkRef` helper.
-
-## `rich_card`/`list` header & footer (0.13.0) — WhatsApp-only, gated at render time
-
-Added `header`/`footer` string fields to `richCardMessageSchema` and
-`listMessageSchema`, matching Meta's real WhatsApp Cloud API interactive-
-message envelope (`header` + `body` + `footer` + `action`). Two real-spec
-constraints drove the design, both verified via search rather than assumed:
-
-- **A `rich_card` header is text OR `image`, never both** — a real WhatsApp
-  button-type interactive message has exactly one header type.
-  `channels/whatsapp/normalize.ts`'s `rich_card` case hard-errors if a
-  scenario sets both (same "count/structural checks are hard errors"
-  bucket as button-count violations — see the `normalize.ts` section
-  above). A `list`'s header has no such conflict since list headers are
-  always text-only on the real platform (no media option at all), so no
-  equivalent check was needed there.
-- **RCS has no header/footer fields on its rich card at all** — Google's
-  RCS rich card is title + description + media + suggestions, full stop
-  (confirmed against the RCS `agentMessages` reference). Rather than
-  invent an approximation for RCS (which the "Automated guard against
-  built-ins regressing to invented types" section above exists specifically
-  to prevent), `RichCard.tsx`/`ListMessage.tsx` gate `header`/`footer`
-  rendering on `channel === 'whatsapp'` — the fields simply don't render on
-  RCS, same as how `list` itself doesn't natively render there. This also
-  matches the literal scope of the request that added this feature
-  ("header and footer for **WhatsApp** messages").
-
-Length limits (both capped at 60 chars per Meta's docs) are the usual live
-soft warning via `getCapabilityWarning`/`maxHeaderTextLength`/
-`maxFooterTextLength` on `ChannelCapabilities` — WhatsApp defines them,
-RCS deliberately leaves them `undefined` (there's no field to have a limit
-on), following the same "count = hard error, length = soft warning"
-split as everything else in `capabilities.ts`/`normalize.ts`.
-
-Demoed in two built-ins rather than left untested-in-practice: `ecommerce.yaml`'s
-`priority_upgrade` rich_card (no `image`, so got `header: "Limited-time
-offer"`) and `beerlao.yaml`'s `event_promotion` rich_card (already has
-`image`, so only got `footer: "Drink responsibly. 18+."` — adding `header`
-there too would have tripped the new mutual-exclusivity error, which is
-exactly the point of that check).
-
-## Restricted shared-link viewer (0.14.0) — `sharedLinkMode`, stricter than Presenter Mode
-
-Shared links previously opened the *entire* app pre-loaded with the shared
-scenario — full header nav, Sidebar (scenario switcher, channel toggle,
-brand/variable editors, debug options), Scenarios/Manual pages, Flow
-Inspector, all of it. The user explicitly asked for this to be locked down:
-a link recipient should see only the phone simulation for the one shared
-scenario, plus a Restart button — nothing else in the tool, no way to
-switch to a different scenario (including whatever's cached in their own
-`localStorage` from a prior visit).
-
-Implementation mirrors `presenterMode`'s existing early-return pattern in
-`App.tsx` (a boolean store flag short-circuits the entire normal render
-tree down to just `PhoneFrame`/`PhoneScreen`), but as a **new, stricter,
-non-togglable** flag rather than reusing `presenterMode` itself — the two
-are conceptually different: `presenterMode` is a user preference toggled
-from the header and persisted across visits (a presenter chooses
-distraction-free mode for their own demo, and can toggle back), while
-`sharedLinkMode` is a fact about how *this specific page load* started
-(`initialize()` sets it once, only when `readShareHash()` finds and
-successfully loads a share hash) and is deliberately **not** persisted or
-exposed as a preference anywhere — there is no UI control that can turn it
-off, matching "no access to other features of the tool" being a hard
-requirement, not a default. `App.tsx` checks `sharedLinkMode` before
-`presenterMode` so restriction always wins if both were somehow true.
-
-`MessageRenderer.tsx`'s capability-warning/fallback-note suppression
-(`!presenterMode`) needed the same `&& !sharedLinkMode` treatment — those
-inline amber notes are debug/authoring information, not something an
-external viewer should see, and since the Sidebar's "Show capability
-warnings" toggle is unreachable in this mode anyway (no Sidebar), a viewer
-would have had no way to turn them back off if left unguarded. If you add
-another `presenterMode`-gated UI behavior later, ask whether `sharedLinkMode`
-needs the same gate — the two "hide the debug chrome" cases so far have
-both needed it.
-
-`SharedLinkFloatingControls.tsx` intentionally has only an iOS/Android
-switch and a Restart button — no fullscreen toggle, no "exit" button like
-`PresenterFloatingControls` has (there's nothing to exit back to; this isn't
-a togglable view). The platform switch was added in 0.19.0 at the user's
-request ("run it, choose android or ios, restart it, that's basically all").
-Don't grow this control set without the user asking; the whole point of this
-mode is that it doesn't offer more.
+`sharedLinkMode` is a non-togglable viewer (phone, Restart, iOS/Android switch only), stricter than `presenterMode`; `App.tsx` checks it first. Never persisted. Add `&& !sharedLinkMode` wherever `presenterMode` hides debug chrome. Don't grow `SharedLinkFloatingControls.tsx` unless asked. Details: docs/HISTORY.md#shared-link-0140
 
 ### Read-only is enforced in code (0.19.0)
-Hiding buttons isn't the guarantee. In shared mode:
-- `sharedLinkMode` is initialised **synchronously** from `hasShareHash()` when
-  the store is created (not after `initialize()` awaits the payload), so the
-  editor never renders, even briefly. Any `#flow=` key counts, even if empty.
-- `lockStorageWrites()` (persistence.ts) makes every `save*`/`clear*` a
-  no-op for the page load. The visitor's saved prefs/last scenario/custom
-  scenarios are never read either.
-- Every editing/config store action starts with `isLocked()` and returns.
-  `initialize()` loads the shared flow via `loadingSharedFlow`, a closure
-  flag that briefly lifts the lock. **If you add a store action that edits
-  scenarios, brand, variables or preferences, add the `isLocked()` guard.**
-- Bad payloads set `sharedLinkError`; `App.tsx` shows it and nothing else.
-  There is no fallback to the default scenario.
-- Link format: `#flow=<z.|r.payload>&platform=<ios|android>`; `platform` is
-  the starting phone only. Decoded size is capped at 2 MB.
-- Tests: `src/store/sharedLinkMode.test.tsx` (uses `vi.resetModules()` since
-  the mode is decided at store creation).
-
-## Fifth built-in: Pro Gadget Laos (0.15.0) — adapted from a real spec PDF, not invented
-
-The user uploaded a PDF ("Pro Gadget Laos — SMS + WhatsApp Integration Spec
-for LTC") — a technical integration doc, not a conversation script — and
-asked for a scenario "based on this." The PDF itself isn't a flow; it's an
-API contract between a Vientiane phone/wearables storefront and their
-telecom provider, split into Track A (transactional SMS: OTP, order
-confirmation, status updates) and Track B (WhatsApp broadcast: product
-launch, lot arrival, promotions). `progadget-laos.yaml` dramatizes the
-**customer-facing conversation those API calls would actually produce** —
-every piece of copy (the OTP format "Pro Gadget Laos — code: NNNNNN.
-Expires in N minutes", the order confirmation shape, the "{{order}} updated
-· Shipped, on the way" status-update phrasing, the WHOOP Peak/WHOOP Life
-product names, the LAUNCH10 promo pattern) is pulled directly from the
-PDF's own worked examples, not invented from scratch.
-
-Same `otp`→`input` substitution as Beerlao, for the same reason: the PDF's
-OTP flow ("customer enters phone... code: 493218") is exactly the "typed
-code with validation" case `docs/SCENARIO_AUTHORING_GUIDE.md` says must use
-`input`. Hit the exact same `rich_card` header/image mutual-exclusivity
-error this session's own validator now enforces (0.13.0) while first
-drafting `order_confirmed` — tried both `header: "Pre-order confirmed"`
-and `image: "/assets/whoop-peak.svg"` on the same card, exactly what
-`whatsapp/normalize.ts` now hard-rejects. Fixed by folding the confirmation
-language into the preceding `text` message instead and keeping the image.
-
-Three new placeholder SVGs (`brand-avatar-progadget.svg`,
-`whoop-peak.svg`, `whoop-life.svg`) were hand-drawn in the same flat-icon
-style as the existing placeholder set (`package.svg`, `brand-avatar-shop.svg`)
-since no real logo/product photos were provided this time (contrast with
-Beerlao, which got real committed PNG/JPG assets later) — same "seeded
-decorative placeholder" precedent documented in the README's Known
-Limitations section for boarding-pass QR codes etc.
-
-## `input` renders as plain, unannotated text (0.15.1)
-
-`InputMessage.tsx` used to add a `PencilLine` icon and, while the field
-was still active, an inline "— reply using the box below." hint. The user
-correctly flagged this as non-standard: no real WhatsApp/RCS message has
-an icon like that, so it was quietly reintroducing the exact problem the
-`otp`→`input` swap (0.12.1) was meant to fix — a component that visually
-signals "this is special software UI" rather than an ordinary business
-text message. Removed both; `input` now renders as bare text in a plain
-bubble, indistinguishable from `TextMessage`, which is the whole point of
-using it over `otp`. If you're tempted to add any visual affordance to
-`input` (icon, color, hint text) to make it "clearer" that a reply is
-expected, don't — that clarity is exactly what a real WhatsApp/RCS
-composer doesn't provide either, and this component's entire job is to
-not claim more than a real platform does.
-
-## Shared `**bold**`/`_italic_` formatting (0.16.0) — beyond just `text`
-
-`TextMessage.tsx` always had a tiny inline formatter (bold/italic/URL
-auto-link, regex-based, no markdown lib, no HTML injection risk). The user
-asked for more use of it across the built-ins, which surfaced that it was
-private to `TextMessage` — `RichCard`, `ListMessage`, `Carousel`, `Image`/
-`VideoMessage` all rendered their `description`/`subtitle`/`caption`
-fields as raw strings. Extracted the renderer into
-`src/components/common/FormattedText.tsx` (a `<FormattedText text={...}/>`
-component) and wired it into those five components' prose fields.
-
-**Deliberately scoped to prose fields, not every string field.** Titles,
-headers, footers were initially considered too, but:
-- `title`/`header` on `rich_card`/`list` — real WhatsApp/RCS header/title
-  fields are short unformatted labels; formatting them would be inventing
-  behavior neither platform has, exactly the thing this codebase's
-  established rigor (see "Official vs. invented message types" above)
-  exists to prevent. **Footer got formatting though** — a footer is
-  small/muted disclaimer-style prose (see the `_Drink responsibly. 18+._`
-  and `_Offer applies to this order only._` examples in the built-ins),
-  not a structural label like a title.
-- Button/chip labels — never formatted on the real platforms either.
-- `document` title/description — deliberately skipped, not because the
-  real platform doesn't format them, but because this component's
-  description renders inside a `truncate` (single-line, `white-space:
-  nowrap`) span; `FormattedText` always wraps output in at least one
-  block-level `<span>` per line, which would break that truncation
-  layout. If you need formatting there later, restyle the row first.
-- `list` row titles/descriptions and `product_catalog` fields — left
-  unformatted for now, simply not requested; revisit if asked.
-
-**Don't nest `**_like this_**`.** `InlineFormatting`'s token regex
-(`\*\*[^*]+\*\*|_[^_]+_`) matches one marker type per pass and does not
-recursively re-parse a captured token's contents, so nested markers render
-as literal asterisks/underscores inside the outer style, not as both
-stylings applied. Keep bold and italic spans separate/sequential in
-authored copy, never overlapping.
-
-All five built-in scenarios got real content passes using this — bold for
-codes/prices/order numbers/key values, italic for secondary
-disclaimers/status notes — not just the user's literal OTP example.
-`beerlao.yaml`'s and `progadget-laos.yaml`'s OTP delivery messages are the
-canonical example (`**{{otpCode}}**` / `_Expires in {{otpExpiry}}._`).
-
-## Adaptive phone sizing via CSS container queries (0.16.1)
-
-`PhoneFrame` used to be hard-capped at `max-w-[380px]` (or `420px` in the
-main/presenter/shared-link wrappers), regardless of how much room the
-window actually had — the user asked for it to scale with the page and
-be bigger. The fix is `.phone-viewport`/`.phone-frame-fit` in
-`index.css`: the wrapper opts into `container-type: size` (a CSS
-container query, sizing on *both* axes, not Tailwind's default
-inline-size-only `@container`), and the frame itself is sized
-`width: min(100cqw, calc(100cqh * 9 / 19))` with `aspect-ratio: 9/19` —
-i.e. "as wide as the container allows, but never wider than what the
-container's height would allow at the real phone aspect ratio." This
-picks whichever axis is actually tighter *without knowing which one that
-is ahead of time*, which a single fixed `max-w` can never do.
-
-**Why not just raise the pixel cap instead**: a fixed cap can't be
-"adaptive" by definition — it's still a fixed number, just a bigger one.
-It would also still have the latent bug the old CSS had: `w-full max-w-
-[Npx] aspect-[9/19] max-h-full` is *width*-driven (aspect-ratio computes
-height from the definite width), so on a short-but-wide window the
-`max-h-full` clamp would shrink height without doing the reverse
-recompute on width — silently distorting the 9:19 ratio instead of
-shrinking proportionally. Confirmed via Playwright across five very
-different window shapes (1280×800 laptop, 1920×1080, 2560×1440, and a
-deliberately awkward 1920×600) that the *rendered* aspect ratio is
-exactly 9:19 = 0.474 in every case — the old approach could not have
-guaranteed that.
-
-**One rule, four call sites, no special-casing per mode.** The same
-`.phone-viewport`/`.phone-frame-fit` pair is used in the main simulator
-view (normally height-bound — desktop windows are far wider than a full-
-height phone needs), Presenter Mode and the shared-link viewer (same
-pattern, full-screen), and `ComparePhones.tsx`'s per-channel columns
-(width-bound instead, since those are fixed `w-[260px]`) — the CSS
-formula is symmetric, so it self-selects the binding constraint per
-call site instead of needing a width-driven variant and a height-driven
-variant maintained separately.
-
-Compare mode's fixed 260px columns are deliberately unchanged — that
-width is chosen so 2+ phones fit side by side without horizontal
-scrolling being the default experience; don't apply the "bigger" request
-there without the user asking, it would defeat the point of side-by-side
-comparison.
-
-## Pro Gadget Laos: WHOOP → real Garmin CIRQA (0.16.3)
-
-The WHOOP Peak/WHOOP Life product names in `progadget-laos.yaml` (0.15.0)
-were themselves pulled from the spec PDF's own worked examples — not
-invented by this session — but the user later asked to replace them with
-a real product from the actual storefront: the Garmin CIRQA (a real SKU,
-`https://www.progadget.tech/products/item-51`). Both the product page and
-its image URL are on `progadget.tech`, which this sandbox's egress proxy
-blocks (confirmed via a `WebFetch` `EGRESS_BLOCKED` error, not assumed) —
-same "can't reach it directly" situation as the Beerlao assets above. The
-user resolved it the same way: pasted a screenshot of the product page for
-the copy/price/SKU, and committed the real photo to the repo
-(`public/garmin_cirqa.jpeg`, moved to `public/assets/` per their
-instruction) rather than relying on a chat-pasted image.
-
-**Only one real product was provided, which forced a narrative fix, not
-just a find-replace.** The original two-node structure needed *two*
-different products — `order_confirmed` (Track A: what was pre-ordered)
-and `product_launch` (Track B: a `**new**` product announcement) — because
-announcing a "new" product that's actually the exact item the customer
-already received in the same conversation doesn't make sense. Rather than
-invent a second fictional product (the thing this file's whole "audited
-against real docs" ethos argues against) or ask another round-trip
-question, `product_launch` was reframed from a *new product launch*
-broadcast to a *promotion/discount* broadcast — a different real use case
-from the same spec PDF's Track B section ("occasional limited-time
-discount broadcasts to customers who opted in during checkout") — still
-featuring the real Garmin CIRQA image, but now honestly framed as "here's
-10% off your next order" rather than implying a second product exists.
-`newProductName` was removed from `variables` entirely; if you're tempted
-to reintroduce a "new arrival" narrative here, you need a second real
-product's info first, not an invented name.
+Hiding buttons isn't the guarantee:
+- `sharedLinkMode` is initialised **synchronously** from `hasShareHash()` at store creation, so the editor never renders. Any `#flow=`, `#s=` or `#scenario=` key counts, even if empty.
+- `lockStorageWrites()` (persistence.ts) makes every `save*`/`clear*` a no-op; saved visitor data is never read.
+- Every editing/config store action starts with `isLocked()` and returns. `initialize()` loads the shared flow via `loadingSharedFlow`, a closure flag that briefly lifts the lock. **If you add a store action that edits scenarios, brand, variables or preferences, add the `isLocked()` guard.**
+- Bad payloads set `sharedLinkError`; `App.tsx` shows only that.
+- Links (`platform` = starting phone only): `#scenario=<built-in id>` (unmodified built-in), `#s=<id>` (short, server-stored, permanent), `#flow=<z.|r.payload>` (long, back-compat + fallback when the POST fails). All resolve via `readSharedSource()` in `utils/shareLink.ts` into the same `loadScenarioSource()`. Decoded size cap 2 MB.
+- Short links: `server/shareLinks.js` (`POST /api/share`, `GET /api/share/:id`, unauthenticated write → size/rate/dedupe/budget limits) over `server/shareStore.js` (VCR **account** state; instance state/disk/memory are not durable and must not be used; `SHARE_STORE_PATH` is local-dev only). Tests: `server/shareLinks.test.js`.
+- Tests: `src/store/sharedLinkMode.test.tsx` (uses `vi.resetModules()`).
 
 ## Versioning — do this on every change
 
-1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number
-   = new feature, last number = fix/infra-only.
-2. Add an entry to the top of `CHANGELOG` in `src/app/changelog.ts`
-   (newest first). This is what renders in the Manual's Changelog tab and
-   is the best record of "what happened and why" for a future session —
-   write it like you're leaving a note for yourself.
-3. The version badge in `AppHeader.tsx` and the Manual header both read
-   `APP_VERSION` from `src/app/version.ts` (sourced from `package.json`)
-   automatically — no separate place to update.
+1. Bump `version` in `package.json` (0.x: middle = new feature, last = fix/infra-only).
+2. Add an entry at the top of `CHANGELOG` in `src/app/changelog.ts` (newest first; renders in the Manual's Changelog tab). Write it as a note to self.
+3. `AppHeader.tsx` and the Manual header read `APP_VERSION` (`src/app/version.ts`) automatically.
 
 ## Git / deploy workflow
 
-- Two branches matter: `claude/messaging-flow-simulator-wboec4` (primary
-  dev branch) and `main` (kept fast-forwarded to match it after every
-  push: `git branch -f main claude/messaging-flow-simulator-wboec4 && git
-  push origin main`).
-- **Vonage Cloud Runtime (VCR) is the primary deployment target.** Run
-  `npm run deploy` from this project to invoke the VCR CLI. The manifest is
-  `vcr.yml`, the build step is `build.sh`, and the deployed application ID is
-  `0ba99fd4-3f1f-45f9-b8a3-8a76ecf9ebe2`.
-- VCR serves the app at the domain root, so `vite.config.ts` defaults to
-  `base: '/'`. The VCR server entrypoint is `server/index.js`; it must keep
-  listening on `VCR_PORT` and serving `GET /_/health`.
-- `.vcrignore` excludes local-only files from the deployment package. Do not
-  add secrets, `.env` files, or `node_modules` to the VCR package.
-- If a GitHub MCP tool 403s on push after a rename, the session's git
-  proxy may have cached authorization under the old repo identity — call
-  `add_repo` (Claude_Code_Remote MCP) for the new owner/repo to
-  re-authorize; no need to actually clone anywhere, just re-push from the
-  existing local checkout afterward.
+- Branches: `claude/messaging-flow-simulator-wboec4` (dev) and `main` (fast-forward after every push: `git branch -f main claude/messaging-flow-simulator-wboec4 && git push origin main`).
+- **Vonage Cloud Runtime (VCR) is the primary deployment target.** `npm run deploy` invokes the VCR CLI. Manifest `vcr.yml`, build step `build.sh`, application ID `0ba99fd4-3f1f-45f9-b8a3-8a76ecf9ebe2`.
+- VCR serves at the domain root, so `vite.config.ts` defaults to `base: '/'`. Entrypoint `server/index.js` must keep listening on `VCR_PORT` and serving `GET /_/health`.
+- `.vcrignore` excludes local-only files. Never add secrets, `.env` files, or `node_modules` to the VCR package.
+- If a GitHub MCP push 403s after a rename, call `add_repo` (Claude_Code_Remote MCP) for the new owner/repo, then re-push.
 
 ## Verification checklist (every change, before commit)
 
 ```bash
 npx tsc -b && npm run build && npm test && npx oxlint .
 ```
-All four must be clean (the two long-standing oxlint warnings —
-`ChannelContext.tsx` fast-refresh export warning,
-`CustomScenarioEditorModal.tsx` exhaustive-deps — are known/accepted, not
-new failures to chase). Then a **Playwright visual pass** for anything
-UI-visible: `npm install -D playwright --no-save`, screenshot the actual
-behavior, **always `npm uninstall playwright` immediately after** — it's
-a temporary dev tool, never a committed dependency. Chromium is
-pre-installed at `/opt/pw-browsers/chromium`; pass that as
-`executablePath` when launching, don't run `playwright install`.
+All four must be clean (two known oxlint warnings accepted: `ChannelContext.tsx` fast-refresh export, `CustomScenarioEditorModal.tsx` exhaustive-deps). For UI-visible changes do a **Playwright visual pass**: `npm install -D playwright --no-save`, screenshot, **always `npm uninstall playwright` right after**. Chromium is at `/opt/pw-browsers/chromium` (pass as `executablePath`; don't run `playwright install`).
 
 ## Sandbox networking (this remote environment specifically)
 
-Outbound HTTPS goes through a policy-enforcing proxy. `WebFetch`/`curl` to
-arbitrary external domains — including `developers.facebook.com`,
-`developers.google.com`, and even this project's own `github.io` Pages
-site — are **blocked** (403 policy denial, not a bug, don't retry or try
-to route around it). `WebSearch` still works for research (it doesn't go
-through the same client-side proxy) and was how the WhatsApp/RCS spec
-verification above was actually done — prefer it over assuming you
-remember a spec correctly, especially for anything with specific numeric
-limits.
-
-## Real Beerlao brand assets (0.13.1) — and a note on getting images into the repo
-
-Chat-attached images (pasted directly into the conversation) aren't
-reachable by this session's tools — they render as visual content the
-model can see, but there's no filesystem path to them, and this sandbox's
-network policy blocks fetching arbitrary external URLs too (see "Sandbox
-networking" below). The user resolved this by committing the files
-straight to GitHub (`public/assets/beerlao_logo.png`,
-`beerlao_event.png` / `event-boun-souang-heua-promo.jpg`) — that's the
-reliable path when a session needs a real binary asset it can't otherwise
-reach: have the user commit it, then wire it in from there. Don't assume a
-pasted image can be saved to disk from chat content alone.
-
-**The uploaded promo photo was later renamed** from
-`event-boun-souang-heua-promo.jpg` to `.png` (0.15.1) — GitHub's upload UI
-doesn't validate that a file's extension matches its actual content, and
-this one was real PNG data saved with a `.jpg` name. That silently broke
-image loading (browsers/servers that respect the declared content type
-over sniffed content can refuse a mismatched pair) and, separately, hid
-the file from the PWA precache entirely, since `vite.config.ts`'s
-`globPatterns` didn't list `jpg`/`jpeg` at all — so the bug had no way to
-surface in a build check. If a future uploaded "photo" file misbehaves,
-check `file <path>` before assuming the code is wrong.
-
-`brand.avatar` now points at the real logo PNG and `event_promotion`'s
-`rich_card.image` at the real promo photo (which already carries its own
-16%-off copy baked into the image, so `event_intro`/`event_details`'
-authored text was updated to match rather than duplicate generic
-placeholder wording). The two placeholder SVGs they replaced
-(`brand-avatar-beerlao.svg`, `event-boun-souang-heua.svg`) were deleted as
-genuinely orphaned — confirmed via grep that nothing else referenced them
-first, per this file's "delete only what's truly unused" convention.
-
-One leftover from the user's GitHub upload,
-`public/assets/38198693_1848856781874876_6406656325777883136_n.jpg` (a
-Beerlao product-lineup photo, unrelated to the boat-race promo), is not
-referenced anywhere — it was part of the same upload batch but never
-requested for a specific use. Left in place rather than deleted (it's the
-user's own content, not this session's to remove without asking) — ask
-before wiring it in or removing it if you're picking this up later.
+Outbound HTTPS goes through a policy proxy: `WebFetch`/`curl` to arbitrary domains (incl. `developers.facebook.com`, `developers.google.com`, the project's `github.io`) are **blocked** (403; don't retry or bypass). `WebSearch` works; prefer it over memory for numeric spec limits.
 
 ## Where things are (quick index)
 
-- Built-in scenarios: `src/scenarios/{singapore-airlines,ecommerce,restaurant,beerlao}.yaml`,
-  registered in `src/scenarios/index.ts`.
-- Schema: `src/schema/messages.ts` (message types), `src/schema/flow.ts`
-  (node/flow structure).
-- Channel capabilities: `src/channels/{rcs,whatsapp}/capabilities.ts`,
-  shared logic in `src/channels/capabilities.ts`. Hard, real-payload-shape
-  validation: `src/channels/{rcs,whatsapp}/normalize.ts`.
-- Engine core: `src/engine/ConversationEngine.ts` (computeNodePlan — the
-  pure "what happens when this node is entered" function).
-- Store: `src/store/simulatorStore.ts` (single Zustand store, large file,
-  organized by feature area with comments).
-- Tests: colocated `*.test.ts` next to the thing they test; run all with
-  `npm test`.
-
+- Built-in scenarios: `src/scenarios/{singapore-airlines,ecommerce,restaurant,beerlao,progadget-laos}.yaml`, registered in `src/scenarios/index.ts`.
+- Schema: `src/schema/messages.ts` (types), `src/schema/flow.ts` (nodes/flow).
+- Channels: `src/channels/{rcs,whatsapp}/{capabilities,normalize}.ts`, shared `src/channels/capabilities.ts`.
+- Engine core: `src/engine/ConversationEngine.ts` (computeNodePlan).
+- Store: `src/store/simulatorStore.ts` (single large Zustand store).
+- Tests: colocated `*.test.ts`.
 
 ## Live RCS guardrails (0.14.0)
 
-The VCR Node server is now part of the production deployment. It must continue to serve `GET /_/health`, static assets, and SPA fallback while preserving the isolated Live RCS namespaces: `GET /api/live/diagnostics`, authenticated `/api/live/*`, and `POST /webhooks/vonage/*`.
+The VCR Node server is part of the production deployment. It must keep serving `GET /_/health`, static assets, and SPA fallback while preserving the isolated Live RCS namespaces: `GET /api/live/diagnostics`, authenticated `/api/live/*`, and `POST /webhooks/vonage/*`.
 
-Live delivery is **off by default**. Never expose or persist Vonage JWTs, webhook secrets, RCS sender IDs, test recipient numbers, or `LIVE_RCS_OPERATOR_TOKEN` in the client/source/scenario/localStorage. The recipient and flow allowlist are server-side. `server/liveDemo.js` deliberately fails closed for unverified Vonage rich-content payloads; do not replace that guard with guessed card/carousel JSON. Add a reviewed provider mapping plus redacted fixtures only after consulting the authenticated application reference. Keep `docs/LIVE_RCS_DEMO.md`, README, and the in-app changelog current when this operational contract changes.
+Live delivery is **off by default**. Never expose or persist Vonage JWTs, webhook secrets, RCS sender IDs, test recipient numbers, or `LIVE_RCS_OPERATOR_TOKEN` in client/source/scenario/localStorage. Recipient and flow allowlist are server-side. `server/liveDemo.js` deliberately fails closed for unverified Vonage rich-content payloads; do not replace that guard with guessed card/carousel JSON. Add a reviewed provider mapping plus redacted fixtures only after consulting the authenticated application reference. Keep `docs/LIVE_RCS_DEMO.md`, README, and the in-app changelog current.

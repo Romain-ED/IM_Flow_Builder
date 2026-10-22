@@ -34,8 +34,7 @@ export function ScenarioControls({ onOpenEditor }: { onOpenEditor: () => void })
 
   async function shareLink() {
     if (!flowSource) return
-    const url = await buildShareUrl(flowSource, phonePlatform)
-    const ok = await copyToClipboard(url)
+    const ok = await copyToClipboard(buildShareUrl(flowSource, phonePlatform))
     if (ok) {
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 1800)

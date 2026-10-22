@@ -14,6 +14,8 @@ instance:
       secret: LIVE_RCS_MODE
     - name: LIVE_RCS_TEST_RECIPIENT
       secret: LIVE_RCS_TEST_RECIPIENT
+    - name: LIVE_RCS_ALLOWED_RECIPIENTS
+      secret: LIVE_RCS_ALLOWED_RECIPIENTS
     - name: LIVE_RCS_OPERATOR_TOKEN
       secret: LIVE_RCS_OPERATOR_TOKEN
     - name: LIVE_RCS_ALLOWED_FLOW_IDS

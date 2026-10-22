@@ -1,0 +1,12 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "title": "Non-personal product eligibility reaches a personal-loan approval flow",
+      "location": "02-design.md: Discovery; Approval, signing, and disbursement",
+      "problem": "Car Loan and Home Mortgage Check eligibility actions are described as entering the shared qualification flow, but the later approval/disbursement values and VB-PL reference are hard-coded to Personal Loan.",
+      "fix": "Either route non-personal eligibility to product-specific detail/not-available nodes and explicitly limit qualification to Personal Loan, or define product-specific conditional result, approval, reference, disbursement, and servicing branches. Add alternate-path tests for both non-personal products."
+    }
+  ]
+}
