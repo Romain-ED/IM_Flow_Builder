@@ -19,12 +19,8 @@ export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()
   const storageDurable = enabled(env.LIVE_RCS_STORAGE_DURABLE)
   const demoEphemeralStorage = enabled(env.LIVE_RCS_DEMO_EPHEMERAL_STORAGE)
   const configuredRecipient = validRecipient(env.LIVE_RCS_TEST_RECIPIENT)
-  const configuredAdditionalRecipients = (env.LIVE_RCS_ALLOWED_RECIPIENTS ?? '').split(',').map((value) => value.trim()).filter(Boolean)
-  const invalidAdditionalRecipients = configuredAdditionalRecipients.filter((value) => !validRecipient(value))
-  const allowedRecipients = [...new Set([configuredRecipient, ...configuredAdditionalRecipients.map(validRecipient).filter(Boolean)])]
   const errors = []
   if (mode !== 'disabled' && !configuredRecipient) errors.push('LIVE_RCS_TEST_RECIPIENT must be a 7 to 15 digit phone number.')
-  if (invalidAdditionalRecipients.length > 0) errors.push('LIVE_RCS_ALLOWED_RECIPIENTS contains an invalid phone number.')
   if (mode !== 'disabled' && !env.LIVE_RCS_OPERATOR_TOKEN) errors.push('LIVE_RCS_OPERATOR_TOKEN is required.')
   if (mode !== 'disabled' && allowedFlowIds.length === 0) errors.push('LIVE_RCS_ALLOWED_FLOW_IDS is required.')
   if (mode === 'vonage') {
@@ -44,7 +40,6 @@ export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()
     configured: mode !== 'disabled' && errors.length === 0,
     errors,
     recipient: env.LIVE_RCS_TEST_RECIPIENT ?? null,
-    allowedRecipients,
     allowedFlowIds,
     operatorToken: env.LIVE_RCS_OPERATOR_TOKEN ?? '',
     vonageJwt: env.LIVE_RCS_VONAGE_JWT ?? '',
@@ -604,8 +599,8 @@ export class LiveDemoService {
     if (!this.config.configured) throw new Error('Live RCS is not configured.')
     const selectedRecipient = recipient === undefined || recipient === '' ? validRecipient(this.config.recipient) : validRecipient(recipient)
     if (!selectedRecipient) throw new Error('Destination phone number must be 7 to 15 digits, optionally prefixed with +.')
-    const allowedRecipients = this.config.allowedRecipients ?? [validRecipient(this.config.recipient)].filter(Boolean)
-    if (!allowedRecipients.includes(selectedRecipient)) throw new Error('Destination phone number is not authorized for Live RCS.')
+    const configuredRecipient = validRecipient(this.config.recipient)
+    if (selectedRecipient !== configuredRecipient) throw new Error('Destination phone number is not authorized for Live RCS.')
     if (!flow?.metadata?.id || flow.metadata.channel !== 'rcs') throw new Error('A validated RCS flow is required.')
     if (!this.config.allowedFlowIds.includes(flow.metadata.id)) throw new Error('This flow is not allowlisted for Live RCS.')
     if (!Array.isArray(flow.nodes) || !flow.start) throw new Error('Flow is missing nodes or start state.')

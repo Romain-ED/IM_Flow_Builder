@@ -1,13 +1,13 @@
 # Live RCS demo operations
 
-Live RCS turns an existing RCS-authored simulator flow into a two-way session for a user-selected destination. It is deliberately **disabled by default**. The browser never receives Vonage credentials, sender identity, recipient configuration, or webhook secret.
+Live RCS turns an existing RCS-authored simulator flow into a two-way session for the configured test destination. It is deliberately **disabled by default**. The browser never receives Vonage credentials, sender identity, recipient configuration, or webhook secret.
 
 ## What a live run does
 
 1. A presenter loads an RCS-authored flow and opens **Live RCS demo** in the sidebar.
 2. The browser runs strict preflight: only native RCS text/media/file/card/carousel content, public media URLs, supported `reply`/`open_url` actions, and valid suggestion attachments may run.
 3. The presenter supplies a short-lived operator token. It is held only in browser memory.
-4. The VCR server creates a persistent session for the entered destination, or the configured fallback number when the field is blank, then sends content through the selected gateway and stores provider IDs/events.
+4. The VCR server normalizes the requested destination and creates a persistent session only when it matches the configured test recipient, then sends content through the selected gateway and stores provider IDs/events.
 5. Vonage inbound and status callbacks advance the same flow graph and are shown in the presenter panel by polling.
 
 The destination phone owns the response path during a live session. The browser composer and simulator playback are paused until the session is stopped.
@@ -19,7 +19,7 @@ Set these as encrypted VCR environment variables. Never add them to `.env`, the 
 | Variable | Required | Purpose |
 |---|---:|---|
 | `LIVE_RCS_MODE` | Yes to enable | `fake` for local/development exercise; `vonage` for provider delivery; omit or use `disabled` otherwise. |
-| `LIVE_RCS_TEST_RECIPIENT` | Enabled modes | Fallback E.164 destination used when no number is entered in the Live RCS panel. Each entered destination must be pre-registered as a testing user in the RCS agent. |
+| `LIVE_RCS_TEST_RECIPIENT` | Enabled modes | The sole normalized E.164 destination permitted for Live RCS sessions. It must be pre-registered as a testing user in the RCS agent. |
 | `LIVE_RCS_OPERATOR_TOKEN` | Enabled modes | Random operator-only bearer token entered for each presenter session; do not reuse a Vonage credential. |
 | `LIVE_RCS_ALLOWED_FLOW_IDS` | Enabled modes | Comma-separated RCS `metadata.id` values allowed to create sessions, e.g. `singapore-airlines-boarding-pass`. |
 | `LIVE_RCS_STORE_PATH` | Recommended | Path to a **VCR durable volume** JSON store. Default is a local file for development only. |
@@ -50,7 +50,7 @@ Open the simulator, select the Singapore Airlines RCS scenario, paste the token 
 
 Before setting `LIVE_RCS_MODE=vonage`:
 
-1. Confirm the agent is enabled in **Developer Mode**, its RCS sender/agent ID, and that every destination you plan to use is pre-registered as a testing user.
+1. Confirm the agent is enabled in **Developer Mode**, its RCS sender/agent ID, and that the configured test recipient is pre-registered as a testing user.
 2. Confirm the application ID, application private key (or short-lived JWT), signature secret, and exact Messages API endpoint for the account/region.
 3. Register public HTTPS callbacks on the Vonage application:
    - `POST https://<vcr-domain>/webhooks/vonage/inbound`
@@ -92,7 +92,7 @@ The Singapore Airlines scenario is the reference live-safe flow. Its boarding pa
 
 ### Single-instance Developer Mode storage
 
-`LIVE_RCS_DEMO_EPHEMERAL_STORAGE=true` is an explicit alternative to durable storage for one presenter, one allowlisted destination, and one short Developer Mode session. It uses the local JSON file store and permits `vonage` mode only because the presenter accepts these limitations:
+`LIVE_RCS_DEMO_EPHEMERAL_STORAGE=true` is an explicit alternative to durable storage for one presenter, one configured test destination, and one short Developer Mode session. It uses the local JSON file store and permits `vonage` mode only because the presenter accepts these limitations:
 
 - Any VCR restart, redeploy, crash, or instance replacement loses the active session, message correlation IDs, and webhook-deduplication state.
 - The phone may still receive a message after a restart, but its next reply cannot safely resume the old flow; start a new demo instead.

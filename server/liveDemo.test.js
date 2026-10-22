@@ -57,11 +57,10 @@ describe('LiveDemoService', () => {
     expect(withStatus.provider.latestStatus).toBe('read')
   })
 
-  it('updates an allowlisted selected recipient status after normalizing its address', async () => {
+  it('updates the configured recipient status after normalizing its address', async () => {
     const config = getLiveDemoConfig({
       ...env,
       LIVE_RCS_MODE: 'vonage',
-      LIVE_RCS_ALLOWED_RECIPIENTS: '+15557654321',
       LIVE_RCS_DEMO_EPHEMERAL_STORAGE: 'true',
       LIVE_RCS_RCS_AGENT_ID: 'agent-123',
       LIVE_RCS_VONAGE_APPLICATION_ID: 'application-123',
@@ -69,21 +68,21 @@ describe('LiveDemoService', () => {
       LIVE_RCS_VONAGE_JWT: 'short-lived-token',
     }, process.cwd())
     const service = new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway())
-    const started = await service.createSession({ flow, recipient: ' +1 555-765-4321 ' })
+    const started = await service.createSession({ flow, recipient: ' +1 555-123-4567 ' })
     const providerMessageId = service.store.get(started.id).outbound[0].providerMessageId
 
     const updated = service.handleStatus({
       message_uuid: providerMessageId,
       status: 'delivered',
       channel: 'rcs',
-      to: '+15557654321',
+      to: '+15551234567',
       from: 'agent-123',
     })
 
     expect(updated.provider.latestStatus).toBe('delivered')
   })
 
-  it('rejects a destination outside the configured recipient allowlist', async () => {
+  it('rejects a destination outside the configured test recipient', async () => {
     const config = getLiveDemoConfig(env, process.cwd())
     const service = new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway())
 
