@@ -5,13 +5,26 @@ import { sectionAccents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
 import { Avatar } from '../phone/Avatar'
 import { assetUrl } from '../../utils/assetUrl'
+import { MAX_EDITOR_IMAGE_FILE_BYTES, safeEditorImageSource } from '../../schema/flow'
 
 /** Reads a picked file as a data: URL so it can be used with no upload/hosting needed. */
 function readFileAsDataUrl(file: File): Promise<string> {
+  if (file.size > MAX_EDITOR_IMAGE_FILE_BYTES) {
+    return Promise.reject(new Error('Image file is too large.'))
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(reader.error)
+    reader.onload = () => {
+      const result = reader.result
+      if (typeof result !== 'string' || !safeEditorImageSource.safeParse(result).success) {
+        reject(new Error('Image data is not valid.'))
+        return
+      }
+      resolve(result)
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read image file.'))
+    reader.onabort = () => reject(new Error('Image read was aborted.'))
     reader.readAsDataURL(file)
   })
 }

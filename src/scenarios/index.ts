@@ -6,6 +6,7 @@ import progadgetLaosSource from './progadget-laos.yaml?raw'
 import ltcLaoTelecomSource from './ltc-lao-telecom.yaml?raw'
 import dominosSingaporeRcsDemoSource from './dominos-singapore-rcs-demo.yaml?raw'
 import vbankMultifinanceSource from './vbank-multifinance.yaml?raw'
+import rcsDemoMenuSource from './rcs-demo-menu.yaml?raw'
 
 export interface BuiltInScenario {
   id: string
@@ -53,7 +54,7 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
   },
   {
     id: 'dominos-singapore-rcs-demo',
-    name: "Domino's Pizza Singapore — RCS Demo Flow",
+    name: "Domino's Pizza Singapore — RCS Messaging",
     description: 'Promotions → menu browsing → order builder → store finder → checkout, tracking, and customer care.',
     source: dominosSingaporeRcsDemoSource,
   },
@@ -62,6 +63,12 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
     name: 'V Bank: From just curious to first repayment',
     description: 'Discovery → indicative eligibility → Personal Loan application → first repayment.',
     source: vbankMultifinanceSource,
+  },
+  {
+    id: 'rcs-demo-menu',
+    name: 'RCS Business Messaging Menu',
+    description: 'Choose a built-in business messaging scenario to start.',
+    source: rcsDemoMenuSource,
   },
 ]
 

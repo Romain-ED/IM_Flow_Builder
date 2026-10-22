@@ -19,15 +19,29 @@ describe('normalizeRcsProfile', () => {
     expect(profile.verified).toBe(true)
   })
 
-  it('creates deterministic reserved fallback contacts', () => {
-    const brand = { name: 'Café North' }
-    const first = normalizeRcsProfile(brand)
-    const second = normalizeRcsProfile(brand)
-    expect(first).toEqual(second)
-    expect(first.websiteUrl).toBe('https://cafe-north.example')
-    expect(first.email).toBe('support@cafe-north.example')
-    expect(first.phone).toMatch(/^\+1 202 555 01\d{2}$/)
-    expect(first.imageCount).toBe(0)
-    expect(first.imageUrls).toEqual([])
+  it('derives the slug, label, and reserved contact from the normalized display name', () => {
+    const profile = normalizeRcsProfile({ name: 'Acme Holdings', shortName: 'Acme' })
+    expect(profile.displayName).toBe('Acme')
+    expect(profile.brandLabel).toBe('Acme')
+    expect(profile.websiteUrl).toBe('https://acme.example')
+    expect(profile.email).toBe('support@acme.example')
+    expect(profile.phone).toBe('+1 202 555 0115')
+  })
+
+  it('normalizes non-ASCII names and falls back to business for empty slugs', () => {
+    const accented = normalizeRcsProfile({ name: 'Café North' })
+    expect(accented.websiteUrl).toBe('https://cafe-north.example')
+    expect(accented.phone).toBe('+1 202 555 0146')
+
+    const emptySlug = normalizeRcsProfile({ name: '!!!' })
+    expect(emptySlug.websiteUrl).toBe('https://business.example')
+    expect(emptySlug.email).toBe('support@business.example')
+    expect(emptySlug.phone).toBe('+1 202 555 0123')
+  })
+
+  it('caps long fallback slugs at 48 characters', () => {
+    const profile = normalizeRcsProfile({ name: 'A'.repeat(60) })
+    expect(profile.websiteLabel).toBe(`${'a'.repeat(48)}.example`)
+    expect(profile.phone).toMatch(/^\+1 202 555 01\d{2}$/)
   })
 })

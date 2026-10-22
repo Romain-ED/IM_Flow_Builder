@@ -40,14 +40,14 @@ export function normalizeRcsProfile(brand: BrandDefinition): NormalizedRcsProfil
     }
   }
 
-  const displayName = brand.shortName?.trim() || brand.name
+  const displayName = brand.shortName?.trim() || brand.name.trim()
   const slug = slugify(displayName)
   const domain = `${slug}.example`
-  const phone = `+1 202 555 ${String(100 + fnv1a(brand.name) % 100).padStart(4, '0')}`
+  const phone = `+1 202 555 ${String(100 + fnv1a(slug) % 100).padStart(4, '0')}`
   const fallback = rcsProfileSchema.parse({
     displayName,
     subtitle: brand.description?.trim() || 'Business messaging',
-    brandLabel: brand.name,
+    brandLabel: displayName,
     phone,
     websiteLabel: domain,
     websiteUrl: `https://${domain}`,

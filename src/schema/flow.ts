@@ -32,18 +32,31 @@ export const safeExternalUrl = z
     }
   }, 'URL must be HTTPS or app-relative')
 
-const imageDataUrl = /^data:image\/(?:png|jpeg|jpg|gif|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/
+const imageDataUrl = /^data:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml);base64,((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4}))$/i
+
+export const MAX_EDITOR_IMAGE_DATA_URL_LENGTH = 4 * 1024 * 1024
+export const MAX_EDITOR_IMAGE_FILE_BYTES = Math.floor(
+  (MAX_EDITOR_IMAGE_DATA_URL_LENGTH - 'data:image/svg+xml;base64,'.length) * 3 / 4,
+)
 
 export const safeImageSource = safeExternalUrl
 
-export const safeEditorImageSource = z
-  .string()
-  .min(1)
-  .max(2048)
-  .refine((value) => !/\s/.test(value), 'Image source must not contain whitespace')
-  .refine((value) => value.startsWith('/') || /^https:\/\/[^/]+/i.test(value) || imageDataUrl.test(value), 'Image source must be app-relative, HTTPS, or a bounded image data URL')
-  .refine((value) => !value.startsWith('//') && !/^blob:|^javascript:|^http:/i.test(value), 'Unsafe image source')
-  .refine((value) => !value.startsWith('data:') || imageDataUrl.test(value), 'Image data must be a valid base64 image')
+export const safeEditorImageSource = z.string().min(1).superRefine((value, context) => {
+  if (value.startsWith('data:')) {
+    if (value.length > MAX_EDITOR_IMAGE_DATA_URL_LENGTH) {
+      context.addIssue({ code: 'custom', message: 'Image data URL is too large' })
+      return
+    }
+    if (!imageDataUrl.test(value)) {
+      context.addIssue({ code: 'custom', message: 'Image data must be valid bounded base64' })
+    }
+    return
+  }
+
+  if (!safeExternalUrl.safeParse(value).success) {
+    context.addIssue({ code: 'custom', message: 'Image source must be app-relative or HTTPS' })
+  }
+})
 
 const profileText = (max: number) => z.string().min(1).max(max)
 

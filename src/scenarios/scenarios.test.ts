@@ -98,6 +98,7 @@ describe('RCS capacity regressions', () => {
     }
   })
 })
+
 // use has a real wire-format equivalent on *at least one* of WhatsApp/RCS —
 // i.e. none of them is one of the 5 types CLAUDE.md documents as having "no
 // official basis on any platform" (otp, flight_card, boarding_pass,
@@ -131,7 +132,7 @@ describe('built-in scenarios use only officially-supported message types', () =>
             isMessageTypeSupported(rcsCapabilities, message.type)
           if (!supportedSomewhere) {
             throw new Error(
-              `${scenario.id}/${node.id}: message type "${message.type}" has no real WhatsApp or RCS equivalent (a simulator-only invented type). Built-in scenarios must only use officially-supported types — see CLAUDE.md.`,
+              `${scenario.id}/${node.id}: message type "${message.type}" has no real WhatsApp or RCS equivalent (a simulator-only invented type). Built-in scenarios must only use officially-supported message types — see CLAUDE.md.`,
             )
           }
         }
@@ -139,7 +140,6 @@ describe('built-in scenarios use only officially-supported message types', () =>
     })
   }
 })
-
 
 describe('RCS built-ins are ready for Live RCS transport', () => {
   for (const scenario of BUILT_IN_SCENARIOS) {
@@ -161,20 +161,20 @@ describe('RCS built-ins are ready for Live RCS transport', () => {
 
 describe('built-in RCS profile audit', () => {
   const expected = {
-    'singapore-airlines': { displayName: 'Singapore Airlines', subtitle: 'Travel support and flight services', phone: '+1 202 555 0165', website: 'singaporeair.example', email: 'care@singaporeair.example', verified: true, banner: '/assets/singapore-airlines/aircraft-a350.png', images: ['/assets/singapore-airlines/aircraft-a350.png', '/assets/singapore-airlines/seat-window.png', '/assets/singapore-airlines/seat-aisle.png'] },
-    'dominos-singapore-rcs-demo': { displayName: "Domino's Pizza Singapore", subtitle: 'Pizza delivery, takeaway, and customer care', phone: '+1 202 555 0174', website: 'dominos-sg.example', email: 'care@dominos-sg.example', verified: true, banner: '/assets/dominos-singapore-rcs-demo/image-4.png', images: ['/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg', '/assets/dominos-singapore-rcs-demo/imgi_5_SG_460691_en_MenuImage_17096.jpg', '/assets/dominos-singapore-rcs-demo/imgi_13_SG_50R1_en_MenuImage_16018.jpg'] },
-    'vbank-multifinance-first-repayment': { displayName: 'V Bank', subtitle: 'Personal banking and lending', phone: '+1 202 555 0183', website: 'vbank.example', email: 'care@vbank.example', verified: true, banner: '/assets/V%20Bank/banner%20wide.jpg', images: ['/assets/V%20Bank/2.jpg', '/assets/V%20Bank/car%20loan.jpg', '/assets/V%20Bank/home%20mortgage.jpg'] },
-    'rcs-demo-menu': { displayName: 'RCS Business Messaging', subtitle: 'Explore business messaging experiences', phone: '+1 202 555 0192', website: 'rcs-messaging.example', email: 'support@rcs-messaging.example', verified: true, banner: '/assets/rcs-demo-menu/profile-banner.svg', images: [] },
-    ecommerce: { displayName: 'Northwind Store', subtitle: 'Order tracking and delivery support', phone: '+1 202 555 0107', website: 'northwind-store.example', email: 'support@northwind-store.example', verified: true, banner: '/assets/ecommerce/package.svg', images: [] },
-    restaurant: { displayName: 'Riverside Bistro', subtitle: 'Reservations and dining support', phone: '+1 202 555 0116', website: 'riverside-bistro.example', email: 'hello@riverside-bistro.example', verified: false, banner: '/assets/restaurant/restaurant-table.svg', images: [] },
-    beerlao: { displayName: 'Beerlao', subtitle: 'Account access and event information', phone: '+1 202 555 0125', website: 'beerlao.example', email: 'support@beerlao.example', verified: true, banner: '/assets/beerlao/event-boun-souang-heua-promo.png', images: ['/assets/beerlao/event-boun-souang-heua-promo.png'] },
-    'progadget-laos': { displayName: 'Pro Gadget Laos', subtitle: 'Orders, products, and delivery support', phone: '+1 202 555 0134', website: 'progadget-laos.example', email: 'support@progadget-laos.example', verified: true, banner: '/assets/progadget-laos/garmin_cirqa.jpeg', images: ['/assets/progadget-laos/garmin_cirqa.jpeg'] },
-    'ltc-lao-telecom': { displayName: 'Lao Telecom', subtitle: 'Mobile account and service support', phone: '+1 202 555 0143', website: 'laotelecom.example', email: 'support@laotelecom.example', verified: true, banner: '/assets/ltc-lao-telecom/banner.jpeg', images: ['/assets/ltc-lao-telecom/banner.jpeg'] },
+    'singapore-airlines': { owner: 'singapore-airlines', displayName: 'Singapore Airlines', subtitle: 'Travel support and flight services', phone: '+1 202 555 0165', website: 'singaporeair.example', email: 'care@singaporeair.example', verified: true, banner: '/assets/singapore-airlines/aircraft-a350.png', imageCount: 3, images: ['/assets/singapore-airlines/aircraft-a350.png', '/assets/singapore-airlines/seat-window.png', '/assets/singapore-airlines/seat-aisle.png'] },
+    'dominos-singapore-rcs-demo': { owner: 'dominos-singapore-rcs-demo', displayName: "Domino's Pizza Singapore", subtitle: 'Pizza delivery, takeaway, and customer care', phone: '+1 202 555 0174', website: 'dominos-sg.example', email: 'care@dominos-sg.example', verified: true, banner: '/assets/dominos-singapore-rcs-demo/image-4.png', imageCount: 44, images: ['/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg', '/assets/dominos-singapore-rcs-demo/imgi_5_SG_460691_en_MenuImage_17096.jpg', '/assets/dominos-singapore-rcs-demo/imgi_13_SG_50R1_en_MenuImage_16018.jpg'] },
+    'vbank-multifinance-first-repayment': { owner: 'V Bank', displayName: 'V Bank', subtitle: 'Personal banking and lending', phone: '+1 202 555 0183', website: 'vbank.example', email: 'care@vbank.example', verified: true, banner: '/assets/V%20Bank/banner%20wide.jpg', imageCount: 3, images: ['/assets/V%20Bank/2.jpg', '/assets/V%20Bank/car%20loan.jpg', '/assets/V%20Bank/home%20mortgage.jpg'] },
+    'rcs-demo-menu': { owner: 'rcs-demo-menu', displayName: 'RCS Business Messaging', subtitle: 'Explore business messaging experiences', phone: '+1 202 555 0192', website: 'rcs-messaging.example', email: 'support@rcs-messaging.example', verified: true, banner: '/assets/rcs-demo-menu/profile-banner.svg', imageCount: 0, images: [] },
+    ecommerce: { owner: 'ecommerce', displayName: 'Northwind Store', subtitle: 'Order tracking and delivery support', phone: '+1 202 555 0107', website: 'northwind-store.example', email: 'support@northwind-store.example', verified: true, banner: '/assets/ecommerce/package.svg', imageCount: 0, images: [] },
+    restaurant: { owner: 'restaurant', displayName: 'Riverside Bistro', subtitle: 'Reservations and dining support', phone: '+1 202 555 0116', website: 'riverside-bistro.example', email: 'hello@riverside-bistro.example', verified: false, banner: '/assets/restaurant/restaurant-table.svg', imageCount: 0, images: [] },
+    beerlao: { owner: 'beerlao', displayName: 'Beerlao', subtitle: 'Account access and event information', phone: '+1 202 555 0125', website: 'beerlao.example', email: 'support@beerlao.example', verified: true, banner: '/assets/beerlao/event-boun-souang-heua-promo.png', imageCount: 1, images: ['/assets/beerlao/event-boun-souang-heua-promo.png'] },
+    'progadget-laos': { owner: 'progadget-laos', displayName: 'Pro Gadget Laos', subtitle: 'Orders, products, and delivery support', phone: '+1 202 555 0134', website: 'progadget-laos.example', email: 'support@progadget-laos.example', verified: true, banner: '/assets/progadget-laos/garmin_cirqa.jpeg', imageCount: 1, images: ['/assets/progadget-laos/garmin_cirqa.jpeg'] },
+    'ltc-lao-telecom': { owner: 'ltc-lao-telecom', displayName: 'Lao Telecom', subtitle: 'Mobile account and service support', phone: '+1 202 555 0143', website: 'laotelecom.example', email: 'support@laotelecom.example', verified: true, banner: '/assets/ltc-lao-telecom/banner.jpeg', imageCount: 1, images: ['/assets/ltc-lao-telecom/banner.jpeg'] },
   } as const
 
   const collectCustomerText = (value: unknown, key = ''): string[] => {
     if (typeof value === 'string') {
-      if (key === 'id' || key === 'startScenarioId' || key === 'image' || key === 'imageUrls' || key.toLowerCase().endsWith('url') || value.startsWith('/assets/')) return []
+      if (key === 'id' || key === 'startScenarioId' || key === 'image' || key === 'imageUrls' || value.startsWith('/assets/')) return []
       return [value]
     }
     if (Array.isArray(value)) return value.flatMap((item) => collectCustomerText(item, key))
@@ -182,10 +182,23 @@ describe('built-in RCS profile audit', () => {
     return []
   }
 
-  it('audits all nine profile fixtures, owned assets, contacts, and customer-facing identity', () => {
+  it('audits all nine profiles, contacts, policies, owned assets, and customer-facing identity', () => {
     expect(BUILT_IN_SCENARIOS).toHaveLength(9)
-    const authoredTriggers = new Set(['SIA START', 'DOMINOS START', 'VBANK START', 'RCS MENU'])
+    expect(new Set(BUILT_IN_SCENARIOS.map((scenario) => scenario.id))).toEqual(new Set(Object.keys(expected)))
+
+    const authoredTriggers = ['SIA START', 'DOMINOS START', 'VBANK START', 'RCS MENU']
+    const actualTriggers = BUILT_IN_SCENARIOS.flatMap((scenario) => {
+      const parsed = parseFlowSource(scenario.source, 'yaml')
+      expect(parsed.success).toBe(true)
+      if (!parsed.success) return []
+      const flow = flowDefinitionSchema.parse(parsed.data)
+      return flow.metadata.channel === 'rcs' ? [flow.metadata.trigger] : []
+    }).filter((trigger): trigger is string => Boolean(trigger))
+    expect(actualTriggers.sort()).toEqual([...authoredTriggers].sort())
+    expect(validateBuiltInRcsTriggers()).toEqual([])
+
     for (const scenario of BUILT_IN_SCENARIOS) {
+      expect(`${scenario.name}\n${scenario.description}`).not.toMatch(/demo|fictional|romain|vonage|localhost/i)
       const parsed = parseFlowSource(scenario.source, 'yaml')
       expect(parsed.success).toBe(true)
       if (!parsed.success) continue
@@ -195,15 +208,38 @@ describe('built-in RCS profile audit', () => {
       if (!profile) continue
       const fixture = expected[scenario.id as keyof typeof expected]
       expect(fixture).toBeDefined()
-      expect(profile).toMatchObject({ displayName: fixture.displayName, subtitle: fixture.subtitle, brandLabel: fixture.displayName, phone: fixture.phone, websiteLabel: fixture.website, websiteUrl: `https://${fixture.website}`, email: fixture.email, imageUrls: fixture.images })
+      expect(profile).toMatchObject({
+        displayName: fixture.displayName,
+        subtitle: fixture.subtitle,
+        brandLabel: fixture.displayName,
+        phone: fixture.phone,
+        websiteLabel: fixture.website,
+        websiteUrl: `https://${fixture.website}`,
+        email: fixture.email,
+        imageCount: fixture.imageCount,
+        imageUrls: fixture.images,
+        privacyPolicyUrl: `https://${fixture.website}/privacy`,
+        termsUrl: `https://${fixture.website}/terms`,
+      })
       expect(flow.brand.banner).toBe(fixture.banner)
       expect(flow.brand.verified).toBe(fixture.verified)
       expect(profile.imageCount === 0).toBe(fixture.images.length === 0)
-      expect(profile.imageCount).toBeGreaterThanOrEqual(fixture.images.length)
-      for (const asset of [fixture.banner, ...fixture.images]) expect(existsSync(resolve(process.cwd(), 'public', asset.slice(1).replaceAll('%20', ' ')))).toBe(true)
-      if (flow.metadata.channel === 'rcs') expect(authoredTriggers.has(flow.metadata.trigger ?? '')).toBe(true)
-      expect(collectCustomerText(flow).join('\\n').match(/demo|fictional|romain|vonage|localhost/i), `${scenario.id} contains forbidden customer-facing text`).toBeNull()
+      expect(profile.imageCount).toBeGreaterThanOrEqual(profile.imageUrls.length)
+      expect(profile.phone).toMatch(/^\+1 202 555 01\d{2}$/)
+
+      for (const asset of [fixture.banner, ...fixture.images]) {
+        const decoded = decodeURIComponent(asset)
+        expect(decoded.startsWith(`/assets/${fixture.owner}/`)).toBe(true)
+        expect(existsSync(resolve(process.cwd(), 'public', decoded.slice(1)))).toBe(true)
+      }
+
+      const customerText = collectCustomerText(flow)
+      expect(customerText.join('\n'), `${scenario.id} contains forbidden customer-facing text`).not.toMatch(/demo|fictional|romain|vonage|localhost/i)
+      for (const text of customerText) {
+        for (const email of text.match(/[\w.+-]+@[\w.-]+/g) ?? []) {
+          expect(email.slice(email.indexOf('@') + 1)).toMatch(/\.example$/)
+        }
+      }
     }
-    expect([...authoredTriggers]).toHaveLength(4)
   })
 })
