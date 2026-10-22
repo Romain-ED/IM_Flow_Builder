@@ -106,6 +106,27 @@ describe('validateFlow', () => {
     expect(result.success).toBe(true)
   })
 
+  it('requires a non-empty entry trigger for RCS flows', () => {
+    const result = validateFlow(baseFlow({ metadata: { id: 'test', name: 'Test flow', channel: 'rcs' } }))
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.errors.some((error) => error.message.includes('metadata.trigger'))).toBe(true)
+  })
+
+  it('accepts a normalized non-empty RCS entry trigger', () => {
+    const result = validateFlow(baseFlow({ metadata: { id: 'test', name: 'Test flow', channel: 'rcs', trigger: '  START  ' } }))
+    expect(result.success).toBe(true)
+  })
+
+  it('keeps WhatsApp entry triggers optional', () => {
+    const result = validateFlow(baseFlow({ metadata: { id: 'test', name: 'Test flow', channel: 'whatsapp' } }))
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects whitespace-only entry triggers for RCS flows', () => {
+    const result = validateFlow(baseFlow({ metadata: { id: 'test', name: 'Test flow', channel: 'rcs', trigger: '   ' } }))
+    expect(result.success).toBe(false)
+  })
+
   it('flags a condition with no "then" target', () => {
     const flow = baseFlow({
       nodes: [

@@ -48,7 +48,7 @@ describe('validateFlowWithChannelCompliance', () => {
 
   it('uses RCS limits for an RCS-authored flow instead of applying WhatsApp caps', () => {
     const flow = baseFlow({
-      metadata: { id: 'test', name: 'Test flow', channel: 'rcs' },
+      metadata: { id: 'test', name: 'Test flow', channel: 'rcs', trigger: 'START' },
       nodes: [{
         id: 'welcome',
         messages: [

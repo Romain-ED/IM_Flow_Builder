@@ -27,6 +27,7 @@ export interface LiveRcsAction {
   label: string
   type: 'reply' | 'open_url'
   next?: string
+  startScenarioId?: string
   set?: VariableMap
   url?: string
 }
@@ -157,7 +158,7 @@ function compileAction(
   }
   const id = actionId(nodeId, messageIndex, index)
   if (action.type === 'reply') {
-    return { id, label: action.label, type: 'reply', next: action.next, set: action.set }
+    return { id, label: action.label, type: 'reply', next: action.next, startScenarioId: action.startScenarioId, set: action.set }
   }
   if (action.type === 'open_url') {
     const url = resolvePublicUrl(action.url, undefined, errors, nodeId, messageIndex, `Action "${action.label}"`)

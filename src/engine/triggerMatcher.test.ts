@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Trigger } from '../schema/flow'
-import { matchTrigger } from './triggerMatcher'
+import { matchTrigger, matchesScenarioTrigger, normalizeScenarioTrigger } from './triggerMatcher'
 
 describe('matchTrigger', () => {
   it('matches a keyword case-insensitively by default', () => {
@@ -52,5 +52,23 @@ describe('matchTrigger', () => {
 
   it('handles an empty triggers list', () => {
     expect(matchTrigger([], 'anything')).toBeNull()
+  })
+})
+
+describe('scenario entry triggers', () => {
+  it('normalizes NFC, surrounding whitespace, and case while requiring equality', () => {
+    expect(normalizeScenarioTrigger('  Café  ')).toBe('café')
+    expect(matchesScenarioTrigger('Café', '  CAFÉ  ')).toBe(true)
+    expect(matchesScenarioTrigger('Café', 'Café please')).toBe(false)
+    expect(matchesScenarioTrigger('Café', 'CafE')).toBe(false)
+  })
+
+  it('keeps internal whitespace and punctuation significant', () => {
+    expect(matchesScenarioTrigger('order now', 'order  now')).toBe(false)
+    expect(matchesScenarioTrigger('order-now', 'order now')).toBe(false)
+  })
+
+  it('rejects empty entry triggers', () => {
+    expect(matchesScenarioTrigger('   ', 'anything')).toBe(false)
   })
 })

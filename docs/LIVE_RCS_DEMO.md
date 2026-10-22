@@ -7,7 +7,7 @@ Live RCS turns an existing RCS-authored simulator flow into a two-way session fo
 1. A presenter loads an RCS-authored flow and opens **Live RCS demo** in the sidebar.
 2. The browser runs strict preflight: only native RCS text/media/file/card/carousel content, public media URLs, supported `reply`/`open_url` actions, and valid suggestion attachments may run.
 3. The presenter supplies a short-lived operator token. It is held only in browser memory.
-4. The VCR server normalizes the requested destination and creates a persistent session only when it matches the configured test recipient, then sends content through the selected gateway and stores provider IDs/events.
+4. The server normalizes the requested destination and creates a persistent session only when it matches the configured test recipient. For RCS flows, the session enters `awaiting_trigger` and sends nothing until the exact `metadata.trigger` message arrives.
 5. Vonage inbound and status callbacks advance the same flow graph and are shown in the presenter panel by polling.
 
 The destination phone owns the response path during a live session. The browser composer and simulator playback are paused until the session is stopped.
@@ -81,8 +81,9 @@ The **Live logs** page is protected by the operator token and polls the authenti
 
 ## Live-compatible authoring rules
 
-- Set `metadata.channel: rcs`.
-- Use text, image, video, document, rich card, carousel, suggested replies/actions, and `input` only.
+- Set `metadata.channel: rcs` and a unique, non-empty `metadata.trigger`.
+- The first inbound text must equal the trigger after Unicode NFC normalization, outer-whitespace trimming, and lowercase casing. Matching is full-string exact; internal whitespace, punctuation, extra text, keyword matching, and fuzzy matching are not accepted.
+- The entry trigger is separate from legacy top-level `triggers`, which remain in-flow shortcuts after startup.
 - Images, videos, documents, and rich-card/carousel media must resolve to public HTTPS URLs when deployed. VCR-root paths such as `/assets/singapore-airlines/boarding-pass-demo.pdf` are resolved against the live VCR origin.
 - Use only `reply` or `open_url` actions in live RCS content. `system_action`, lists, simulator-only cards, and call/location/calendar/custom action variants fail preflight.
 - Keep RCS limits: text ≤ 3,000 UTF-8 characters; media URL ≤ 2,000 characters; file ≤ 100 MB; carousel 2–10 cards; reply chips ≤ 11; action chips/card buttons ≤ 4.

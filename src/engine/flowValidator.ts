@@ -34,6 +34,10 @@ export function validateFlow(raw: unknown): FlowValidationResult {
   const errors: ValidationIssue[] = []
   const warnings: ValidationIssue[] = []
 
+  if (flow.metadata.channel === 'rcs' && !flow.metadata.trigger?.trim()) {
+    errors.push({ message: 'RCS flows require a non-empty metadata.trigger for exact scenario entry.' })
+  }
+
   const idCounts = new Map<string, number>()
   for (const node of flow.nodes) {
     idCounts.set(node.id, (idCounts.get(node.id) ?? 0) + 1)
@@ -95,7 +99,10 @@ export function validateFlow(raw: unknown): FlowValidationResult {
         for (const card of message.cards) {
           for (const action of card.actions ?? []) {
             if (action.type === 'reply') {
-              checkRef(node.id, action.next, `carousel card "${card.title}" action "${action.label}"`)
+              if (action.startScenarioId && action.next) {
+                errors.push({ nodeId: node.id, message: `Carousel card "${card.title}" action "${action.label}" cannot define both startScenarioId and next.` })
+              }
+              if (!action.startScenarioId) checkRef(node.id, action.next, `carousel card "${card.title}" action "${action.label}"`)
             }
           }
         }
@@ -103,7 +110,10 @@ export function validateFlow(raw: unknown): FlowValidationResult {
       if ('actions' in message && Array.isArray(message.actions)) {
         for (const action of message.actions) {
           if (action.type === 'reply' || action.type === 'download' || action.type === 'add_to_wallet') {
-            checkRef(node.id, action.next, `action "${action.label}"`)
+            if (action.type === 'reply' && 'startScenarioId' in action && action.startScenarioId && action.next) {
+              errors.push({ nodeId: node.id, message: `Action "${action.label}" cannot define both startScenarioId and next.` })
+            }
+            if (!('startScenarioId' in action) || !action.startScenarioId) checkRef(node.id, action.next, `action "${action.label}"`)
           }
         }
       }

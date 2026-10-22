@@ -67,6 +67,24 @@ describe('Vonage RCS transport', () => {
     expect(carousel).toMatchObject({ message_type: 'carousel', carousel: { cards: [{ suggestions: [{ postback_data: 'one:reply' }] }, { suggestions: [{ postback_data: 'two:reply' }] }] } })
   })
 
+  it('serializes the RCS menu raster logo as carousel media', () => {
+    const payload = toVonageRcsMessage({
+      id: 'rcs-menu',
+      type: 'carousel',
+      cards: [{
+        id: 'singapore-airlines',
+        title: 'Singapore Airlines',
+        imageUrl: 'https://demo.example/assets/singapore-airlines/brand-logo.png',
+        actions: [{ id: 'menu:action', label: 'Start airline demo', kind: 'reply' }],
+      }, { id: 'other', title: 'Other' }],
+    }, config)
+
+    expect(payload.message_type).toBe('carousel')
+    expect(payload.carousel.cards[0]).toMatchObject({
+      media_url: 'https://demo.example/assets/singapore-airlines/brand-logo.png',
+    })
+  })
+
   it('verifies an official HS256 signed callback and rejects tampering', () => {
     const rawBody = Buffer.from(JSON.stringify({ message_uuid: 'message-1' }))
     const authorization = signedWebhook(rawBody)

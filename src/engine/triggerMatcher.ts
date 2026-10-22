@@ -1,5 +1,19 @@
 import type { Trigger } from '../schema/flow'
 
+/**
+ * Normalizes an RCS scenario-entry trigger without changing exact matching:
+ * Unicode NFC, surrounding whitespace removal, and deterministic lowercase.
+ * Internal whitespace, punctuation, and every other character stay significant.
+ */
+export function normalizeScenarioTrigger(value: string): string {
+  return value.normalize('NFC').trim().toLowerCase()
+}
+
+export function matchesScenarioTrigger(trigger: string, text: string): boolean {
+  const normalizedTrigger = normalizeScenarioTrigger(trigger)
+  return Boolean(normalizedTrigger) && normalizedTrigger === normalizeScenarioTrigger(text)
+}
+
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

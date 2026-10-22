@@ -80,6 +80,16 @@ function normalizedAddress(value) {
   return /^\+?\d+$/.test(normalized) ? normalized.replace(/^\+/, '') : normalized
 }
 
+/** RCS scenario-entry normalization: NFC, trim outer whitespace, lowercase; then full-string equality. */
+export function normalizeRcsEntryTrigger(value) {
+  return String(value ?? '').normalize('NFC').trim().toLowerCase()
+}
+
+function matchesRcsEntryTrigger(trigger, text) {
+  const normalizedTrigger = normalizeRcsEntryTrigger(trigger)
+  return Boolean(normalizedTrigger) && normalizedTrigger === normalizeRcsEntryTrigger(text)
+}
+
 function validRecipient(value) {
   const normalized = normalizedAddress(value)
   return /^\d{7,15}$/.test(normalized) ? `+${normalized}` : null
@@ -395,6 +405,25 @@ function matchTrigger(triggers, text) {
   })) ?? null
 }
 
+function validateScenarioCatalog(catalog, config) {
+  if (!Array.isArray(catalog)) throw new Error('Live RCS scenario catalog must be an array.')
+  const targets = {}
+  for (const entry of catalog) {
+    const id = entry?.id
+    const flow = entry?.flow
+    if (typeof id !== 'string' || !id || !flow || typeof flow !== 'object') throw new Error('Live RCS scenario catalog entries require an id and flow.')
+    if (targets[id]) throw new Error(`Live RCS scenario catalog contains duplicate id "${id}".`)
+    const metadataId = flow.metadata?.id
+    if (typeof metadataId !== 'string' || !metadataId) throw new Error(`Live RCS scenario "${id}" requires a metadata.id.`)
+    if (!config.allowedFlowIds.includes(metadataId)) throw new Error(`Live RCS scenario "${id}" (flow "${metadataId}") is not allowlisted for Live RCS.`)
+    if (flow.metadata?.channel !== 'rcs') throw new Error(`Live RCS scenario "${id}" must use the RCS channel.`)
+    if (typeof flow.metadata?.trigger !== 'string' || !normalizeRcsEntryTrigger(flow.metadata.trigger)) throw new Error(`Live RCS scenario "${id}" requires a non-empty metadata.trigger.`)
+    if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node) => node?.id === flow.start)) throw new Error(`Live RCS scenario "${id}" is missing a valid start state.`)
+    targets[id] = flow
+  }
+  return targets
+}
+
 function evaluateCondition(condition, variables) {
   const actual = variables[condition.variable]
   switch (condition.operator) {
@@ -436,7 +465,7 @@ function interactionId(nodeId, messageIndex, kind, index) {
 }
 
 function createAction(action, nodeId, messageIndex, index) {
-  if (action.type === 'reply') return { id: interactionId(nodeId, messageIndex, 'action', index), label: action.label, kind: 'reply', next: action.next, set: action.set }
+  if (action.type === 'reply') return { id: interactionId(nodeId, messageIndex, 'action', index), label: action.label, kind: 'reply', next: action.next, startScenarioId: action.startScenarioId, set: action.set }
   if (action.type === 'open_url') return { id: interactionId(nodeId, messageIndex, 'action', index), label: action.label, kind: 'open_url', url: action.url }
   throw new Error(`Unsupported Live RCS action type "${action.type}".`)
 }
@@ -595,16 +624,18 @@ export class LiveDemoService {
     return Boolean(this.config.operatorToken) && token === this.config.operatorToken
   }
 
-  async createSession({ flow, variables = {}, recipient, publicBaseUrl }) {
+  async createSession({ flow, variables = {}, recipient, publicBaseUrl, catalog }) {
     if (!this.config.configured) throw new Error('Live RCS is not configured.')
     const selectedRecipient = recipient === undefined || recipient === '' ? validRecipient(this.config.recipient) : validRecipient(recipient)
     if (!selectedRecipient) throw new Error('Destination phone number must be 7 to 15 digits, optionally prefixed with +.')
     const configuredRecipient = validRecipient(this.config.recipient)
     if (selectedRecipient !== configuredRecipient) throw new Error('Destination phone number is not authorized for Live RCS.')
     if (!flow?.metadata?.id || flow.metadata.channel !== 'rcs') throw new Error('A validated RCS flow is required.')
+    if (typeof flow.metadata.trigger !== 'string' || !normalizeRcsEntryTrigger(flow.metadata.trigger)) throw new Error('RCS flow requires a non-empty metadata.trigger.')
     if (!this.config.allowedFlowIds.includes(flow.metadata.id)) throw new Error('This flow is not allowlisted for Live RCS.')
     if (!Array.isArray(flow.nodes) || !flow.start) throw new Error('Flow is missing nodes or start state.')
-    if (this.store.list().some((session) => session.status === 'starting' || session.status === 'awaiting_reply')) {
+    const scenarioCatalog = catalog === undefined ? {} : validateScenarioCatalog(catalog, this.config)
+    if (this.store.list().some((session) => session.status === 'starting' || session.status === 'awaiting_trigger' || session.status === 'awaiting_reply')) {
       throw new Error('A Live RCS session is already active for the selected recipient.')
     }
 
@@ -612,10 +643,11 @@ export class LiveDemoService {
       id: randomUUID(),
       createdAt: now(),
       updatedAt: now(),
-      status: 'starting',
+      status: 'awaiting_trigger',
       recipient: selectedRecipient,
       publicBaseUrl,
       flow,
+      scenarioCatalog,
       variables: { ...(flow.variables ?? {}), ...variables },
       initialVariables: { ...(flow.variables ?? {}), ...variables },
       currentNodeId: null,
@@ -632,17 +664,6 @@ export class LiveDemoService {
     }
     event(session, 'session_started', { flowId: flow.metadata.id })
     this.store.save(session)
-    try {
-      await this.enterNode(session, flow.start)
-    } catch (error) {
-      session.status = 'error'
-      session.updatedAt = now()
-      event(session, 'delivery_failed', { safeCode: 'DELIVERY_FAILED' })
-      this.store.save(session)
-      if (error && typeof error === 'object') error.liveSnapshot = presenterSnapshot(session)
-      throw error
-    }
-    this.store.save(session)
     return presenterSnapshot(session)
   }
 
@@ -657,7 +678,7 @@ export class LiveDemoService {
     if (session.status === 'starting') throw new Error('Live session is already starting.')
     if (session.status === 'stopped') throw new Error('Cannot restart a stopped Live RCS session.')
 
-    session.status = 'starting'
+    session.status = 'awaiting_trigger'
     session.currentNodeId = null
     session.pendingInput = null
     session.correlation = {}
@@ -671,17 +692,6 @@ export class LiveDemoService {
     session.provider = { latestStatus: null, updatedAt: null }
     session.variables = { ...(session.initialVariables ?? session.flow.variables ?? {}) }
     event(session, 'session_restarted')
-    this.store.save(session)
-    try {
-      await this.enterNode(session, session.flow.start)
-    } catch (error) {
-      session.status = 'error'
-      session.updatedAt = now()
-      event(session, 'delivery_failed', { safeCode: 'DELIVERY_FAILED' })
-      this.store.save(session)
-      if (error && typeof error === 'object') error.liveSnapshot = presenterSnapshot(session)
-      throw error
-    }
     this.store.save(session)
     return presenterSnapshot(session)
   }
@@ -737,7 +747,7 @@ export class LiveDemoService {
     if (!eventId) throw new Error('Inbound callback has no event identifier.')
     const postbackId = payloadSummary.postbackId
     const text = payload.text ?? payload.message?.text
-    const session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || (candidate.status === 'awaiting_reply' && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
+    const session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || ((candidate.status === 'awaiting_trigger' || candidate.status === 'awaiting_reply') && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
     if (!session) {
       this.recordDiagnostic({ type: 'inbound_unmatched_session', eventId, postbackId })
       throw new Error('No active Live RCS session matches this inbound event.')
@@ -756,15 +766,35 @@ export class LiveDemoService {
     let next
     let recognized = false
     let recognizedReplyLabel = null
-    if (postbackId && session.correlation[postbackId]) {
+    if (session.status === 'awaiting_trigger') {
+      if (typeof text === 'string' && text.trim()) {
+        recognized = matchesRcsEntryTrigger(session.flow.metadata.trigger, text)
+        event(session, 'inbound_text', { eventId, text, recognized, trigger: true })
+        if (recognized) next = session.flow.start
+      } else {
+        event(session, 'inbound_unsupported', { eventId, messageType: payload.message_type ?? 'unknown' })
+      }
+    } else if (postbackId && session.correlation[postbackId]) {
       const interaction = session.correlation[postbackId]
       recognizedReplyLabel = interaction.label
       session.variables = { ...session.variables, ...(interaction.set ?? {}) }
-      next = interaction.next
+      if (interaction.startScenarioId) {
+        const targetFlow = session.scenarioCatalog?.[interaction.startScenarioId]
+        if (!targetFlow) throw new Error(`Selected Live RCS scenario "${interaction.startScenarioId}" is not available.`)
+        session.flow = targetFlow
+        session.initialVariables = { ...(targetFlow.variables ?? {}) }
+        session.variables = { ...(targetFlow.variables ?? {}) }
+        session.pendingInput = null
+        session.correlation = {}
+        next = targetFlow.start
+        event(session, 'scenario_selected', { eventId, scenarioId: interaction.startScenarioId })
+      } else {
+        next = interaction.next
+      }
       recognized = true
       event(session, 'inbound_reply', { eventId, text: interaction.label, postbackId })
     } else if (typeof text === 'string' && text.trim()) {
-      const trigger = matchTrigger(session.flow.triggers, text)
+      const trigger = matchTrigger(session.flow.triggers ?? [], text)
       if (trigger) {
         session.variables = { ...session.variables, ...(trigger.set ?? {}) }
         next = trigger.next

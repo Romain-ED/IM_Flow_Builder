@@ -15,6 +15,11 @@ const base = {
 }
 
 describe('projectLiveSnapshot', () => {
+  it('accepts the waiting-for-entry-trigger live status', () => {
+    const result = projectLiveSnapshot({ ...base, status: 'awaiting_trigger', currentNodeId: null, timeline: [] })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.projection.status).toBe('awaiting_trigger')
+  })
   it('maps supported content and keeps stable chronological identity', () => {
     const result = projectLiveSnapshot({
       ...base,

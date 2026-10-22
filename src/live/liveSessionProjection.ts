@@ -41,7 +41,7 @@ const activitySchema = z.object({
 const liveSnapshotSchema = z.object({
   schemaVersion: z.number().int().positive(),
   id: z.string().min(1),
-  status: z.enum(['starting', 'awaiting_reply', 'completed', 'error', 'stopped']),
+  status: z.enum(['starting', 'awaiting_trigger', 'awaiting_reply', 'completed', 'error', 'stopped']),
   currentNodeId: z.string().nullable().optional(),
   pendingInput: z.object({ nodeId: z.string(), inputType: z.enum(['text', 'email', 'phone', 'numeric', 'date']) }).nullable().optional(),
   variables: z.record(z.string(), scalarSchema).default({}),

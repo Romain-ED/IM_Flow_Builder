@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { CircleAlert, CircleCheck, LoaderCircle, Radio, RotateCcw, Square, WifiOff } from 'lucide-react'
 import { preflightLiveRcsFlow, type LiveRcsIssue } from '../../live/rcsPreflight'
+import { flowDefinitionSchema } from '../../schema/flow'
+import { parseFlowSource } from '../../utils/flowSource'
+import { BUILT_IN_SCENARIOS } from '../../scenarios'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import type { LiveProjection, LiveSnapshot } from '../../live/liveSessionProjection'
 import { sectionAccents } from '../../utils/accents'
@@ -63,6 +66,7 @@ export function LiveRcsControls() {
   const [error, setError] = useState<string | null>(null)
   const [offline, setOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
   const isVBank = flow?.metadata.id === 'vbank-multifinance-first-repayment'
+  const isRcsDemoMenu = flow?.metadata.id === 'rcs-demo-menu'
   const persistenceKey = flow?.metadata.id ? `bmfs.live-demo.phone.${flow.metadata.id}` : 'bmfs.live-demo.phone'
 
   useEffect(() => {
@@ -77,12 +81,23 @@ export function LiveRcsControls() {
   }, [destinationPhone, persistenceKey])
 
   const liveFlow = useMemo(() => flow ? { ...flow, variables: { ...(flow.variables ?? {}), ...configuredVariables } } : null, [configuredVariables, flow])
+  const rcsCatalog = useMemo(() => BUILT_IN_SCENARIOS.flatMap((scenario) => {
+    if (scenario.id === 'rcs-demo-menu') return []
+    const parsed = parseFlowSource(scenario.source, 'yaml')
+    if (!parsed.success) return []
+    const result = flowDefinitionSchema.safeParse(parsed.data)
+    return result.success && result.data.metadata.channel === 'rcs' ? [{ id: scenario.id, flow: result.data }] : []
+  }), [])
+  const catalogIssues = useMemo(() => isRcsDemoMenu
+    ? rcsCatalog.flatMap((entry) => preflightLiveRcsFlow(entry.flow, { publicBaseUrl: publicBaseUrl() }).errors.map((issue) => ({ ...issue, nodeId: `${entry.id}/${issue.nodeId}` })))
+    : [], [isRcsDemoMenu, rcsCatalog])
   const preflight = useMemo(() => liveFlow && liveFlow.metadata.channel === 'rcs'
     ? preflightLiveRcsFlow(liveFlow, { publicBaseUrl: publicBaseUrl() })
     : null, [liveFlow])
   const nodeLabel = liveProjection?.currentNodeId
     ? flow?.nodes.find((node) => node.id === liveProjection.currentNodeId)?.label
     : undefined
+  const liveStatus = liveProjection?.status ?? session?.status
 
   useEffect(() => {
     let cancelled = false
@@ -137,7 +152,12 @@ export function LiveRcsControls() {
     try {
       const started = await api<LiveSession>('/api/live/sessions', operatorToken, {
         method: 'POST',
-        body: JSON.stringify({ flow: liveFlow, variables: configuredVariables, ...(destinationPhone.trim() ? { recipient: destinationPhone.trim() } : {}) }),
+        body: JSON.stringify({
+          flow: liveFlow,
+          variables: configuredVariables,
+          ...(isRcsDemoMenu ? { catalog: rcsCatalog } : {}),
+          ...(destinationPhone.trim() ? { recipient: destinationPhone.trim() } : {}),
+        }),
       })
       setSession(started)
       setLiveSessionCredentials(started.id, operatorToken)
@@ -185,7 +205,7 @@ export function LiveRcsControls() {
 
   const issues: LiveRcsIssue[] = preflight?.errors ?? []
   const needsRcsScenario = Boolean(flow && flow.metadata.channel !== 'rcs')
-  const canStart = Boolean(diagnostics?.ready && preflight?.success && operatorToken && !offline && !session && channel === 'rcs')
+  const canStart = Boolean(diagnostics?.ready && preflight?.success && catalogIssues.length === 0 && operatorToken && !offline && !session && channel === 'rcs')
   const vBankModeNotice = diagnostics?.mode === 'fake'
     ? 'Messages remain in this browser until a live provider is configured.'
     : 'Messages are sent through the configured RCS service when available.'
@@ -215,6 +235,11 @@ export function LiveRcsControls() {
           {preflight && !preflight.success && (
             <Notice icon={CircleAlert} tone="rose">
               Live preflight found {issues.length} issue{issues.length === 1 ? '' : 's'}: {issues.slice(0, 2).map((issue) => issue.message).join(' ')}
+            </Notice>
+          )}
+          {isRcsDemoMenu && catalogIssues.length > 0 && (
+            <Notice icon={CircleAlert} tone="rose">
+              A selectable RCS scenario failed Live preflight: {catalogIssues[0].message}
             </Notice>
           )}
           {preflight?.success && !session && <Notice icon={CircleCheck} tone="emerald">Flow passes strict Live RCS preflight.</Notice>}
@@ -252,7 +277,8 @@ export function LiveRcsControls() {
           {session ? (
             <>
               <div className={`rounded-md border px-2.5 py-2 text-[12px] ${darkNotices.indigo}`}>
-                <div className="flex items-center justify-between gap-2"><span className="font-medium">{liveProjection?.status?.replaceAll('_', ' ') ?? session.status.replaceAll('_', ' ')}</span><span className="font-mono text-[10px]">{session.id.slice(0, 8)}</span></div>
+                <div className="flex items-center justify-between gap-2"><span className="font-medium">{liveStatus?.replaceAll('_', ' ')}</span><span className="font-mono text-[10px]">{session.id.slice(0, 8)}</span></div>
+                {liveStatus === 'awaiting_trigger' && flow?.metadata.trigger && <p className="mt-1 m-0">Waiting for the destination phone to send the exact trigger: <strong>{flow.metadata.trigger}</strong></p>}
                 <p className="mt-1 m-0">Node: {nodeLabel ? `${nodeLabel} · ` : ''}<span className="font-mono">{liveProjection?.currentNodeId ?? 'unavailable'}</span></p>
                 <p className="mt-1 m-0 truncate">Inbound: {activityLabel(liveProjection?.activity.latestInbound ?? null)}</p>
                 <p className="mt-1 m-0 truncate">Outbound: {activityLabel(liveProjection?.activity.latestOutbound ?? null)}</p>

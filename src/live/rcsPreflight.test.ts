@@ -32,6 +32,18 @@ describe('preflightLiveRcsFlow', () => {
     })
   })
 
+  it('retains a built-in scenario target in compiled Live RCS actions', () => {
+    const flow = flowDefinitionSchema.parse({
+      ...baseFlow,
+      nodes: [{ id: 'start', messages: [{ type: 'carousel', cards: [
+        { id: 'demo', title: 'Demo', actions: [{ type: 'reply', label: 'Start', startScenarioId: 'demo-flow' }] },
+        { id: 'other', title: 'Other' },
+      ] }], end: true }],
+    })
+    const result = preflightLiveRcsFlow(flow, { publicBaseUrl: 'https://demo.example' })
+    expect(result.success).toBe(true)
+    expect(result.nodes[0].content[0].cards?.[0]).toMatchObject({ actions: [{ startScenarioId: 'demo-flow' }] })
+  })
   it('uses 11 for trailing RCS suggestions and 4 for card-owned actions', () => {
     const flow = flowDefinitionSchema.parse({
       ...baseFlow,

@@ -45,6 +45,8 @@ export const actionSchema = z.discriminatedUnion('type', [
     type: z.literal('reply'),
     ...actionBase,
     next: z.string().optional(),
+    /** Starts a registered built-in RCS scenario instead of following a node-local next target. */
+    startScenarioId: z.string().optional(),
     set: variableMapSchema.optional(),
   }),
   z.object({
