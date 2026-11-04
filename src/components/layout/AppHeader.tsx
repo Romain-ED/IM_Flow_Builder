@@ -1,4 +1,4 @@
-import { PanelLeft, PanelRight, Maximize2, Minimize2, MessageSquareText, MonitorSmartphone, FolderCog, BookOpen, ClipboardList } from 'lucide-react'
+import { PanelLeft, PanelRight, Maximize2, Minimize2, MessageSquareText, MonitorSmartphone, FolderCog, BookOpen, ClipboardList, MessagesSquare } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import type { AppPage } from '../../app/pages'
 import { APP_VERSION } from '../../app/version'
@@ -17,6 +17,7 @@ const NAV_ITEMS: { id: AppPage; label: string; icon: typeof MonitorSmartphone }[
   { id: 'simulator', label: 'Simulator', icon: MonitorSmartphone },
   { id: 'scenarios', label: 'Scenarios', icon: FolderCog },
   { id: 'manual', label: 'Manual', icon: BookOpen },
+  { id: 'conversations', label: 'Conversations', icon: MessagesSquare },
   { id: 'liveDiagnostics', label: 'Live logs', icon: ClipboardList },
 ]
 

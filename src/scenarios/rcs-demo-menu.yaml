@@ -45,7 +45,7 @@ nodes:
         mediaHeight: medium
         cards:
           - id: singapore-airlines
-            image: "/assets/singapore-airlines/brand-logo.png"
+            image: "/assets/singapore-airlines/banner.jpg"
             title: "Singapore Airlines"
             description: "Check-in, seat selection, and a digital boarding pass."
             actions:
@@ -53,7 +53,7 @@ nodes:
                 label: "Start airline experience"
                 startScenarioId: singapore-airlines
           - id: dominos-singapore-rcs-demo
-            image: "/assets/dominos-singapore-rcs-demo/imgi_17_app-icon.png"
+            image: "/assets/dominos-singapore-rcs-demo/banner.jpg"
             title: "Domino's Pizza Singapore"
             description: "Promotions, menu browsing, ordering, and customer care."
             actions:

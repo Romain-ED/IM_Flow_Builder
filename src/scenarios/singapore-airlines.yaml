@@ -3,6 +3,10 @@
 # Fictional airline check-in journey. All passenger, flight and booking
 # details below are invented for demonstration purposes only and do not
 # represent real flight operations.
+#
+# Live-safe: only `reply` and `open_url` actions are used, so the flow runs
+# unchanged over Live RCS. Image slots marked "NEW ARTWORK" currently point at
+# existing assets; see the variables block to swap in the generated files.
 version: "1.0"
 
 metadata:
@@ -10,7 +14,7 @@ metadata:
   name: "Singapore Airlines — Check-in & Boarding Pass"
   description: >-
     Interactive airline check-in journey showing RCS/WhatsApp rich
-    messaging, seat selection and boarding-pass delivery.
+    messaging, seat selection, upgrades, extras and boarding-pass delivery.
   channel: rcs
   trigger: "SIA START"
   tags: [airline, travel, check-in, boarding-pass]
@@ -70,13 +74,43 @@ variables:
   gate: B7
 
   boardingTime: "08:35"
-  seat: null
+  boardingGroup: 3
+  seat: 24C
   cabin: Economy
+  upgradePrice: 0
+  seatUpgradePrice: 0
+
+  lastAddOn: ""
+  mealChoice: "Chef's choice"
 
   krisFlyerStatus: Gold
   krisFlyerNumber: KF12345678
 
   checkedIn: false
+
+  # ---- Image slots -------------------------------------------------
+  # Existing artwork is used wherever it fits. Slots marked NEW ARTWORK
+  # currently point at a stand-in; once the generated file is saved in
+  # public/assets/singapore-airlines/, change the value to the new path
+  # (a new filename avoids stale browser/provider caches).
+  imgAircraft: "/assets/singapore-airlines/aircraft-a350.png?v=0.17.6"          # 800x449
+  imgSeatWindow: "/assets/singapore-airlines/seat-window.png?v=0.17.6"          # 800x560
+  imgSeatAisle: "/assets/singapore-airlines/seat-aisle.png?v=0.17.6"            # 800x560
+  imgSeatLegroom: "/assets/singapore-airlines/seat-legroom.png?v=0.17.6"        # 800x560
+  imgWelcome: "/assets/singapore-airlines/banner.jpg"                           # 1456x800 branded hero
+  imgPremiumEconomy: "/assets/singapore-airlines/seat-legroom.png?v=0.17.6"     # NEW ARTWORK: cabin-premium-economy.jpg, 1728x960
+  imgBusiness: "/assets/singapore-airlines/seat-window.png?v=0.17.6"            # NEW ARTWORK: cabin-business.jpg, 1728x960
+  imgBaggage: "/assets/singapore-airlines/aircraft-a350.png?v=0.17.6"           # NEW ARTWORK: addon-baggage.jpg, 1728x960
+  imgMeal: "/assets/singapore-airlines/seat-aisle.png?v=0.17.6"                 # NEW ARTWORK: addon-meal.jpg, 1728x960
+  imgLounge: "/assets/singapore-airlines/seat-window.png?v=0.17.6"              # NEW ARTWORK: addon-lounge.jpg, 1728x960
+  imgCheckedIn: "/assets/singapore-airlines/banner.jpg"                         # NEW ARTWORK: checkin-complete.jpg, 1440x960
+  imgTokyo: "/assets/singapore-airlines/banner.jpg"                             # NEW ARTWORK: tokyo-arrival.jpg, 1440x960
+
+triggers:
+  - keywords: [help, support]
+    next: help
+  - keywords: [stop, cancel]
+    next: cancelled
 
 start: welcome
 
@@ -85,125 +119,199 @@ nodes:
   # WELCOME
   # --------------------------------------------------
   - id: welcome
+    label: "Welcome"
     messages:
       - type: text
         sender: business
-        text: |
-          Good morning {{customerName}} 👋
-
-          Your flight **{{flightNumber}}** to {{destinationCity}} departs in 2 days.
-
-          _Online check-in is now available._
-      - type: suggested_replies
+        text: "Good morning {{customerName}} 👋 Your trip to {{destinationCity}} is almost here."
+      - type: rich_card
         sender: business
-        options:
-          - label: Check in
-            value: check_in
+        image: "{{imgWelcome}}"
+        mediaHeight: tall
+        title: "✈️ {{flightNumber}} · {{originCity}} → {{destinationCity}}"
+        description: |
+          🗓️ {{departureDate}} · departs {{departureTime}}
+          ⏰ Online check-in is now open
+        actions:
+          - type: reply
+            label: "✅ Check in now"
             next: check_in_intro
-          - label: View booking
-            value: view_booking
+          - type: reply
+            label: "🧾 View booking"
             next: booking_details
-          - label: Not now
-            value: not_now
+          - type: reply
+            label: "⏳ Not now"
             next: not_now
+          - type: reply
+            label: "💬 Help"
+            next: help
 
   # --------------------------------------------------
   # NOT NOW
   # --------------------------------------------------
   - id: not_now
+    label: "Check-in later"
     messages:
       - type: text
         sender: business
         text: |
-          No problem.
+          No problem 👍
 
-          _You can check in anytime before online check-in closes._
+          _You can check in anytime until online check-in closes, 1 hour before departure._
       - type: suggested_replies
         sender: business
         options:
-          - label: Check in now
+          - label: "✅ Check in now"
             next: check_in_intro
-          - label: Flight details
+          - label: "🧾 Flight details"
             next: booking_details
+
+  # --------------------------------------------------
+  # HELP
+  # --------------------------------------------------
+  - id: help
+    label: "Support"
+    messages:
+      - type: rich_card
+        sender: business
+        image: "{{imgAircraft}}"
+        mediaHeight: tall
+        title: "💬 Singapore Airlines support"
+        description: |
+          I can help with check-in, seats, upgrades and your boarding pass.
+
+          🌐 More options: manage your booking online
+        actions:
+          - type: reply
+            label: "✅ Check in"
+            next: check_in_intro
+          - type: open_url
+            label: "🌐 Manage booking"
+            url: "https://singaporeair.example/manage-booking"
+          - type: reply
+            label: "⬅️ Back"
+            next: welcome
+
+  - id: cancelled
+    label: "Closed"
+    messages:
+      - type: text
+        sender: business
+        text: "Okay {{customerName}}, we'll leave it here 👋 Message us anytime to pick up where you left off. ✈️"
+    end: true
 
   # --------------------------------------------------
   # BOOKING DETAILS
   # --------------------------------------------------
   - id: booking_details
+    label: "Booking details"
     messages:
       - type: rich_card
         sender: business
-        image: /assets/singapore-airlines/aircraft-a350.png?v=0.17.6
-        title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
+        image: "{{imgAircraft}}"
+        mediaHeight: tall
+        title: "✈️ {{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
-          {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
-
-          Terminal **{{terminal}}** · Gate **{{gate}}**
-
-          Booking ref **{{bookingReference}}** · _Check-in available_
-      - type: text
-        sender: business
-        text: "What would you like to do?"
-      - type: suggested_replies
-        sender: business
-        options:
-          - label: Check in
+          🗓️ {{departureDate}}
+          🛫 Departs {{departureTime}} · 🛬 Arrives {{arrivalTime}}
+          🏢 Terminal {{terminal}} · Gate {{gate}}
+          💺 {{cabin}} · {{aircraft}}
+          🎫 Booking ref {{bookingReference}}
+        actions:
+          - type: reply
+            label: "✅ Check in"
             next: check_in_intro
-          - label: Choose seat
+          - type: reply
+            label: "💺 Choose seat"
             next: seat_selection
-          - label: Back
+          - type: reply
+            label: "🎁 Upgrades & extras"
+            next: check_in_options
+          - type: reply
+            label: "⬅️ Back"
             next: welcome
 
   # --------------------------------------------------
   # CHECK-IN INTRO
   # --------------------------------------------------
   - id: check_in_intro
+    label: "Check-in: passenger"
     messages:
       - type: typing
         duration: 700
       - type: text
         sender: business
-        text: |
-          Let's get you checked in for **{{flightNumber}}**.
+        text: "Let's get you checked in for **{{flightNumber}}** ✈️"
       - type: rich_card
         sender: business
-        image: /assets/singapore-airlines/aircraft-a350.png?v=0.17.6
-        title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
+        image: "{{imgAircraft}}"
+        mediaHeight: tall
+        title: "👤 {{customerName}} {{lastName}}"
         description: |
-          {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
-
-          Terminal **{{terminal}}**
-      - type: text
-        sender: business
-        text: |
-          Passenger
-
-          **{{customerName}} {{lastName}}**
-
-          KrisFlyer **{{krisFlyerStatus}}**
-      - type: suggested_replies
-        sender: business
-        options:
-          - label: Continue
-            next: check_in_options
-          - label: Cancel
+          ⭐ KrisFlyer {{krisFlyerStatus}} · {{krisFlyerNumber}}
+          ✈️ {{originCity}} → {{destinationCity}} · {{departureDate}}
+          🏢 Terminal {{terminal}}
+        actions:
+          - type: reply
+            label: "▶️ Continue"
+            next: travel_docs
+          - type: reply
+            label: "❌ Cancel"
             next: welcome
+
+  # --------------------------------------------------
+  # TRAVEL DOCUMENTS
+  # --------------------------------------------------
+  - id: travel_docs
+    label: "Check-in: travel documents"
+    messages:
+      - type: rich_card
+        sender: business
+        title: "🛂 Confirm your travel documents"
+        description: |
+          Japan requires a valid passport for entry.
+
+          📘 Passport ending **4821**
+          📅 Valid until 2031
+          🇯🇵 Visa-free stay for Singapore passport holders
+        actions:
+          - type: reply
+            label: "✅ Details are correct"
+            next: check_in_options
+          - type: open_url
+            label: "✏️ Update details"
+            url: "https://singaporeair.example/checkin/travel-documents"
+          - type: reply
+            label: "⬅️ Back"
+            next: check_in_intro
 
   # --------------------------------------------------
   # CHECK-IN OPTIONS
   # --------------------------------------------------
   - id: check_in_options
+    label: "Check-in: options"
     messages:
-      - type: text
+      - type: rich_card
         sender: business
-        text: |
-          Before completing check-in, would you like to select your seat?
-      - type: suggested_replies
-        sender: business
-        options:
-          - label: Choose seat
+        image: "{{imgSeatWindow}}"
+        mediaHeight: tall
+        title: "✨ Make it your flight"
+        description: |
+          Your seat is **24C** for now. Want to personalise the trip before you check in?
+
+          💺 Pick a seat · ⬆️ Upgrade · 🧳 Add extras
+        actions:
+          - type: reply
+            label: "💺 Choose my seat"
             next: seat_selection
-          - label: Keep assigned seat
+          - type: reply
+            label: "⬆️ See upgrades"
+            next: upgrades
+          - type: reply
+            label: "🧳 Add extras"
+            next: extras
+          - type: reply
+            label: "⏩ Keep seat 24C"
             set: { seat: 24C }
             next: check_in_processing
 
@@ -211,68 +319,60 @@ nodes:
   # SEAT SELECTION
   # --------------------------------------------------
   - id: seat_selection
+    label: "Seat selection"
     messages:
       - type: text
         sender: business
-        text: |
-          Here are some available seats for **{{flightNumber}}**.
+        text: "💺 Here are some available seats on **{{flightNumber}}**. Swipe to compare →"
       - type: carousel
         sender: business
+        mediaHeight: tall
         cards:
           - id: seat-21a
-            image: /assets/singapore-airlines/seat-window.png?v=0.17.6
-            title: 21A
-            subtitle: Window seat
+            image: "{{imgSeatWindow}}"
+            title: "🪟 21A · Window"
+            subtitle: "Economy · Free"
             description: |
-              **Economy Class**
+              Lean against the window and watch the clouds roll by.
 
-              Window
-              _Standard seat_
-            badges: [Available, Window]
+              ✅ Available · No extra charge
             actions:
               - type: reply
-                label: Select 21A
-                set: { seat: 21A }
+                label: "Select 21A"
+                set: { seat: 21A, seatUpgradePrice: 0 }
                 next: seat_selected
           - id: seat-21c
-            image: /assets/singapore-airlines/seat-aisle.png?v=0.17.6
-            title: 21C
-            subtitle: Aisle seat
+            image: "{{imgSeatAisle}}"
+            title: "🚶 21C · Aisle"
+            subtitle: "Economy · Free"
             description: |
-              **Economy Class**
+              Easy access to the aisle, stretch whenever you like.
 
-              Aisle
-              _Standard seat_
-            badges: [Available, Aisle]
+              ✅ Available · No extra charge
             actions:
               - type: reply
-                label: Select 21C
-                set: { seat: 21C }
+                label: "Select 21C"
+                set: { seat: 21C, seatUpgradePrice: 0 }
                 next: seat_selected
           - id: seat-32a
-            image: /assets/singapore-airlines/seat-legroom.png?v=0.17.6
-            title: 32A
-            subtitle: Extra legroom
+            image: "{{imgSeatLegroom}}"
+            title: "🦵 32A · Extra legroom"
+            subtitle: "Economy · SGD 65"
             description: |
-              **Economy Class**
+              Window seat with extra space to stretch out.
 
-              Window
-              Extra legroom
-
-              **SGD 65**
-            badges: [Window, Extra legroom]
+              💳 SGD 65 one-time charge
             actions:
               - type: reply
-                label: Select 32A
+                label: "Select 32A"
                 set: { seat: 32A, seatUpgradePrice: 65 }
                 next: extra_legroom_confirmation
-      - type: text
-        sender: business
-        text: "Or, if you'd rather not change seats:"
       - type: suggested_replies
         sender: business
         options:
-          - label: Keep current seat
+          - label: "⬆️ See upgrades"
+            next: upgrades
+          - label: "⏩ Keep seat 24C"
             set: { seat: 24C }
             next: check_in_processing
 
@@ -280,51 +380,227 @@ nodes:
   # EXTRA LEGROOM
   # --------------------------------------------------
   - id: extra_legroom_confirmation
+    label: "Extra legroom confirmation"
     messages:
-      - type: text
+      - type: rich_card
         sender: business
-        text: |
-          Seat 32A is an extra-legroom window seat.
+        image: "{{imgSeatLegroom}}"
+        mediaHeight: tall
+        title: "🦵 Seat 32A · Extra legroom"
+        description: |
+          🪟 Window · Economy
+          💳 Additional charge: **SGD {{seatUpgradePrice}}**
 
-          Additional charge: **SGD {{seatUpgradePrice}}**
-      - type: suggested_replies
-        sender: business
-        options:
-          - label: Confirm 32A
+          Confirm to add it to your booking.
+        actions:
+          - type: reply
+            label: "✅ Confirm 32A"
             next: seat_selected
-          - label: Choose another
+          - type: reply
+            label: "↩️ Choose another"
             next: seat_selection
 
   # --------------------------------------------------
   # SEAT CONFIRMATION
   # --------------------------------------------------
   - id: seat_selected
+    label: "Seat confirmed"
     messages:
       - type: text
         sender: business
         text: |
-          **{{seat}}** selected ✓
+          ✅ Seat **{{seat}}** selected
 
-          _Your seat will be confirmed when check-in is completed._
+          _Your seat is confirmed when check-in is completed._
       - type: suggested_replies
         sender: business
         options:
-          - label: Complete check-in
+          - label: "✅ Complete check-in"
             next: check_in_processing
-          - label: Change seat
+          - label: "🧳 Add extras"
+            next: extras
+          - label: "⬆️ See upgrades"
+            next: upgrades
+          - label: "💺 Change seat"
             next: seat_selection
+
+  # --------------------------------------------------
+  # UPGRADES
+  # --------------------------------------------------
+  - id: upgrades
+    label: "Cabin upgrades"
+    messages:
+      - type: text
+        sender: business
+        text: "⬆️ Fancy more comfort to {{destinationCity}}? These upgrades are open on **{{flightNumber}}**."
+      - type: carousel
+        sender: business
+        mediaHeight: medium
+        cards:
+          - id: upgrade-premium-economy
+            image: "{{imgPremiumEconomy}}"
+            title: "✨ Premium Economy"
+            subtitle: "+ SGD 320"
+            description: |
+              🪑 Wider seat, deeper recline
+              🍽️ Enhanced dining
+              🧳 Extra 10 kg baggage
+              🎟️ Priority boarding
+            actions:
+              - type: reply
+                label: "Upgrade · SGD 320"
+                set: { cabin: Premium Economy, seat: 31A, boardingGroup: 2, upgradePrice: 320 }
+                next: upgrade_confirmed
+              - type: reply
+                label: "Maybe later"
+                next: check_in_options
+          - id: upgrade-business
+            image: "{{imgBusiness}}"
+            title: "👑 Business Class"
+            subtitle: "+ SGD 890"
+            description: |
+              🛏️ Lie-flat seat
+              🍷 Chef-curated dining
+              🛋️ Lounge access before you fly
+              🎟️ Priority check-in and boarding
+            actions:
+              - type: reply
+                label: "Upgrade · SGD 890"
+                set: { cabin: Business, seat: 12A, boardingGroup: 1, upgradePrice: 890 }
+                next: upgrade_confirmed
+              - type: reply
+                label: "Maybe later"
+                next: check_in_options
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: "Stay in Economy"
+            next: check_in_options
+
+  - id: upgrade_confirmed
+    label: "Upgrade confirmed"
+    messages:
+      - type: text
+        sender: business
+        text: |
+          🎉 Upgrade confirmed!
+
+          **{{cabin}}** · Seat **{{seat}}**
+          💳 SGD {{upgradePrice}} charged to your booking
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: "✅ Complete check-in"
+            next: check_in_processing
+          - label: "🧳 Add extras"
+            next: extras
+
+  # --------------------------------------------------
+  # EXTRAS
+  # --------------------------------------------------
+  - id: extras
+    label: "Extras"
+    messages:
+      - type: text
+        sender: business
+        text: "🎁 Add a few extras to your trip. Swipe to see what's on offer →"
+      - type: carousel
+        sender: business
+        mediaHeight: medium
+        cards:
+          - id: extra-baggage
+            image: "{{imgBaggage}}"
+            title: "🧳 Extra baggage"
+            subtitle: "+20 kg · SGD 80"
+            description: |
+              Bringing home more than you packed?
+
+              Pre-paying online is cheaper than at the airport.
+            actions:
+              - type: reply
+                label: "Add 20 kg · SGD 80"
+                set: { lastAddOn: "Extra baggage (+20 kg)" }
+                next: extra_added
+          - id: extra-meal
+            image: "{{imgMeal}}"
+            title: "🍽️ Pre-order your meal"
+            subtitle: "Complimentary"
+            description: |
+              Choose your main course before you fly and skip the trolley lottery.
+
+              🥗 Vegetarian option available
+            actions:
+              - type: reply
+                label: "Choose my meal"
+                next: meal_choice
+          - id: extra-lounge
+            image: "{{imgLounge}}"
+            title: "🛋️ Lounge access"
+            subtitle: "SGD 55"
+            description: |
+              Relax before boarding.
+
+              🍜 Hot food · 🚿 Showers · 📶 Fast Wi-Fi
+            actions:
+              - type: reply
+                label: "Add lounge · SGD 55"
+                set: { lastAddOn: "Lounge access" }
+                next: extra_added
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: "✅ Complete check-in"
+            next: check_in_processing
+          - label: "💺 Choose seat"
+            next: seat_selection
+
+  - id: meal_choice
+    label: "Meal pre-order"
+    messages:
+      - type: text
+        sender: business
+        text: "🍽️ Which main course would you like on **{{flightNumber}}**?"
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: "🍗 Chicken rice"
+            set: { mealChoice: "Hainanese chicken rice", lastAddOn: "Meal: Hainanese chicken rice" }
+            next: extra_added
+          - label: "🐟 Teriyaki salmon"
+            set: { mealChoice: "Teriyaki salmon", lastAddOn: "Meal: Teriyaki salmon" }
+            next: extra_added
+          - label: "🥗 Vegetarian"
+            set: { mealChoice: "Vegetarian pasta", lastAddOn: "Meal: Vegetarian pasta" }
+            next: extra_added
+
+  - id: extra_added
+    label: "Extra added"
+    messages:
+      - type: text
+        sender: business
+        text: |
+          ✅ **{{lastAddOn}}** added to your booking.
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: "➕ Add another"
+            next: extras
+          - label: "💺 Choose seat"
+            next: seat_selection
+          - label: "✅ Complete check-in"
+            next: check_in_processing
 
   # --------------------------------------------------
   # PROCESS CHECK-IN
   # --------------------------------------------------
   - id: check_in_processing
+    label: "Checking in"
     messages:
       - type: typing
         duration: 1200
       - type: text
         sender: business
-        text: |
-          Checking you in…
+        text: "⏳ Checking you in…"
       - type: delay
         duration: 1200
     next: check_in_success
@@ -333,141 +609,255 @@ nodes:
   # CHECK-IN SUCCESS
   # --------------------------------------------------
   - id: check_in_success
+    label: "Checked in"
     set:
       checkedIn: true
     messages:
-      - type: text
+      - type: rich_card
         sender: business
-        text: |
-          You're checked in, {{customerName}} ✓
-
-          Your boarding pass for **{{flightNumber}}** is ready.
+        image: "{{imgCheckedIn}}"
+        mediaHeight: tall
+        title: "🎉 You're checked in, {{customerName}}!"
+        description: |
+          ✈️ {{flightNumber}} · {{originCode}} → {{destinationCode}}
+          💺 Seat {{seat}} · {{cabin}} · Group {{boardingGroup}}
+          🚪 Gate {{gate}} · Boarding {{boardingTime}}
+          🎫 Booking ref {{bookingReference}}
       - type: delay
         duration: 700
       - type: document
         sender: business
         filename: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
-        title: Your boarding pass
+        title: "🎫 Your boarding pass"
         description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
         fileType: PDF
         url: /assets/singapore-airlines/boarding-pass-demo.pdf
-      - type: text
-        sender: business
-        text: |
-          Seat **{{seat}}** · {{cabin}} Class · Group 3
-
-          Gate **{{gate}}** · Boarding **{{boardingTime}}**
-
-          Booking ref **{{bookingReference}}**
       - type: suggested_replies
         sender: business
         options:
-          - label: Download boarding pass
-            next: boarding_pass_downloaded
-          - label: Add to wallet
+          - label: "📲 Add to wallet"
             next: wallet_added
-          - label: Flight details
-            next: checked_in_flight_details
+          - label: "⬇️ Download pass"
+            next: boarding_pass_downloaded
+          - label: "🧭 Airport guide"
+            next: airport_guide
+          - label: "✅ Done"
+            next: final_message
 
   # --------------------------------------------------
   # DOWNLOAD
   # --------------------------------------------------
   - id: boarding_pass_downloaded
+    label: "Boarding pass downloaded"
     messages:
       - type: text
         sender: business
         text: |
-          _Your boarding pass has been saved to your device._
+          ✅ _Your boarding pass has been saved to your device._
       - type: suggested_replies
         sender: business
         options:
-          - label: Flight details
-            next: checked_in_flight_details
-          - label: Add to wallet
+          - label: "🧭 Airport guide"
+            next: airport_guide
+          - label: "📲 Add to wallet"
             next: wallet_added
-          - label: Done
+          - label: "✅ Done"
             next: final_message
 
   # --------------------------------------------------
   # WALLET
   # --------------------------------------------------
   - id: wallet_added
+    label: "Added to wallet"
     messages:
       - type: text
         sender: business
         text: |
-          _Your boarding pass has been added to your wallet._
+          📲 _Your boarding pass has been added to your wallet._
       - type: suggested_replies
         sender: business
         options:
-          - label: Flight details
+          - label: "🧭 Airport guide"
+            next: airport_guide
+          - label: "✈️ Flight details"
             next: checked_in_flight_details
-          - label: Done
+          - label: "✅ Done"
+            next: final_message
+
+  # --------------------------------------------------
+  # AIRPORT GUIDE
+  # --------------------------------------------------
+  - id: airport_guide
+    label: "Airport guide"
+    messages:
+      - type: text
+        sender: business
+        text: "🧭 Your departure day at Changi Terminal {{terminal}}. Swipe through the key stops →"
+      - type: carousel
+        sender: business
+        mediaHeight: medium
+        cards:
+          - id: guide-bag-drop
+            image: "{{imgBaggage}}"
+            title: "🧳 Bag drop"
+            subtitle: "Closes 08:20"
+            description: |
+              Drop-off rows 8–12, Terminal {{terminal}}.
+
+              ⏱️ Closes 60 minutes before departure
+            actions:
+              - type: open_url
+                label: "🗺️ Terminal map"
+                url: "https://singaporeair.example/changi/terminal-3-map"
+          - id: guide-lounge
+            image: "{{imgLounge}}"
+            title: "🛋️ Lounge"
+            subtitle: "Level 2"
+            description: |
+              Relax before your flight, if included in your fare or booked as an extra.
+
+              🍜 Food · 🚿 Showers · 📶 Wi-Fi
+            actions:
+              - type: open_url
+                label: "🛋️ Lounge details"
+                url: "https://singaporeair.example/changi/lounges"
+          - id: guide-gate
+            image: "{{imgAircraft}}"
+            title: "🚪 Gate {{gate}}"
+            subtitle: "Boarding {{boardingTime}}"
+            description: |
+              Be at the gate by **{{boardingTime}}**. Gate closes 20 minutes before departure.
+
+              🎟️ Group {{boardingGroup}}
+            actions:
+              - type: reply
+                label: "✈️ Flight details"
+                next: checked_in_flight_details
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: "🗼 Tokyo arrival"
+            next: arrival_guide
+          - label: "✅ Done"
             next: final_message
 
   # --------------------------------------------------
   # CHECKED-IN FLIGHT DETAILS
   # --------------------------------------------------
   - id: checked_in_flight_details
+    label: "Flight details (checked in)"
     messages:
       - type: rich_card
         sender: business
-        image: /assets/singapore-airlines/aircraft-a350.png?v=0.17.6
-        title: "{{flightNumber}} · {{originCode}} → {{destinationCode}}"
+        image: "{{imgAircraft}}"
+        mediaHeight: tall
+        title: "✈️ {{flightNumber}} · {{originCode}} → {{destinationCode}}"
         description: |
-          {{departureDate}} · Departs **{{departureTime}}**, arrives **{{arrivalTime}}**
-
-          Terminal **{{terminal}}** · Gate **{{gate}}** · _Checked in_
-      - type: text
-        sender: business
-        text: "Anything else?"
-      - type: suggested_replies
-        sender: business
-        options:
-          - label: Boarding pass
+          🗓️ {{departureDate}}
+          🛫 Departs {{departureTime}} · 🛬 Arrives {{arrivalTime}}
+          🏢 Terminal {{terminal}} · Gate {{gate}}
+          💺 Seat {{seat}} · {{cabin}}
+          ✅ Checked in
+        actions:
+          - type: reply
+            label: "🎫 Boarding pass"
             next: show_boarding_pass_again
-          - label: Done
+          - type: reply
+            label: "🧭 Airport guide"
+            next: airport_guide
+          - type: reply
+            label: "🗼 Tokyo arrival"
+            next: arrival_guide
+          - type: reply
+            label: "✅ Done"
             next: final_message
 
   # --------------------------------------------------
   # BOARDING PASS AGAIN
   # --------------------------------------------------
   - id: show_boarding_pass_again
+    label: "Boarding pass (again)"
     messages:
       - type: document
         sender: business
         filename: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
-        title: Your boarding pass
+        title: "🎫 Your boarding pass"
         description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
         fileType: PDF
         url: /assets/singapore-airlines/boarding-pass-demo.pdf
       - type: text
         sender: business
         text: |
-          Seat **{{seat}}** · {{cabin}} Class · Group 3
-
-          Gate **{{gate}}** · Boarding **{{boardingTime}}**
+          💺 Seat **{{seat}}** · {{cabin}} · Group {{boardingGroup}}
+          🚪 Gate **{{gate}}** · Boarding **{{boardingTime}}**
       - type: suggested_replies
         sender: business
         options:
-          - label: Download
+          - label: "⬇️ Download pass"
             next: boarding_pass_downloaded
-          - label: Add to wallet
+          - label: "📲 Add to wallet"
             next: wallet_added
-          - label: Done
+          - label: "✅ Done"
+            next: final_message
+
+  # --------------------------------------------------
+  # TOKYO ARRIVAL
+  # --------------------------------------------------
+  - id: arrival_guide
+    label: "Tokyo arrival"
+    messages:
+      - type: rich_card
+        sender: business
+        image: "{{imgTokyo}}"
+        mediaHeight: tall
+        title: "🗼 Welcome to {{destinationCity}}"
+        description: |
+          🛬 Landing {{arrivalTime}} at {{destinationAirport}}
+          🕐 Tokyo is 1 hour ahead of Singapore
+          ☀️ Warm and humid in August
+          🚆 Train or monorail to central Tokyo in about 15–30 minutes
+        actions:
+          - type: open_url
+            label: "🚆 Getting to the city"
+            url: "https://singaporeair.example/destinations/tokyo/arrival"
+          - type: reply
+            label: "🧭 Airport guide"
+            next: airport_guide
+          - type: reply
+            label: "✅ Done"
             next: final_message
 
   # --------------------------------------------------
   # END
   # --------------------------------------------------
   - id: final_message
+    label: "All set"
     messages:
       - type: text
         sender: business
         text: |
-          You're all set, {{customerName}}.
+          You're all set, {{customerName}} ✅
 
-          _We'll let you know here if there are any changes to your flight or gate._
+          _We'll message you here if your flight or gate changes._
 
           Have a pleasant flight to {{destinationCity}} ✈️
+      - type: text
+        sender: business
+        text: "How was your check-in today?"
+      - type: suggested_replies
+        sender: business
+        options:
+          - label: "😍 Great"
+            next: thank_you
+          - label: "🙂 Okay"
+            next: thank_you
+          - label: "😕 Could be better"
+            next: thank_you
+
+  - id: thank_you
+    label: "Thank you"
+    messages:
+      - type: text
+        sender: business
+        text: "Thank you for your feedback 🙏 See you on board!"
     end: true

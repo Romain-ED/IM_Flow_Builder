@@ -1,6 +1,8 @@
 import { createHash, createHmac } from 'node:crypto'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
+import { createContactNames } from './contactNames.js'
+import { createMemoryShareStore } from './shareStore.js'
 import { FakeRcsGateway, getLiveDemoConfig, LiveDemoService } from './liveDemo.js'
 
 class MemoryStore {
@@ -28,7 +30,7 @@ async function startTestServer(allowedFlowIds = 'test-live-flow') {
     LIVE_RCS_OPERATOR_TOKEN: 'operator-token',
     LIVE_RCS_ALLOWED_FLOW_IDS: allowedFlowIds,
   }, process.cwd())
-  const app = createApp({ liveDemo: new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway()) })
+  const app = createApp({ liveDemo: new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway()), contactNames: createContactNames(createMemoryShareStore()) })
   await new Promise((resolve) => app.listen(0, '127.0.0.1', resolve))
   servers.push(app)
   const address = app.address()
@@ -54,6 +56,36 @@ describe('VCR server live routes', () => {
 
     expect(response.status).toBe(401)
     expect(await response.json()).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized.' } })
+  })
+
+  it('lists conversations only with the conversations password', async () => {
+    const origin = await startTestServer()
+    const denied = await fetch(`${origin}/api/live/conversations`, { headers: { Authorization: 'Bearer wrong' } })
+    const missing = await fetch(`${origin}/api/live/conversations`)
+    const allowed = await fetch(`${origin}/api/live/conversations`, { headers: { Authorization: 'Bearer admin' } })
+
+    expect(denied.status).toBe(401)
+    expect(missing.status).toBe(401)
+    expect(allowed.status).toBe(200)
+    expect(await allowed.json()).toEqual([])
+  })
+
+  it('saves and clears a contact name behind the conversations password', async () => {
+    const origin = await startTestServer()
+    const put = (body: unknown, password = 'admin') => fetch(`${origin}/api/live/conversations/name`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${password}` },
+      body: JSON.stringify(body),
+    })
+
+    expect((await put({ phone: '+15551234567', name: 'Alice' }, 'wrong')).status).toBe(401)
+    expect((await put({ phone: 'not-a-phone', name: 'Alice' })).status).toBe(422)
+    expect((await put({ phone: '+15551234567', name: 'x'.repeat(61) })).status).toBe(422)
+
+    const saved = await put({ phone: '+15551234567', name: '  Alice  ' })
+    expect(await saved.json()).toEqual({ phone: '+15551234567', name: 'Alice' })
+    const cleared = await put({ phone: '+15551234567', name: ' ' })
+    expect(await cleared.json()).toEqual({ phone: '+15551234567', name: null })
   })
 
   it('never creates a session from an inbound webhook with no matching session', async () => {

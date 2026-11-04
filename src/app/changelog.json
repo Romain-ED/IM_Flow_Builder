@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.28.0",
+    "date": "2026-11-04",
+    "changes": [
+      "Feature: new Conversations page (header nav). Read-only inbox of live RCS sessions grouped by phone number, drawn in the RCS phone frame so I see what the user saw, including their inbound replies. Refreshes every 5s.",
+      "Feature: save a name per phone number (pencil icon above the phone). Names are stored server-side (VCR account state on VCR, contact-names.json locally). Full numbers are shown, not masked.",
+      "Note: the page is gated by a hardcoded password ('admin', checked server-side on GET /api/live/conversations and PUT /api/live/conversations/name). Replace with real auth before real users. Live sessions are still stored on the instance disk, so history can be lost on redeploy while names persist."
+    ]
+  },
+  {
+    "version": "0.27.0",
+    "date": "2026-11-04",
+    "changes": [
+      "Enhancement: Singapore Airlines flow rebuilt in the V Bank / Domino's style. Emoji-led rich cards replace plain text, and the flow adds a travel-documents check, a cabin-upgrade carousel, an extras carousel (baggage, meal pre-order, lounge), an airport-guide carousel, a Tokyo arrival card and a feedback prompt. Seat cards now use tall media. Still live-safe (reply/open_url only).",
+      "Note: new-artwork slots (premium economy, business, baggage, meal, lounge, checked-in, Tokyo) use stand-in images via the imgXxx variables at the top of singapore-airlines.yaml until the generated files are swapped in."
+    ]
+  },
+  {
     "version": "0.26.1",
     "date": "2026-11-04",
     "changes": [

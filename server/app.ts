@@ -1,8 +1,10 @@
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
+import { createHash, timingSafeEqual } from 'node:crypto'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getLiveDemoConfig, LiveDemoService, summarizeInboundPayload, verifyWebhook } from './liveDemo.js'
+import { isValidContactPhone, MAX_CONTACT_NAME_LENGTH, resolveContactNames, type ContactNames } from './contactNames.js'
 import { createShareLinks, type ShareLinks } from './shareLinks.js'
 import { isVcrRuntime } from './shareStore.js'
 import type { Env, Json } from './types.js'
@@ -106,6 +108,15 @@ function bearerToken(request: IncomingMessage): string {
   return typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7) : ''
 }
 
+// Temporary hardcoded gate for the read-only Conversations page; replace with real auth.
+const CONVERSATIONS_PASSWORD = 'admin'
+
+function isConversationsPassword(candidate: string): boolean {
+  const expected = createHash('sha256').update(CONVERSATIONS_PASSWORD).digest()
+  const actual = createHash('sha256').update(candidate).digest()
+  return timingSafeEqual(expected, actual)
+}
+
 function errorEnvelope(code: string, message: string) {
   return { error: { code, message } }
 }
@@ -137,9 +148,32 @@ function requestOrigin(request: IncomingMessage): string {
   return `${protocol}://${request.headers.host ?? 'localhost'}`
 }
 
-async function handleApi(request: IncomingMessage, response: ServerResponse, url: URL, liveDemo: LiveDemoService): Promise<boolean> {
+async function handleApi(request: IncomingMessage, response: ServerResponse, url: URL, liveDemo: LiveDemoService, contactNames: ContactNames): Promise<boolean> {
   if (request.method === 'GET' && url.pathname === '/api/live/diagnostics') {
     sendJson(response, 200, liveDemo.diagnostics())
+    return true
+  }
+  if (request.method === 'GET' && url.pathname === '/api/live/conversations') {
+    if (!isConversationsPassword(bearerToken(request))) {
+      sendJson(response, 401, errorEnvelope('UNAUTHORIZED', 'Incorrect password.'))
+      return true
+    }
+    const names = await contactNames.all()
+    sendJson(response, 200, liveDemo.conversations().map((conversation) => ({ ...conversation, name: names[conversation.phone] ?? null })))
+    return true
+  }
+  if (request.method === 'PUT' && url.pathname === '/api/live/conversations/name') {
+    if (!isConversationsPassword(bearerToken(request))) {
+      sendJson(response, 401, errorEnvelope('UNAUTHORIZED', 'Incorrect password.'))
+      return true
+    }
+    const body = readJson(await readBody(request))
+    if (!isValidContactPhone(body?.phone) || typeof body?.name !== 'string' || body.name.trim().length > MAX_CONTACT_NAME_LENGTH) {
+      sendJson(response, 422, errorEnvelope('INVALID_CONTACT', `Provide a phone number and a name of at most ${MAX_CONTACT_NAME_LENGTH} characters.`))
+      return true
+    }
+    const names = await contactNames.set(body.phone, body.name)
+    sendJson(response, 200, { phone: body.phone, name: names[body.phone] ?? null })
     return true
   }
   if (!liveDemo.authorize(bearerToken(request))) {
@@ -268,17 +302,19 @@ export interface CreateAppOptions {
   env?: Env
   liveDemo?: LiveDemoService
   shareLinks?: ShareLinks
+  contactNames?: ContactNames
 }
 
-export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }) }: CreateAppOptions = {}) {
+export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }), contactNames: providedContactNames }: CreateAppOptions = {}) {
   const config = liveDemo?.config ?? getLiveDemoConfig(withBundledAlwaysOnFlow(env), projectRoot)
   if (!liveDemo && config.alwaysOnFlowPath === bundledAlwaysOnFlowPath) config.trustedAlwaysOnFlowIds = bundledFlowIds()
   const service = liveDemo ?? new LiveDemoService(config)
+  const contactNames = providedContactNames ?? resolveContactNames(env, config.storagePath)
   return createServer(async (request, response) => {
     const url = new URL(request.url || '/', 'http://localhost')
     try {
       if (await shareLinks.handle(request, response, url)) return
-      if (url.pathname.startsWith('/api/live/') && await handleApi(request, response, url, service)) return
+      if (url.pathname.startsWith('/api/live/') && await handleApi(request, response, url, service, contactNames)) return
       if (url.pathname.startsWith('/webhooks/vonage/') && await handleWebhook(request, response, url, service)) return
     } catch (error) {
       apiError(response, error)

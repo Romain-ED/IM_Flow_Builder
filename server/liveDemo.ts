@@ -665,6 +665,31 @@ export class LiveDemoService {
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
   }
 
+  /** Sessions grouped by phone number, newest conversation first. Includes full numbers: callers must authenticate. */
+  conversations() {
+    const groups = new Map<string, LiveSession[]>()
+    for (const session of this.store.list()) {
+      const key = session.recipient || 'unknown'
+      groups.set(key, [...(groups.get(key) ?? []), session])
+    }
+    return [...groups.entries()]
+      .map(([recipient, sessions]) => {
+        const ordered = sessions.slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
+        const latest = ordered.reduce((best, session) => String(session.updatedAt) > String(best.updatedAt) ? session : best)
+        const lastItem = ordered.flatMap((session) => session.timeline ?? []).sort((a, b) => a.at.localeCompare(b.at)).at(-1)
+        return {
+          phone: recipient,
+          updatedAt: latest.updatedAt,
+          messageCount: ordered.reduce((total, session) => total + (session.timeline?.length ?? 0), 0),
+          lastMessage: lastItem
+            ? { sender: lastItem.sender, at: lastItem.at, preview: boundedText(previewForMessage(lastItem.message), 120) }
+            : null,
+          sessions: ordered.map((session) => presenterSnapshot(session)),
+        }
+      })
+      .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+  }
+
   diagnosticsLog(sessionId?: string) {
     const session = sessionId ? this.store.get(sessionId) : null
     return {

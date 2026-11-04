@@ -14,6 +14,7 @@ import { ScenarioEditorModal } from './components/editor/ScenarioEditorModal'
 import { ScenariosPage } from './components/scenarios/ScenariosPage'
 import { ManualPage } from './components/manual/ManualPage'
 import { LiveDiagnosticsPage } from './components/live/LiveDiagnosticsPage'
+import { ConversationsPage } from './components/live/ConversationsPage'
 import { darkFocusRing, darkSurface } from './utils/darkChrome'
 
 function App() {
@@ -92,6 +93,7 @@ function App() {
       {page === 'scenarios' && <ScenariosPage onNavigateToSimulator={() => setPage('simulator')} />}
       {page === 'manual' && <ManualPage />}
       {page === 'liveDiagnostics' && <LiveDiagnosticsPage />}
+      {page === 'conversations' && <ConversationsPage />}
 
       {page === 'simulator' && (
         <div className="flex-1 min-h-0 flex">
