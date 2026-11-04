@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { flowDefinitionSchema } from '../../schema/flow'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { LiveRcsControls } from './LiveRcsControls'
 
 const rcsFlow = flowDefinitionSchema.parse({
   version: '1',
-  metadata: { id: 'live-test', name: 'Live test', channel: 'rcs' },
+  metadata: { id: 'live-test', name: 'Live test', channel: 'rcs', trigger: 'START DEMO' },
   brand: { name: 'Demo' },
   start: 'start',
   nodes: [{ id: 'start', messages: [{ type: 'text', text: 'Hello' }], end: true }],
@@ -32,6 +32,7 @@ describe('LiveRcsControls', () => {
 
   afterEach(() => {
     cleanup()
+    vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
 
@@ -58,6 +59,38 @@ describe('LiveRcsControls', () => {
     expect(screen.getByLabelText(/Operator access token/i)).toHaveValue('')
   })
 
+  it('posts the selected non-menu flow when Start live RCS is clicked', async () => {
+    const snapshot = {
+      schemaVersion: 1,
+      id: 'session-1',
+      status: 'awaiting_reply',
+      currentNodeId: 'start',
+      variables: {},
+      timeline: [{ id: 'timeline-1', ordinal: 1, nodeId: 'start', sender: 'business', message: { type: 'text', text: 'Hello' } }],
+      activity: { latestInbound: null, latestOutbound: null, latestProvider: null },
+      provider: { latestStatus: null, updatedAt: null },
+      updatedAt: new Date().toISOString(),
+    }
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>((input) => {
+      const path = String(input)
+      const body = path === '/api/live/diagnostics'
+        ? { mode: 'fake', ready: true, recipient: '••••4567', allowedFlowIds: ['live-test'], storage: 'development file store', errors: [] }
+        : snapshot
+      return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    render(<LiveRcsControls />)
+    expect(await screen.findByText(/Flow passes strict Live RCS preflight/i)).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/Operator access token/i), { target: { value: 'operator-token' } })
+    fireEvent.click(screen.getByRole('button', { name: /Start live RCS/i }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/live/sessions', expect.objectContaining({ method: 'POST' })))
+    expect(await screen.findByText(/awaiting reply/i)).toBeInTheDocument()
+    const request = fetchMock.mock.calls.find(([input, init]) => String(input) === '/api/live/sessions' && init?.method === 'POST')
+    expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({ flow: { metadata: { id: 'live-test' } } })
+  })
   it('keeps demo and test wording out of the rendered V Bank controls', async () => {
     useSimulatorStore.setState({ flow: vBankFlow })
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({

@@ -14,7 +14,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '0.25.1',
     date: '2026-10-22',
     changes: [
-      'Enhancement: Live RCS sessions now wait for an exact normalized entry trigger, support allowlisted scenario-menu transitions, and preserve live input and playback state safely across the server and presenter view.',
+      'Enhancement: Live RCS sessions start immediately for simulator-launched flows, while the RCS MENU flow (metadata.id: rcs-demo-menu) waits for its exact normalized phone trigger and preserves allowlisted scenario-menu transitions.',
     ],
   },
   {

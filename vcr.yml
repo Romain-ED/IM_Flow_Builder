@@ -28,6 +28,8 @@ instance:
       secret: LIVE_RCS_VONAGE_SIGNATURE_SECRET
     - name: LIVE_RCS_DEMO_EPHEMERAL_STORAGE
       secret: LIVE_RCS_DEMO_EPHEMERAL_STORAGE
+    - name: LIVE_RCS_ALWAYS_ON_FLOW_PATH
+      secret: LIVE_RCS_ALWAYS_ON_FLOW_PATH
   security:
     access: public
 debug:

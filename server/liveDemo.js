@@ -7,6 +7,7 @@ const MAX_AUTO_HOPS = 50
 const MAX_EVENTS = 500
 const MAX_TIMELINE = 500
 const LIVE_SCHEMA_VERSION = 1
+const RCS_MENU_FLOW_ID = 'rcs-demo-menu'
 const PROVIDER_STATUSES = new Set(['submitted', 'delivered', 'read', 'rejected', 'undeliverable', 'failed', 'updated'])
 
 function enabled(value) {
@@ -51,6 +52,7 @@ export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()
     storagePath: resolve(env.LIVE_RCS_STORE_PATH ?? resolve(projectRoot, '.live-rcs-sessions.json')),
     storageDurable,
     demoEphemeralStorage,
+    alwaysOnFlowPath: env.LIVE_RCS_ALWAYS_ON_FLOW_PATH ?? null,
   }
 }
 
@@ -67,6 +69,7 @@ export function publicLiveDemoDiagnostics(config) {
           ? 'single-instance storage — sessions are lost on restart'
           : 'not configured'
       : 'development file store',
+    alwaysOnFlow: config.alwaysOnFlowPath ? 'configured' : 'not configured',
     errors: config.errors,
   }
 }
@@ -88,6 +91,10 @@ export function normalizeRcsEntryTrigger(value) {
 function matchesRcsEntryTrigger(trigger, text) {
   const normalizedTrigger = normalizeRcsEntryTrigger(trigger)
   return Boolean(normalizedTrigger) && normalizedTrigger === normalizeRcsEntryTrigger(text)
+}
+
+function isRcsMenuFlow(flow) {
+  return flow?.metadata?.id === RCS_MENU_FLOW_ID
 }
 
 function validRecipient(value) {
@@ -582,6 +589,7 @@ export class LiveDemoService {
     this.gateway = gateway
     this.webhookReplayIds = new Map()
     this.diagnosticEvents = []
+    this._alwaysOnFlowCache = undefined
   }
 
   diagnostics() {
@@ -624,6 +632,83 @@ export class LiveDemoService {
     return Boolean(this.config.operatorToken) && token === this.config.operatorToken
   }
 
+  loadAlwaysOnFlow() {
+    if (!this.config.alwaysOnFlowPath) return null
+    if (this._alwaysOnFlowCache !== undefined) return this._alwaysOnFlowCache
+    try {
+      const raw = JSON.parse(readFileSync(this.config.alwaysOnFlowPath, 'utf8'))
+      if (!raw || typeof raw !== 'object') throw new Error('Always-on flow config must be a JSON object.')
+      const { flow, catalog } = raw
+      if (!flow || typeof flow !== 'object') throw new Error('Always-on flow config requires a "flow" property.')
+      if (!isRcsMenuFlow(flow)) throw new Error('Always-on flow must use the RCS MENU flow.')
+      if (!this.config.allowedFlowIds.includes(flow.metadata?.id)) throw new Error(`Always-on flow "${flow.metadata?.id}" is not allowlisted for Live RCS.`)
+      if (flow.metadata?.channel !== 'rcs') throw new Error('Always-on flow must use the RCS channel.')
+      if (typeof flow.metadata?.trigger !== 'string' || !normalizeRcsEntryTrigger(flow.metadata.trigger)) throw new Error('Always-on flow requires a non-empty metadata.trigger.')
+      if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node) => node?.id === flow.start)) throw new Error('Always-on flow is missing a valid start state.')
+      if (catalog !== undefined) validateScenarioCatalog(Array.isArray(catalog) ? catalog : [], this.config)
+      this._alwaysOnFlowCache = { flow, catalog: Array.isArray(catalog) ? catalog : undefined }
+      return this._alwaysOnFlowCache
+    } catch (error) {
+      this._alwaysOnFlowCache = null
+      this.recordDiagnostic({ type: 'always_on_flow_load_error', error: error instanceof Error ? error.message : 'Failed to load always-on flow config.' })
+      return null
+    }
+  }
+
+  async _tryAutoStartSession(payload, payloadSummary) {
+    if (!this.config.configured) return null
+    const alwaysOn = this.loadAlwaysOnFlow()
+    if (!alwaysOn || !isRcsMenuFlow(alwaysOn.flow)) return null
+    const text = payload.text ?? payload.message?.text
+    if (typeof text !== 'string' || !text.trim()) return null
+    if (!matchesRcsEntryTrigger(alwaysOn.flow.metadata.trigger, text)) return null
+    if (this.config.mode === 'vonage') {
+      if (payload.channel !== 'rcs') return null
+      if (normalizedAddress(payload.to) !== normalizedAddress(this.config.rcsAgentId)) return null
+    }
+    const senderRecipient = validRecipient(payload.from)
+    if (!senderRecipient) {
+      this.recordDiagnostic({ type: 'auto_start_skipped', reason: 'Inbound sender is not a valid phone number.', from: payloadSummary.from })
+      return null
+    }
+    const normalizedSender = normalizedAddress(senderRecipient)
+    if (this.store.list().some((s) =>
+      normalizedAddress(s.recipient) === normalizedSender &&
+      (s.status === 'starting' || s.status === 'awaiting_trigger' || s.status === 'awaiting_reply')
+    )) {
+      this.recordDiagnostic({ type: 'auto_start_skipped', reason: 'Active session already exists for this sender.' })
+      return null
+    }
+    const scenarioCatalog = Array.isArray(alwaysOn.catalog) ? validateScenarioCatalog(alwaysOn.catalog, this.config) : {}
+    const session = {
+      id: randomUUID(),
+      createdAt: now(),
+      updatedAt: now(),
+      status: 'awaiting_trigger',
+      recipient: senderRecipient,
+      publicBaseUrl: null,
+      flow: alwaysOn.flow,
+      scenarioCatalog,
+      variables: { ...(alwaysOn.flow.variables ?? {}) },
+      initialVariables: { ...(alwaysOn.flow.variables ?? {}) },
+      currentNodeId: null,
+      pendingInput: null,
+      correlation: {},
+      processedInbound: [],
+      outbound: [],
+      events: [],
+      timeline: [],
+      nextTimelineOrdinal: 1,
+      timelineTruncated: false,
+      activity: { latestInbound: null, latestOutbound: null, latestProvider: null },
+      provider: { latestStatus: null, updatedAt: null },
+    }
+    event(session, 'session_auto_started', { flowId: alwaysOn.flow.metadata.id })
+    this.store.save(session)
+    this.recordDiagnostic({ type: 'auto_start_session_created', sessionId: session.id, recipient: maskRecipient(senderRecipient) })
+    return session
+  }
+
   async createSession({ flow, variables = {}, recipient, publicBaseUrl, catalog }) {
     if (!this.config.configured) throw new Error('Live RCS is not configured.')
     const selectedRecipient = recipient === undefined || recipient === '' ? validRecipient(this.config.recipient) : validRecipient(recipient)
@@ -643,7 +728,7 @@ export class LiveDemoService {
       id: randomUUID(),
       createdAt: now(),
       updatedAt: now(),
-      status: 'awaiting_trigger',
+      status: isRcsMenuFlow(flow) ? 'awaiting_trigger' : 'starting',
       recipient: selectedRecipient,
       publicBaseUrl,
       flow,
@@ -664,6 +749,10 @@ export class LiveDemoService {
     }
     event(session, 'session_started', { flowId: flow.metadata.id })
     this.store.save(session)
+    if (!isRcsMenuFlow(flow)) {
+      await this.enterNode(session, flow.start)
+      this.store.save(session)
+    }
     return presenterSnapshot(session)
   }
 
@@ -678,7 +767,8 @@ export class LiveDemoService {
     if (session.status === 'starting') throw new Error('Live session is already starting.')
     if (session.status === 'stopped') throw new Error('Cannot restart a stopped Live RCS session.')
 
-    session.status = 'awaiting_trigger'
+    const menuFlow = isRcsMenuFlow(session.flow)
+    session.status = menuFlow ? 'awaiting_trigger' : 'starting'
     session.currentNodeId = null
     session.pendingInput = null
     session.correlation = {}
@@ -693,6 +783,10 @@ export class LiveDemoService {
     session.variables = { ...(session.initialVariables ?? session.flow.variables ?? {}) }
     event(session, 'session_restarted')
     this.store.save(session)
+    if (!menuFlow) {
+      await this.enterNode(session, session.flow.start)
+      this.store.save(session)
+    }
     return presenterSnapshot(session)
   }
 
@@ -747,7 +841,11 @@ export class LiveDemoService {
     if (!eventId) throw new Error('Inbound callback has no event identifier.')
     const postbackId = payloadSummary.postbackId
     const text = payload.text ?? payload.message?.text
-    const session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || ((candidate.status === 'awaiting_trigger' || candidate.status === 'awaiting_reply') && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
+    let session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || ((candidate.status === 'awaiting_trigger' || candidate.status === 'awaiting_reply') && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
+    if (!session) {
+      const autoStarted = await this._tryAutoStartSession(payload, payloadSummary)
+      if (autoStarted) session = this.store.get(autoStarted.id)
+    }
     if (!session) {
       this.recordDiagnostic({ type: 'inbound_unmatched_session', eventId, postbackId })
       throw new Error('No active Live RCS session matches this inbound event.')
@@ -766,7 +864,7 @@ export class LiveDemoService {
     let next
     let recognized = false
     let recognizedReplyLabel = null
-    if (session.status === 'awaiting_trigger') {
+    if (session.status === 'awaiting_trigger' && isRcsMenuFlow(session.flow)) {
       if (typeof text === 'string' && text.trim()) {
         recognized = matchesRcsEntryTrigger(session.flow.metadata.trigger, text)
         event(session, 'inbound_text', { eventId, text, recognized, trigger: true })

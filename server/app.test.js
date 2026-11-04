@@ -21,12 +21,12 @@ afterEach(async () => {
   await Promise.all(servers.splice(0).map((server) => new Promise((resolve) => server.close(resolve))))
 })
 
-async function startTestServer() {
+async function startTestServer(allowedFlowIds = 'test-live-flow') {
   const config = getLiveDemoConfig({
     LIVE_RCS_MODE: 'fake',
     LIVE_RCS_TEST_RECIPIENT: '+15551234567',
     LIVE_RCS_OPERATOR_TOKEN: 'operator-token',
-    LIVE_RCS_ALLOWED_FLOW_IDS: 'test-live-flow',
+    LIVE_RCS_ALLOWED_FLOW_IDS: allowedFlowIds,
   }, process.cwd())
   const app = createApp({ liveDemo: new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway()) })
   await new Promise((resolve) => app.listen(0, '127.0.0.1', resolve))
@@ -48,12 +48,59 @@ describe('VCR server live routes', () => {
     expect(await diagnostics.json()).toMatchObject({ mode: 'fake', ready: true, recipient: expect.stringContaining('4567') })
   })
 
-  it('requires an operator token before creating a live session', async () => {
-    const origin = await startTestServer()
-    const response = await fetch(`${origin}/api/live/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+  it('creates non-menu sessions immediately and keeps inbound entry triggers menu-only', async () => {
+    const origin = await startTestServer('test-live-flow,rcs-demo-menu')
+    const headers = { Authorization: 'Bearer operator-token', 'Content-Type': 'application/json' }
+    const nonMenuFlow = {
+      metadata: { id: 'test-live-flow', channel: 'rcs', trigger: 'START DEMO' },
+      start: 'welcome',
+      nodes: [{ id: 'welcome', messages: [{ type: 'text', text: 'Started immediately' }] }],
+    }
+    const menuFlow = {
+      metadata: { id: 'rcs-demo-menu', channel: 'rcs', trigger: 'RCS MENU' },
+      start: 'welcome',
+      nodes: [{ id: 'welcome', messages: [{ type: 'text', text: 'Menu started' }], end: true }],
+    }
 
-    expect(response.status).toBe(401)
-    expect(await response.json()).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized.' } })
+    const nonMenuResponse = await fetch(`${origin}/api/live/sessions`, {
+      method: 'POST', headers, body: JSON.stringify({ flow: nonMenuFlow }),
+    })
+    const nonMenu = await nonMenuResponse.json()
+    expect(nonMenuResponse.status).toBe(201)
+    expect(nonMenu.status).toBe('awaiting_reply')
+    expect(nonMenu.timeline).toHaveLength(1)
+    expect(nonMenu.timeline[0].message.text).toBe('Started immediately')
+
+    const ignored = await fetch(`${origin}/webhooks/vonage/inbound`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_uuid: 'non-menu-trigger', text: 'START DEMO' }),
+    })
+    expect(ignored.status).toBe(202)
+    const nonMenuAfterInbound = await fetch(`${origin}/api/live/sessions/${nonMenu.id}`, { headers })
+    expect((await nonMenuAfterInbound.json()).timeline).toHaveLength(1)
+
+    const stopped = await fetch(`${origin}/api/live/sessions/${nonMenu.id}/stop`, { method: 'POST', headers })
+    expect(stopped.status).toBe(200)
+
+    const menuResponse = await fetch(`${origin}/api/live/sessions`, {
+      method: 'POST', headers, body: JSON.stringify({ flow: menuFlow }),
+    })
+    const menu = await menuResponse.json()
+    expect(menuResponse.status).toBe(201)
+    expect(menu.status).toBe('awaiting_trigger')
+    expect(menu.timeline).toHaveLength(0)
+
+    const triggered = await fetch(`${origin}/webhooks/vonage/inbound`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_uuid: 'menu-trigger', text: ' rcs menu ' }),
+    })
+    expect(triggered.status).toBe(202)
+    const menuAfterTrigger = await fetch(`${origin}/api/live/sessions/${menu.id}`, { headers })
+    const startedMenu = await menuAfterTrigger.json()
+    expect(startedMenu.status).toBe('completed')
+    expect(startedMenu.timeline).toHaveLength(2)
+    expect(startedMenu.timeline[0].message.text).toBe('rcs menu')
+    expect(startedMenu.timeline[1].message.text).toBe('Menu started')
   })
 })
 

@@ -7,8 +7,8 @@ Live RCS turns an existing RCS-authored simulator flow into a two-way session fo
 1. A presenter loads an RCS-authored flow and opens **Live RCS demo** in the sidebar.
 2. The browser runs strict preflight: only native RCS text/media/file/card/carousel content, public media URLs, supported `reply`/`open_url` actions, and valid suggestion attachments may run.
 3. The presenter supplies a short-lived operator token. It is held only in browser memory.
-4. The server normalizes the requested destination and creates a persistent session only when it matches the configured test recipient. For RCS flows, the session enters `awaiting_trigger` and sends nothing until the exact `metadata.trigger` message arrives.
-5. Vonage inbound and status callbacks advance the same flow graph and are shown in the presenter panel by polling.
+4. The server normalizes the requested destination and creates a persistent session only when it matches the configured test recipient. RCS MENU (`metadata.id: rcs-demo-menu`) enters `awaiting_trigger` and sends nothing until the exact `RCS MENU` message arrives from the destination phone. Every other RCS flow enters its `start` node immediately and sends its first live messages when the presenter starts the session.
+5. Vonage inbound and status callbacks advance the same flow graph and are shown in the presenter panel by polling. When `LIVE_RCS_ALWAYS_ON_FLOW_PATH` is configured, the exact `RCS MENU` message from any real customer automatically creates and runs a menu session for that sender, independent of the presenter UI.
 
 The destination phone owns the response path during a live session. The browser composer and simulator playback are paused until the session is stopped.
 
@@ -25,6 +25,7 @@ Set these as encrypted VCR environment variables. Never add them to `.env`, the 
 | `LIVE_RCS_STORE_PATH` | Recommended | Path to a **VCR durable volume** JSON store. Default is a local file for development only. |
 | `LIVE_RCS_STORAGE_DURABLE` | Vonage production | Set to `true` only after `LIVE_RCS_STORE_PATH` is backed by a shared durable store. |
 | `LIVE_RCS_DEMO_EPHEMERAL_STORAGE` | Vonage demo alternative | Set to `true` only for one controlled single-instance Developer Mode demo; all active sessions are lost if VCR restarts or redeploys. Never set this alongside a production/multi-presenter deployment. |
+| `LIVE_RCS_ALWAYS_ON_FLOW_PATH` | Optional | JSON file containing the allowlisted RCS MENU flow (`{ flow, catalog? }`) for always-on phone-triggered menu starts. Any sender who texts the exact `RCS MENU` message to the bound RCS number gets their own session, with no presenter action required. |
 | `LIVE_RCS_VONAGE_APPLICATION_ID` | Vonage | Application ID linked to the RCS agent; used for outbound JWT generation and signed-webhook claim validation. |
 | `LIVE_RCS_VONAGE_JWT` | Vonage, optional | Explicit short-lived application JWT. Prefer `LIVE_RCS_VONAGE_PRIVATE_KEY` instead. |
 | `LIVE_RCS_VONAGE_PRIVATE_KEY` | Vonage, preferred | Application RSA private key (PEM, stored as a VCR secret); the server generates five-minute JWTs. |
@@ -81,8 +82,8 @@ The **Live logs** page is protected by the operator token and polls the authenti
 
 ## Live-compatible authoring rules
 
-- Set `metadata.channel: rcs` and a unique, non-empty `metadata.trigger`.
-- The first inbound text must equal the trigger after Unicode NFC normalization, outer-whitespace trimming, and lowercase casing. Matching is full-string exact; internal whitespace, punctuation, extra text, keyword matching, and fuzzy matching are not accepted.
+- Set `metadata.channel: rcs` and a unique, non-empty `metadata.trigger`. RCS MENU (`metadata.id: rcs-demo-menu`) uses its exact `metadata.trigger` as the phone entry message. Other Live RCS flows start from the simulator and do not require that message from the phone.
+- For RCS MENU, the first inbound text must equal the trigger after Unicode NFC normalization, outer-whitespace trimming, and lowercase casing. Matching is full-string exact; internal whitespace, punctuation, extra text, keyword matching, and fuzzy matching are not accepted.
 - The entry trigger is separate from legacy top-level `triggers`, which remain in-flow shortcuts after startup.
 - Images, videos, documents, and rich-card/carousel media must resolve to public HTTPS URLs when deployed. VCR-root paths such as `/assets/singapore-airlines/boarding-pass-demo.pdf` are resolved against the live VCR origin.
 - Use only `reply` or `open_url` actions in live RCS content. `system_action`, lists, simulator-only cards, and call/location/calendar/custom action variants fail preflight.
