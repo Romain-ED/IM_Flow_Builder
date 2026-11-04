@@ -1,0 +1,262 @@
+{
+  "toc": [
+    {
+      "id": "overview",
+      "label": "Overview"
+    },
+    {
+      "id": "interface",
+      "label": "Interface guide"
+    },
+    {
+      "id": "flow-format",
+      "label": "Flow definition reference"
+    },
+    {
+      "id": "ai-authoring",
+      "label": "Generating scenarios with AI"
+    },
+    {
+      "id": "architecture",
+      "label": "Technical architecture"
+    },
+    {
+      "id": "changelog",
+      "label": "Changelog"
+    },
+    {
+      "id": "limitations",
+      "label": "Limitations & roadmap"
+    }
+  ],
+  "platformLimits": [
+    [
+      "Suggested-reply / interactive buttons per message",
+      "3",
+      "11 chips (4 per rich card)"
+    ],
+    [
+      "Carousel cards",
+      "up to 10 (Carousel Template, Meta-approved)",
+      "2–10"
+    ],
+    [
+      "Buttons per carousel card",
+      "2",
+      "4"
+    ],
+    [
+      "Button/chip label length",
+      "20 chars",
+      "25 chars"
+    ],
+    [
+      "List rows (total, all sections)",
+      "10",
+      "— (no native list picker)"
+    ],
+    [
+      "List row title length",
+      "24 chars",
+      "—"
+    ],
+    [
+      "Rich card title / description length",
+      "not separately capped",
+      "200 / 2000 chars"
+    ],
+    [
+      "Header / footer text length (rich_card, list)",
+      "60 / 60 chars",
+      "no dedicated fields — not rendered"
+    ]
+  ],
+  "architectureLayers": [
+    {
+      "label": "JSON / YAML flow definition",
+      "accent": "bg-slate-800"
+    },
+    {
+      "label": "Zod schema validation",
+      "accent": "bg-indigo-600"
+    },
+    {
+      "label": "Conversation engine (pure, unit-tested)",
+      "accent": "bg-emerald-600"
+    },
+    {
+      "label": "Channel renderer — RCS · WhatsApp",
+      "accent": "bg-violet-600"
+    },
+    {
+      "label": "Interactive phone simulator",
+      "accent": "bg-teal-600"
+    }
+  ],
+  "interfaceGuide": [
+    [
+      "Scenario",
+      "Shows the loaded flow's name, a dropdown of built-in examples, \"Edit flow\" (opens the quick JSON/YAML editor for the live flow), \"Export\" (downloads the current flow as YAML), and \"Copy share link\" (encodes the flow into a URL — opening it loads the same scenario in a restricted viewer, no file needed; see \"Presenter mode\" below)."
+    ],
+    [
+      "Channel",
+      "Switches the rendering between RCS and WhatsApp. The same flow definition renders through each channel's own visual language and capability set. \"Compare all channels\" shows both at once, driven by the same live conversation — tap a button in either and the other follows."
+    ],
+    [
+      "Brand",
+      "Edit the business profile shown in the header: name, short name, picture, banner, description subtitle, and the verified checkmark. RCS also shows an authored `rcsProfile` in Info & options when provided; otherwise it derives a safe deterministic fallback. Image values must be local `/assets/...` paths or HTTPS images, and authored gallery previews must stay in the owning brand directory. Applies immediately, no restart needed — useful for re-skinning a scenario without touching the scenario file. \"Reset\" reverts to the loaded flow's own brand block."
+    ],
+    [
+      "Variables",
+      "Editable list of the flow's top-level variables (e.g. customer name, booking reference, seat). Edits apply on the next Restart, not live — this lets a presenter line up several fields before restarting the demo."
+    ],
+    [
+      "Debug options",
+      "\"Fast demo mode\" shrinks all typing/message delays; \"Show capability warnings\" toggles the inline notes shown when a message type falls back to a generic rendering on a channel that doesn't natively support it; \"Flow inspector panel\" toggles the right-hand debug drawer; \"Start node\" overrides which node Restart jumps to."
+    ],
+    [
+      "Playback",
+      "Restart (replays from the start node using the current variable values), Back (undoes the last user interaction using a state snapshot), Pause/Resume (freezes automatic playback), Clear (same as Restart)."
+    ],
+    [
+      "Phone preview",
+      "The focal point — a realistic mobile chat UI rendering the live conversation for the selected channel."
+    ],
+    [
+      "Flow inspector",
+      "Shows the current node id, live variable values, the node-visit history (click any entry to jump straight to that node), validation errors if any, and a recent event log. The \"Flow graph\" section has a List/Graph toggle — Graph lays out every node and connection automatically and lets you click any box to jump straight to it live. The same graph view (read-only there) is also available while editing a scenario, or via \"View\" on any scenario card on the Scenarios page."
+    ],
+    [
+      "Presenter mode",
+      "Hides all configuration chrome and enlarges the phone for screen-sharing with customers; a small floating control keeps Restart and fullscreen within reach. Toggled on/off from the header — a preference, not a lock."
+    ],
+    [
+      "Shared links",
+      "Opening a \"Copy share link\" URL goes further than Presenter mode: there's no header, no Sidebar, no Scenarios/Manual pages, and no Flow Inspector at all — just the phone, an iOS / Android switch, and a Restart button, permanently for that page load. A link recipient only ever sees the one scenario the link author shared, with no path to anything else in the tool, including whatever scenario is saved in their own browser. A shared page never saves anything to the browser. If a link is damaged or invalid, a clear message is shown instead of the app."
+    ]
+  ],
+  "nodeFields": [
+    [
+      "id",
+      "Unique identifier other nodes/actions reference via \"next\"."
+    ],
+    [
+      "messages",
+      "Ordered list of messages/pseudo-messages to play when the node is entered."
+    ],
+    [
+      "actions",
+      "Buttons shown once messages finish playing, attached to the last message — a lighter way to author what a suggested_replies message does; renders identically."
+    ],
+    [
+      "set",
+      "Variables to assign unconditionally as soon as the node is entered."
+    ],
+    [
+      "condition / then / else",
+      "Declarative branch: variable + operator (equals, not_equals, exists, contains, greater_than, less_than) + value, routing to \"then\" or \"else\"."
+    ],
+    [
+      "next",
+      "Automatic transition to another node once messages finish, when there is no condition or actions."
+    ],
+    [
+      "end",
+      "Marks a deliberate end of the scenario."
+    ]
+  ],
+  "messageTypes": [
+    [
+      "text",
+      "Multiline text, basic URL auto-linking, **bold**/_italic_. Official on every channel."
+    ],
+    [
+      "image / video / document",
+      "Media with graceful broken-asset fallback; document taps simulate a download. Official on every channel."
+    ],
+    [
+      "rich_card",
+      "An optional header (text OR image, not both) + title + description + optional footer + up to a few buttons. Official: matches a real WhatsApp interactive message (header/body/footer/buttons) and a real RCS rich card — RCS has no separate header/footer fields, so those two only render on the WhatsApp channel."
+    ],
+    [
+      "carousel",
+      "A horizontally scrollable row of cards, each with its own buttons. Official: matches WhatsApp's Carousel Template (Meta-approved, up to 10 cards / 2 buttons each) and a real RCS carousel (2–10 cards / 4 buttons each)."
+    ],
+    [
+      "suggested_replies",
+      "Inline reply chips. Official — matches WhatsApp interactive reply buttons (max 3) and RCS suggestion chips (max 11)."
+    ],
+    [
+      "suggested_actions",
+      "Richer buttons (open_url, call, location, calendar, custom). The reply/open_url subtypes are official; the others are simulator conveniences shown as a modal/toast rather than a real WhatsApp button type."
+    ],
+    [
+      "list",
+      "Opens a bottom-sheet menu of grouped rows, with an optional text-only header/footer. Official on WhatsApp (native list picker). RCS has no equivalent — see below."
+    ],
+    [
+      "input",
+      "Free-text/email/phone/numeric/date entry that drives the composer and stores the value in a variable. Simulator convenience: real WhatsApp/RCS composers are always plain text; there's no structured input-type UI."
+    ],
+    [
+      "location",
+      "A map-preview card with a label/address and an \"Open in Maps\" simulated action. Official on both — matches WhatsApp's location message and RCS's location suggested action."
+    ],
+    [
+      "product_catalog",
+      "A horizontally scrollable row of products. Official on WhatsApp (multi-product/catalog message); RCS has no equivalent, shown as a generic fallback."
+    ],
+    [
+      "whatsapp_flow",
+      "A placeholder card representing an embedded WhatsApp Flow. Official — WhatsApp Flows are a real interactive subtype; WhatsApp-only by definition."
+    ],
+    [
+      "system_action",
+      "A compact, centered simulator notice (e.g. \"Boarding pass downloaded\") — not a business or user chat bubble, so it isn't a \"message type\" claim at all; it represents a local device/app action."
+    ],
+    [
+      "typing",
+      "Pseudo-message: shows the typing indicator for duration ms, then disappears — never stored in history. Not a message."
+    ],
+    [
+      "delay",
+      "Pseudo-message: pause without rendering anything. Not a message."
+    ]
+  ],
+  "aiAuthoring": [
+    [
+      "Generate",
+      "Describe the conversation you want and paste in your own Anthropic API key. The app calls Anthropic's API directly from your browser — there is no backend, so this is the only way an in-app assistant can work without sending your key through a server of ours. The key is stored only in this browser's local storage and sent only to Anthropic. If the first result fails the app's own validator, it automatically retries once with the validation errors fed back for a self-correction pass, then hands back whatever it gets — reviewed and editable in the Source view either way."
+    ],
+    [
+      "Copy prompt instead",
+      "No API key needed. Copies the full spec plus your description to the clipboard — paste it into Claude, ChatGPT, or any AI tool you already use, then paste the resulting YAML back into the editor."
+    ]
+  ],
+  "architectureFiles": [
+    [
+      "schema/",
+      "Zod discriminated-union schemas for messages, actions, nodes and the top-level flow — the single source of truth for both validation and TypeScript types."
+    ],
+    [
+      "engine/",
+      "Pure, timer-free functions: computeNodePlan (what to play + what happens next), templateRenderer, conditionEvaluator, flowValidator, plus the ConversationEvent log types."
+    ],
+    [
+      "store/",
+      "The Zustand store is the only place that turns an engine plan into real wall-clock playback — handling Fast mode, Pause/Resume, Back/Restart via state snapshots, and localStorage persistence."
+    ],
+    [
+      "channels/",
+      "Per-channel capabilities (which message types are natively supported) and renderers (header + chrome). Content components stay shared; only chrome and capability rules differ per channel."
+    ],
+    [
+      "messages/",
+      "One React component per message type, dispatched generically by MessageRenderer — no scenario-specific logic lives here."
+    ],
+    [
+      "components/",
+      "The phone simulator chrome, sidebar controls, flow inspector, and the Scenarios/Manual pages all live here, organized by feature."
+    ]
+  ]
+}

@@ -67,7 +67,7 @@ The engine never imports React, and no message component hardcodes a specific de
 
 ```
 src/
-  app/                    pages.ts (page routing type), version.ts, changelog.ts,
+  app/                    pages.ts (page routing type), version.ts, changelog.ts + changelog.json,
                            ChannelContext.tsx (per-phone-screen channel override,
                            used by Compare Mode)
   components/

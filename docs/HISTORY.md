@@ -820,7 +820,7 @@ until this was fixed).
 
 1. Bump `version` in `package.json`. Scheme (0.x, pre-1.0): middle number
    = new feature, last number = fix/infra-only.
-2. Add an entry to the top of `CHANGELOG` in `src/app/changelog.ts`
+2. Add an entry to the top of `src/app/changelog.json` (a JSON array; newest first)
    (newest first). This is what renders in the Manual's Changelog tab and
    is the best record of "what happened and why" for a future session —
    write it like you're leaving a note for yourself.
