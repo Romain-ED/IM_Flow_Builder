@@ -120,7 +120,7 @@ function toSuggestions(content) {
     }
     if (action.kind === 'open_url') {
       return {
-        type: 'action',
+        type: 'open_url',
         text: action.label,
         postback_data: action.id,
         url: action.url,
@@ -131,11 +131,14 @@ function toSuggestions(content) {
   return [...replies, ...actions]
 }
 
-function cardPayload(card) {
+const VONAGE_MEDIA_HEIGHTS = { short: 'SHORT', medium: 'MEDIUM', tall: 'TALL' }
+const vonageMediaHeight = (mediaHeight) => VONAGE_MEDIA_HEIGHTS[mediaHeight] ?? 'MEDIUM'
+
+function cardPayload(card, mediaHeight) {
   return {
     title: card.title,
     text: toPlainRcsText(card.description),
-    ...(card.imageUrl ? { media_url: card.imageUrl, media_height: 'MEDIUM', media_description: card.title } : {}),
+    ...(card.imageUrl ? { media_url: card.imageUrl, media_height: vonageMediaHeight(mediaHeight), media_description: card.title } : {}),
     ...(card.actions?.length ? { suggestions: toSuggestions({ actions: card.actions }) } : {}),
   }
 }
@@ -163,7 +166,7 @@ export function toVonageRcsMessage(content, config) {
         card: {
           title: content.title,
           text: toPlainRcsText(content.description),
-          ...(content.url ? { media_url: content.url, media_height: 'MEDIUM', media_description: content.title } : {}),
+          ...(content.url ? { media_url: content.url, media_height: vonageMediaHeight(content.mediaHeight), media_description: content.title } : {}),
           ...(suggestions.length ? { suggestions } : {}),
         },
         rcs: { card_orientation: 'VERTICAL' },
@@ -172,7 +175,7 @@ export function toVonageRcsMessage(content, config) {
       return {
         ...request,
         message_type: 'carousel',
-        carousel: { cards: content.cards.map(cardPayload) },
+        carousel: { cards: content.cards.map((card) => cardPayload(card, content.mediaHeight)) },
         rcs: { card_width: 'MEDIUM' },
       }
     default:

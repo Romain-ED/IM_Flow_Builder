@@ -41,6 +41,8 @@ export interface LiveRcsContent {
   filename?: string
   title?: string
   description?: string
+  /** Card media height (rich card, or all carousel cards); the Vonage mapping defaults to medium. */
+  mediaHeight?: 'short' | 'medium' | 'tall'
   cards?: Array<{
     id: string
     title: string
@@ -291,6 +293,7 @@ function compileNode(
           title: message.title,
           description: message.description,
           url: imageUrl,
+          ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}),
           actions,
         })
         break
@@ -328,7 +331,7 @@ function compileNode(
               .filter((action): action is LiveRcsAction => Boolean(action)),
           }
         })
-        content.push({ id, nodeId: node.id, type: 'carousel', cards })
+        content.push({ id, nodeId: node.id, type: 'carousel', ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}), cards })
         break
       }
       case 'suggested_replies':

@@ -9,6 +9,7 @@ import { ActionButton } from '../components/phone/ActionButton'
 import { channelThemes } from '../channels/theme'
 import { assetUrl } from '../utils/assetUrl'
 import { RCS_ACTION_STACK } from '../channels/rcs/cardStyles'
+import { RCS_CAROUSEL_TARGET_RATIOS } from '../channels/rcs/mediaRatios'
 
 /**
  * RCS carousel media is fluid in Google Messages rather than a fixed
@@ -16,11 +17,7 @@ import { RCS_ACTION_STACK } from '../channels/rcs/cardStyles'
  * choices while allowing a phone-width card to scale beyond the 112/168/264
  * DP standalone-card heights; object-cover keeps Google's centered crop.
  */
-const RCS_CAROUSEL_MEDIA_RATIOS: Record<MediaHeight, string> = {
-  short: '2.5 / 1',
-  medium: '1.82 / 1',
-  tall: '1.5 / 1',
-}
+const carouselAspectRatio = (mediaHeight: MediaHeight) => `${RCS_CAROUSEL_TARGET_RATIOS[mediaHeight]} / 1`
 
 interface CarouselProps {
   message: NormalizedMessage
@@ -132,7 +129,7 @@ function CarouselCardView({
             src={card.image}
             alt={card.title}
             className={`block ${isRcs ? 'w-full object-cover' : 'h-28 w-full object-cover'}`}
-            style={isRcs ? { aspectRatio: RCS_CAROUSEL_MEDIA_RATIOS[mediaHeight] } : undefined}
+            style={isRcs ? { aspectRatio: carouselAspectRatio(mediaHeight) } : undefined}
           />
         </button>
       )}

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { NormalizedMessage } from '../engine/types'
-import { messageSchema, type RenderableMessage, type VariableMap } from '../schema/messages'
+import { mediaHeightSchema, messageSchema, type RenderableMessage, type VariableMap } from '../schema/messages'
 
 export const LIVE_UNKNOWN_NODE_ID = '__live_unknown_node__'
 
@@ -15,9 +15,9 @@ const liveMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('video'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), thumbnailUrl: z.string().max(1000).optional(), caption: z.string().optional(), durationLabel: z.string().max(64).optional() }),
   z.object({ type: z.literal('file'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), filename: z.string(), title: z.string().optional(), description: z.string().optional() }),
   z.object({ type: z.literal('document'), sender: z.enum(['business', 'user']).optional(), url: z.string().optional(), filename: z.string(), title: z.string().optional(), description: z.string().optional() }),
-  z.object({ type: z.literal('card'), sender: z.enum(['business', 'user']).optional(), image: z.string().optional(), url: z.string().optional(), title: z.string(), description: z.string().optional(), actions: z.array(liveActionSchema).optional() }),
-  z.object({ type: z.literal('rich_card'), sender: z.enum(['business', 'user']).optional(), image: z.string().optional(), title: z.string(), description: z.string().optional(), actions: z.array(liveActionSchema).optional() }),
-  z.object({ type: z.literal('carousel'), sender: z.enum(['business', 'user']).optional(), cards: z.array(z.object({ id: z.string(), image: z.string().optional(), imageUrl: z.string().optional(), title: z.string(), subtitle: z.string().optional(), description: z.string().optional(), price: z.string().optional(), actions: z.array(liveActionSchema).optional() })) }),
+  z.object({ type: z.literal('card'), sender: z.enum(['business', 'user']).optional(), image: z.string().optional(), mediaHeight: mediaHeightSchema.optional(), url: z.string().optional(), title: z.string(), description: z.string().optional(), actions: z.array(liveActionSchema).optional() }),
+  z.object({ type: z.literal('rich_card'), sender: z.enum(['business', 'user']).optional(), image: z.string().optional(), mediaHeight: mediaHeightSchema.optional(), title: z.string(), description: z.string().optional(), actions: z.array(liveActionSchema).optional() }),
+  z.object({ type: z.literal('carousel'), sender: z.enum(['business', 'user']).optional(), mediaHeight: mediaHeightSchema.optional(), cards: z.array(z.object({ id: z.string(), image: z.string().optional(), imageUrl: z.string().optional(), title: z.string(), subtitle: z.string().optional(), description: z.string().optional(), price: z.string().optional(), actions: z.array(liveActionSchema).optional() })) }),
   z.object({ type: z.literal('suggested_replies'), sender: z.enum(['business', 'user']).optional(), options: z.array(z.object({ label: z.string() })) }),
   z.object({ type: z.literal('suggested_actions'), sender: z.enum(['business', 'user']).optional(), actions: z.array(liveActionSchema) }),
 ])
@@ -86,16 +86,19 @@ function mapMessage(message: z.infer<typeof liveMessageSchema>, sender: 'busines
     case 'document': return { type: 'document', ...common, filename: message.filename, url: message.url, ...(message.title ? { title: message.title } : {}), ...(message.description ? { description: message.description } : {}) }
     case 'card': return {
       type: 'rich_card', ...common, image: message.image ?? message.url,
+      ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}),
       title: message.title, ...(message.description ? { description: message.description } : {}),
       ...(message.actions ? { actions: message.actions.map(mapAction) } : {}),
     }
     case 'rich_card': return {
       type: 'rich_card', ...common, image: message.image,
+      ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}),
       title: message.title, ...(message.description ? { description: message.description } : {}),
       ...(message.actions ? { actions: message.actions.map(mapAction) } : {}),
     }
     case 'carousel': return {
       type: 'carousel', ...common,
+      ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}),
       cards: message.cards.map((card) => ({
         id: card.id, image: card.image ?? card.imageUrl, title: card.title,
         ...(card.subtitle ? { subtitle: card.subtitle } : {}),

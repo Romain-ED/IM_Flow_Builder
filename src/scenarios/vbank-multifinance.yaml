@@ -72,15 +72,15 @@ nodes:
       - type: text
         text: "Hi {{customerName}} 👋 Welcome to V Bank. Explore borrowing options and find a repayment plan that fits your needs. Review product details, rates, fees, and eligibility requirements before applying."
       - type: rich_card
-        image: "/assets/V%20Bank/logo.jpg"
-        mediaHeight: medium
+        image: "/assets/V%20Bank/logo%20card.jpg"
+        mediaHeight: tall
         title: "V Bank · banking clarity for your next move"
         description: "Explore V Bank lending options and review product terms before applying."
       - type: carousel
         mediaHeight: medium
         cards:
           - id: personal-loan
-            image: "/assets/V%20Bank/2.jpg"
+            image: "/assets/V%20Bank/2%20carousel.jpg"
             title: "Personal Loan"
             subtitle: "From 12% p.a."
             description: "Make room for your next chapter. Indicative rate subject to eligibility, product terms, and credit assessment."
@@ -96,7 +96,7 @@ nodes:
                 label: "View details"
                 next: details_personal
           - id: car-loan
-            image: "/assets/V%20Bank/car%20loan.jpg"
+            image: "/assets/V%20Bank/car%20loan%20carousel.jpg"
             title: "Car Loan"
             subtitle: "From 6% p.a."
             description: "Your next move, your own wheels. Indicative rates and terms depend on vehicle details and credit assessment."
@@ -112,7 +112,7 @@ nodes:
                 label: "View details"
                 next: details_car
           - id: home-mortgage
-            image: "/assets/V%20Bank/home%20mortgage.jpg"
+            image: "/assets/V%20Bank/home%20mortgage%20carousel.jpg"
             title: "Home Mortgage"
             subtitle: "Intro rate from 5% p.a."
             description: "A place to call yours. Introductory rate subject to eligibility, property details, and credit assessment."
@@ -133,7 +133,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/2.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Personal Loan details"
         description: "From 12% p.a. indicative rate. Review the applicable terms, fees, and eligibility requirements before applying."
         actions:
@@ -153,7 +153,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/car%20loan.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Car Loan details"
         description: "From 6% p.a. indicative rate. Your rate and repayment terms depend on the vehicle, application details, and credit assessment."
         actions:
@@ -173,7 +173,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/home%20mortgage.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Home Mortgage details"
         description: "Intro rate from 5% p.a. Your rate and repayment terms depend on the property, application details, and credit assessment."
         actions:
@@ -193,7 +193,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/car%20loan.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Car Loan options"
         description: "Car Loan eligibility depends on vehicle details, income, documentation, and credit assessment. Continue with Personal Loan to review its options."
         actions:
@@ -213,7 +213,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/home%20mortgage.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Home Mortgage options"
         description: "Home Mortgage eligibility depends on property details, income, documentation, and credit assessment. Continue with Personal Loan to review its options."
         actions:
@@ -233,7 +233,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/initial eligibility.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Before we check options"
         description: "May we use your answers and existing V Bank account information for an initial, indicative assessment of this Personal Loan? This does not commit you to borrow. Final eligibility and terms require document review and credit checks."
         actions:
@@ -251,7 +251,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/2.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "No problem, Nadia"
         description: "No assessment answers were collected. You can return to product options when you're ready."
         actions:
@@ -327,7 +327,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/you may qualify.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Indicative eligibility: up to {{indicativeLimit}}"
         description: "{{productDescription}} · {{productRate}}. This is an initial eligibility indication based on the information provided. Final approval and terms require documents and credit checks. Borrow only what you need and review the full terms before accepting."
         actions:
@@ -353,7 +353,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/secure document upload.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Application documents · {{documentsStatus}}"
         description: "KTP identity card ⏳ · Latest payslip ⏳. Use the secure document portal to submit the required files."
         actions:
@@ -379,7 +379,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/secure document upload.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Application documents · {{documentsStatus}}"
         description: "KTP identity card ✅ · Latest payslip ⏳. Use the secure document portal to submit the remaining file."
         actions:
@@ -405,7 +405,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/secure document upload.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Application documents · {{documentsStatus}}"
         description: "KTP identity card ✅ · Latest payslip ✅. Your documents are ready for identity verification."
         actions:
@@ -475,7 +475,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/identity check.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Identity verification"
         description: "Have your camera ready for secure identity verification. Follow the instructions, then return here when complete."
         actions:
@@ -501,7 +501,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/identity check.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Identity check not completed"
         description: "Try secure identity verification again, or pause your application."
         actions:
@@ -542,7 +542,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/review before signing.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Review your Personal Loan offer"
         description: "Principal {{selectedAmount}} · rate 12% p.a. · monthly instalment {{estimatedInstallment}} · fees Rp 1,200,000 · total instalments Rp 67,785,792 · total cost including fees Rp 68,985,792 · reference VB-PL-261101-0842. Review the full terms before signing."
         actions:
@@ -568,7 +568,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/review before signing.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Contract signing not completed"
         description: "Review your agreement in the secure document portal and return here when signing is complete."
         actions:
@@ -615,7 +615,7 @@ nodes:
         text: "Contract signed ✅ Your Personal Loan funds have been transferred to your V Bank account."
       - type: rich_card
         image: "/assets/V%20Bank/fund transferred.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Personal Loan · transfer confirmed"
         description: "Reference VB-PL-261101-0842 · View your contract or repayment schedule."
         actions:
@@ -632,7 +632,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/payment reminder.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Your first repayment"
         description: "Amount: Rp 2,824,408\nDue: 6 December 2026\nChoose a payment method to view instructions."
       - type: suggested_replies
@@ -663,7 +663,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/payment options.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "{{paymentMethod}} payment instructions"
         description: "Virtual account: {{virtualAccount}}\nExact amount: Rp 2,824,408\nDue: 6 December 2026\nFollow {{paymentMethod}} instructions to complete your repayment."
         actions:
@@ -702,7 +702,7 @@ nodes:
     messages:
       - type: rich_card
         image: "/assets/V%20Bank/payment received.jpg"
-        mediaHeight: medium
+        mediaHeight: tall
         title: "Payment received · Rp 2,824,408"
         description: "Payment received ✅ Your repayment has been recorded."
         actions:
@@ -734,8 +734,8 @@ nodes:
     label: "V Bank support"
     messages:
       - type: rich_card
-        image: "/assets/V%20Bank/logo.jpg"
-        mediaHeight: medium
+        image: "/assets/V%20Bank/logo%20card.jpg"
+        mediaHeight: tall
         title: "V Bank support"
         description: "I can help with product options, document upload, identity verification, contract signing, and repayments. Choose an option below."
         actions:

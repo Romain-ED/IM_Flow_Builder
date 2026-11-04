@@ -78,6 +78,15 @@ Every flow with `metadata.channel: rcs` must define a non-empty `metadata.trigge
 
 This field is separate from the optional top-level `triggers` array below. Top-level triggers are legacy in-flow keyword shortcuts checked after the scenario has started; they are not scenario selectors.
 
+## RCS card image sizing
+
+Google Messages shows card media at a fixed height (`mediaHeight`: short 112, medium 168, tall 264 DP) across a width set by the screen, then zooms and centre-crops anything that doesn't match. Standalone `rich_card`s span the screen, so on a typical phone: short ≈ 3.5:1, medium ≈ 2.4:1, tall ≈ 1.5:1 (flatter on wide/foldable screens, ~1.3:1 tall on 360 DP phones). Carousel cards (medium width, 296 DP) are ≈ 1.8:1 at `medium`.
+
+- Standard 3:2 artwork (or anything with text/logos near its edges) belongs in `mediaHeight: tall` on standalone `rich_card`s. `medium`/`short` only suit wide banners (≈ 2.4:1 / 3.5:1) with the subject kept in the central band.
+- Carousels: keep `mediaHeight: medium` and supply ≈ 1.8:1 images (e.g. 1728×960). Don't use `tall` in carousels; some providers reject it.
+- Square logos need their own padded 1.8:1 (carousel) or 1.5:1 (tall) card image; keep the square file for `brand.avatar`/`logo`.
+- The Scenario editor's "RCS media crop" panel measures each card image against these ratios and dims what will be cropped; resolve anything shown in amber. `mediaHeight` also reaches the phone in Live RCS (`media_height`).
+
 ## Free text & triggers
 
 The user's composer is always typable after the browser simulator's RCS entry trigger has been accepted, not just when an `input` message is active — whatever they type then sends as an outgoing bubble. In Live RCS, the composer is available after the session starts; only RCS MENU requires a phone entry trigger. Before startup, unmatched RCS text is ignored by the browser simulator; Live RCS flows started from the simulator do not wait for phone text. `triggers`

@@ -61,7 +61,7 @@ nodes:
                 label: "Start Domino's experience"
                 startScenarioId: dominos-singapore-rcs-demo
           - id: vbank-multifinance-first-repayment
-            image: "/assets/V%20Bank/logo.jpg"
+            image: "/assets/V%20Bank/logo%20carousel.jpg"
             title: "V Bank"
             description: "Explore lending options through first repayment."
             actions:

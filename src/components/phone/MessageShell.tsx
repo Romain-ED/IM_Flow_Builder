@@ -79,14 +79,15 @@ export function MessageShell({
   // definite width, whereas a percentage on a plain block child resolves
   // against its parent's — here indeterminate — width and silently fails to
   // constrain anything, letting long messages overflow the phone frame.
-  // Tinted RCS cards use a fixed share of the row so their width doesn't depend
+  // Tinted RCS cards span the row (Google Messages draws them nearly edge to
+  // edge) so their width doesn't depend
   // on the media's intrinsic size or the title length.
   const wrapperMaxWidth =
     chrome === 'bubble'
       ? 'max-w-[82%]'
       : chrome === 'card'
         ? tinted && channel === 'rcs'
-          ? 'w-[86%]'
+          ? 'w-full'
           : 'max-w-[86%]'
         : 'max-w-full'
 

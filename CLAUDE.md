@@ -55,6 +55,7 @@ Built-in scenarios use **only types with a real WhatsApp Cloud API / Google RCS 
 - **Formatting (0.16.0):** `FormattedText` for prose fields only (not titles, headers, button labels, `document`). **Never nest `**_x_**`.** Details: docs/HISTORY.md#formatting-0160
 - **Phone sizing (0.16.1):** `.phone-viewport`/`.phone-frame-fit` keep 9:19; Compare mode's 260px columns stay unchanged unless asked. Details: docs/HISTORY.md#phone-sizing-0161
 - **Pro Gadget Laos (0.15.0/0.16.3):** copy from a real spec PDF; real Garmin CIRQA; `product_launch` is a promo. No "new arrival" without a second real product. Details: docs/HISTORY.md#progadget-0150, docs/HISTORY.md#progadget-0163
+- **RCS card images:** standalone `rich_card` art that isn't a wide banner uses `mediaHeight: tall`; carousels stay `medium` with ≈1.8:1 images; real phones crop to the card ratio (docs/SCENARIO_AUTHORING_GUIDE.md#rcs-card-image-sizing). Ratios live in `src/channels/rcs/mediaRatios.ts`; the editor's "RCS media crop" panel checks them.
 - **Beerlao assets (0.13.1):** pasted chat images are unreachable; have the user commit binaries to `public/assets/`; run `file <path>` if one misbehaves. Leave unreferenced `public/assets/38198693_*.jpg` alone; ask first. Details: docs/HISTORY.md#beerlao-assets-0131
 
 ## Shared-link mode (0.14.0)

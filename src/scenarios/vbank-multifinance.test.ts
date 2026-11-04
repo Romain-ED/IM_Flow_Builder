@@ -75,9 +75,9 @@ describe('V Bank multifinance RCS scenario', () => {
     if (!carousel || carousel.type !== 'carousel') return
     expect(carousel.cards.map((card) => card.title)).toEqual(['Personal Loan', 'Car Loan', 'Home Mortgage'])
     expect(carousel.cards.map((card) => card.image)).toEqual([
-      '/assets/V%20Bank/2.jpg',
-      '/assets/V%20Bank/car%20loan.jpg',
-      '/assets/V%20Bank/home%20mortgage.jpg',
+      '/assets/V%20Bank/2%20carousel.jpg',
+      '/assets/V%20Bank/car%20loan%20carousel.jpg',
+      '/assets/V%20Bank/home%20mortgage%20carousel.jpg',
     ])
 
     const nodeIds = new Set(flow.nodes.map((node) => node.id))

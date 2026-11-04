@@ -4,6 +4,7 @@ import { useSimulatorStore } from '../../store/simulatorStore'
 import { detectFormat, parseFlowSource, toJsonString, toYamlString } from '../../utils/flowSource'
 import { EXAMPLE_FLOW_TEMPLATE } from '../../utils/exampleFlowTemplate'
 import { ToolbarButton } from './ToolbarButton'
+import { MediaCropReport } from './MediaCropReport'
 
 export function ScenarioEditorModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const flow = useSimulatorStore((s) => s.flow)
@@ -136,6 +137,7 @@ export function ScenarioEditorModal({ open, onClose }: { open: boolean; onClose:
                 ))}
               </div>
             )}
+            <MediaCropReport draft={draft} />
           </div>
         </div>
       </div>

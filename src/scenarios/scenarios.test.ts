@@ -69,7 +69,7 @@ describe('RCS capacity regressions', () => {
     expect(carousel.cards.map((card) => ({ id: card.id, image: card.image, startScenarioId: card.actions?.[0]?.type === 'reply' ? card.actions[0].startScenarioId : undefined }))).toEqual([
       { id: 'singapore-airlines', image: '/assets/singapore-airlines/brand-logo.png', startScenarioId: 'singapore-airlines' },
       { id: 'dominos-singapore-rcs-demo', image: '/assets/dominos-singapore-rcs-demo/imgi_17_app-icon.png', startScenarioId: 'dominos-singapore-rcs-demo' },
-      { id: 'vbank-multifinance-first-repayment', image: '/assets/V%20Bank/logo.jpg', startScenarioId: 'vbank-multifinance-first-repayment' },
+      { id: 'vbank-multifinance-first-repayment', image: '/assets/V%20Bank/logo%20carousel.jpg', startScenarioId: 'vbank-multifinance-first-repayment' },
     ])
     expect(carousel.cards.some((card) => card.id === 'rcs-demo-menu')).toBe(false)
   })

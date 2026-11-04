@@ -46,7 +46,7 @@ describe('Vonage RCS transport', () => {
       message_type: 'text',
       suggestions: [
         { type: 'reply', text: 'Continue', postback_data: 'welcome:m:1:reply:0' },
-        { type: 'action', text: 'Open site', postback_data: 'welcome:m:1:action:1', url: 'https://example.com' },
+        { type: 'open_url', text: 'Open site', postback_data: 'welcome:m:1:action:1', url: 'https://example.com' },
       ],
     })
   })
@@ -65,6 +65,16 @@ describe('Vonage RCS transport', () => {
 
     expect(card).toMatchObject({ message_type: 'card', card: { media_url: 'https://example.com/flight.jpg', suggestions: [{ postback_data: 'card:action' }] } })
     expect(carousel).toMatchObject({ message_type: 'carousel', carousel: { cards: [{ suggestions: [{ postback_data: 'one:reply' }] }, { suggestions: [{ postback_data: 'two:reply' }] }] } })
+  })
+
+  it('maps mediaHeight to Vonage media_height and defaults to MEDIUM', () => {
+    const tall = toVonageRcsMessage({ id: 'tall', type: 'card', title: 'Tall', url: 'https://example.com/a.jpg', mediaHeight: 'tall' }, config)
+    const plain = toVonageRcsMessage({ id: 'plain', type: 'card', title: 'Plain', url: 'https://example.com/a.jpg' }, config)
+    const short = toVonageRcsMessage({ id: 'short', type: 'carousel', mediaHeight: 'short', cards: [{ id: 'one', title: 'One', imageUrl: 'https://example.com/a.jpg' }] }, config)
+
+    expect(tall.card.media_height).toBe('TALL')
+    expect(plain.card.media_height).toBe('MEDIUM')
+    expect(short.carousel.cards[0].media_height).toBe('SHORT')
   })
 
   it('serializes the RCS menu raster logo as carousel media', () => {

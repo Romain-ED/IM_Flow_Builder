@@ -5,6 +5,7 @@ import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { FormattedText } from '../components/common/FormattedText'
 import { ActionButton } from '../components/phone/ActionButton'
 import { RCS_ACTION_STACK } from '../channels/rcs/cardStyles'
+import { RCS_STANDALONE_TARGET_RATIOS } from '../channels/rcs/mediaRatios'
 
 interface RichCardProps {
   message: NormalizedMessage
@@ -13,8 +14,6 @@ interface RichCardProps {
   timestampLabel?: string
 }
 
-// Google's RCS media heights for vertical cards are 112 / 168 / 264 DP.
-const RCS_MEDIA_HEIGHTS: Record<string, string> = { short: 'h-[112px]', medium: 'h-[168px]', tall: 'h-[264px]' }
 const WHATSAPP_MEDIA_HEIGHTS: Record<string, string> = { short: 'h-28', medium: 'h-44', tall: 'h-64' }
 
 export function RichCard({ message, channel, interactive, timestampLabel }: RichCardProps) {
@@ -59,7 +58,8 @@ export function RichCard({ message, channel, interactive, timestampLabel }: Rich
               <ImageWithFallback
                 src={image}
                 alt={title}
-                className={`w-full ${RCS_MEDIA_HEIGHTS[mediaHeight ?? 'medium']} object-cover block`}
+                className="block w-full object-cover"
+                style={{ aspectRatio: `${RCS_STANDALONE_TARGET_RATIOS[mediaHeight ?? 'medium']} / 1` }}
               />
             )}
             {body}
