@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.26.0',
+    date: '2026-11-04',
+    changes: [
+      'New: Live RCS is always on for the RCS MENU flow. Any customer who texts the exact trigger to the bound RCS number gets their own independent session, with no presenter action. Needs LIVE_RCS_ALWAYS_ON_FLOW_PATH (JSON file with { flow, catalog? }) and rcs-demo-menu in LIVE_RCS_ALLOWED_FLOW_IDS; restart the server after changing the file. Without the env var, behavior is unchanged.',
+      'Fix: the duplicate-session guard in createSession is now per recipient, so a customer session no longer blocks the presenter.',
+    ],
+  },
+  {
     version: '0.25.1',
     date: '2026-10-22',
     changes: [

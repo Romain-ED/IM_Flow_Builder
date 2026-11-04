@@ -48,6 +48,25 @@ describe('VCR server live routes', () => {
     expect(await diagnostics.json()).toMatchObject({ mode: 'fake', ready: true, recipient: expect.stringContaining('4567') })
   })
 
+  it('requires an operator token before creating a live session', async () => {
+    const origin = await startTestServer()
+    const response = await fetch(`${origin}/api/live/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized.' } })
+  })
+
+  it('never creates a session from an inbound webhook with no matching session', async () => {
+    const origin = await startTestServer('test-live-flow,rcs-demo-menu')
+    const inbound = await fetch(`${origin}/webhooks/vonage/inbound`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_uuid: 'orphan-trigger', text: 'RCS MENU', from: '+15559990003' }),
+    })
+    expect(inbound.status).toBeGreaterThanOrEqual(400)
+    const list = await fetch(`${origin}/api/live/sessions`, { headers: { Authorization: 'Bearer operator-token' } })
+    expect(await list.json()).toHaveLength(0)
+  })
+
   it('creates non-menu sessions immediately and keeps inbound entry triggers menu-only', async () => {
     const origin = await startTestServer('test-live-flow,rcs-demo-menu')
     const headers = { Authorization: 'Bearer operator-token', 'Content-Type': 'application/json' }
