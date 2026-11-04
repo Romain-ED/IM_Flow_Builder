@@ -75,7 +75,7 @@ Hiding buttons isn't the guarantee:
 ## Versioning — do this on every change
 
 1. Bump `version` in `package.json` (0.x: middle = new feature, last = fix/infra-only).
-2. Add an entry at the top of `src/app/changelog.json` (a JSON array; newest first) (newest first; renders in the Manual's Changelog tab). Write it as a note to self.
+2. Add an entry at the top of `src/app/changelog.json` (a JSON array, newest first; renders in the Manual's Changelog tab). Write it as a note to self.
 3. `AppHeader.tsx` and the Manual header read `APP_VERSION` (`src/app/version.ts`) automatically.
 
 ## Git / deploy workflow
