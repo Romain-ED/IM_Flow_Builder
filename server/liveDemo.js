@@ -53,6 +53,18 @@ export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()
     storageDurable,
     demoEphemeralStorage,
     alwaysOnFlowPath: env.LIVE_RCS_ALWAYS_ON_FLOW_PATH ?? null,
+    publicBaseUrl: configuredPublicBaseUrl(env),
+  }
+}
+
+/** Public origin used to resolve root-relative media for sessions not created from a browser request (always-on starts). */
+function configuredPublicBaseUrl(env) {
+  const value = (env.LIVE_RCS_PUBLIC_BASE_URL || env.VCR_INSTANCE_PUBLIC_URL || '').trim()
+  if (!value) return null
+  try {
+    return new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`).origin
+  } catch {
+    return null
   }
 }
 
@@ -324,6 +336,7 @@ function liveMessageFromContent(content, sender, session) {
     type: 'rich_card',
     ...base,
     ...(content.url ? { image: presenterUrl(content.url) } : {}),
+    ...(content.mediaHeight ? { mediaHeight: content.mediaHeight } : {}),
     title: presenterText(session, content.title),
     ...(content.description ? { description: presenterText(session, content.description) } : {}),
     ...(Array.isArray(content.actions) ? { actions: content.actions.map(displayAction).filter(Boolean) } : {}),
@@ -331,6 +344,7 @@ function liveMessageFromContent(content, sender, session) {
   if (content.type === 'carousel' && Array.isArray(content.cards)) return {
     type: 'carousel',
     ...base,
+    ...(content.mediaHeight ? { mediaHeight: content.mediaHeight } : {}),
     cards: content.cards.map((card) => ({
       id: boundedText(card.id, 160),
       ...(card.imageUrl || card.image ? { image: presenterUrl(card.imageUrl ?? card.image) } : {}),
@@ -409,7 +423,14 @@ function safeDiagnostic(entry, index) {
     ...(typeof entry.recognized === 'boolean' ? { recognized: entry.recognized } : {}),
     ...(entry.messageType ? { messageType: boundedText(entry.messageType, 80) } : {}),
     ...(entry.error ? { safeCode: 'WEBHOOK_PROCESSING_ERROR' } : {}),
+    ...(providerRejection(entry.error) ? { providerRejection: providerRejection(entry.error) } : {}),
   }
+}
+
+/** Vonage's own rejection text ("Vonage Messages API rejected the message (422): ..."), with phone-like digit runs masked. */
+function providerRejection(error) {
+  if (typeof error !== 'string' || !error.startsWith('Vonage Messages API rejected the message')) return null
+  return boundedText(error.replace(/\d{7,}/g, '[number]'), 400)
 }
 
 function matchTrigger(triggers, text) {
@@ -419,6 +440,10 @@ function matchTrigger(triggers, text) {
   })) ?? null
 }
 
+/** Allowlisted by the operator, or part of the server-bundled always-on file (trusted repo content, never browser-supplied). */
+function isAllowedFlowId(config, id) {
+  return config.allowedFlowIds.includes(id) || (config.trustedAlwaysOnFlowIds ?? []).includes(id)
+}
 function validateScenarioCatalog(catalog, config) {
   if (!Array.isArray(catalog)) throw new Error('Live RCS scenario catalog must be an array.')
   const targets = {}
@@ -429,7 +454,7 @@ function validateScenarioCatalog(catalog, config) {
     if (targets[id]) throw new Error(`Live RCS scenario catalog contains duplicate id "${id}".`)
     const metadataId = flow.metadata?.id
     if (typeof metadataId !== 'string' || !metadataId) throw new Error(`Live RCS scenario "${id}" requires a metadata.id.`)
-    if (!config.allowedFlowIds.includes(metadataId)) throw new Error(`Live RCS scenario "${id}" (flow "${metadataId}") is not allowlisted for Live RCS.`)
+    if (!isAllowedFlowId(config, metadataId)) throw new Error(`Live RCS scenario "${id}" (flow "${metadataId}") is not allowlisted for Live RCS.`)
     if (flow.metadata?.channel !== 'rcs') throw new Error(`Live RCS scenario "${id}" must use the RCS channel.`)
     if (typeof flow.metadata?.trigger !== 'string' || !normalizeRcsEntryTrigger(flow.metadata.trigger)) throw new Error(`Live RCS scenario "${id}" requires a non-empty metadata.trigger.`)
     if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node) => node?.id === flow.start)) throw new Error(`Live RCS scenario "${id}" is missing a valid start state.`)
@@ -554,8 +579,8 @@ function collectContent(session, node, variables) {
       })
     }
     else if (message.type === 'document') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'file', url: resolveMediaUrl(message.url, session.publicBaseUrl), filename: message.filename, title: message.title, description: message.description })
-    else if (message.type === 'rich_card') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'card', title: message.title, description: message.description, url: resolveMediaUrl(message.image, session.publicBaseUrl), actions: (message.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, actionIndex)) })
-    else if (message.type === 'carousel') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'carousel', cards: message.cards.map((card, cardIndex) => ({ id: card.id, title: card.title, description: card.description ?? card.subtitle, imageUrl: resolveMediaUrl(card.image, session.publicBaseUrl), actions: (card.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, cardIndex * 10 + actionIndex)) })) })
+    else if (message.type === 'rich_card') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'card', title: message.title, description: message.description, url: resolveMediaUrl(message.image, session.publicBaseUrl), ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}), actions: (message.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, actionIndex)) })
+    else if (message.type === 'carousel') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'carousel', ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}), cards: message.cards.map((card, cardIndex) => ({ id: card.id, title: card.title, description: card.description ?? card.subtitle, imageUrl: resolveMediaUrl(card.image, session.publicBaseUrl), actions: (card.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, cardIndex * 10 + actionIndex)) })) })
     else if (message.type === 'suggested_replies') {
       if (!previous) throw new Error('Suggestions require a preceding content message.')
       previous.replies = message.options.map((choice, optionIndex) => ({ id: interactionId(node.id, index, 'reply', optionIndex), label: choice.label, kind: 'reply', next: choice.next, set: choice.set }))
@@ -600,7 +625,12 @@ export class LiveDemoService {
   }
 
   diagnostics() {
-    return publicLiveDemoDiagnostics(this.config)
+    const diagnostics = publicLiveDemoDiagnostics(this.config)
+    // Load now so a bad always-on file or allowlist mismatch shows here instead of failing silently on an inbound message.
+    if (this.config.alwaysOnFlowPath && !this.loadAlwaysOnFlow()) {
+      diagnostics.alwaysOnFlow = `error: ${this._alwaysOnFlowError ?? 'could not load always-on flow'}`
+    }
+    return diagnostics
   }
 
   recordDiagnostic(details) {
@@ -648,7 +678,7 @@ export class LiveDemoService {
       const { flow, catalog } = raw
       if (!flow || typeof flow !== 'object') throw new Error('Always-on flow config requires a "flow" property.')
       if (!isRcsMenuFlow(flow)) throw new Error('Always-on flow must use the RCS MENU flow.')
-      if (!this.config.allowedFlowIds.includes(flow.metadata?.id)) throw new Error(`Always-on flow "${flow.metadata?.id}" is not allowlisted for Live RCS.`)
+      if (!isAllowedFlowId(this.config, flow.metadata?.id)) throw new Error(`Always-on flow "${flow.metadata?.id}" is not allowlisted for Live RCS.`)
       if (flow.metadata?.channel !== 'rcs') throw new Error('Always-on flow must use the RCS channel.')
       if (typeof flow.metadata?.trigger !== 'string' || !normalizeRcsEntryTrigger(flow.metadata.trigger)) throw new Error('Always-on flow requires a non-empty metadata.trigger.')
       if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node) => node?.id === flow.start)) throw new Error('Always-on flow is missing a valid start state.')
@@ -657,12 +687,13 @@ export class LiveDemoService {
       return this._alwaysOnFlowCache
     } catch (error) {
       this._alwaysOnFlowCache = null
-      this.recordDiagnostic({ type: 'always_on_flow_load_error', error: error instanceof Error ? error.message : 'Failed to load always-on flow config.' })
+      this._alwaysOnFlowError = error instanceof Error ? error.message : 'Failed to load always-on flow config.'
+      this.recordDiagnostic({ type: 'always_on_flow_load_error', error: this._alwaysOnFlowError })
       return null
     }
   }
 
-  async _tryAutoStartSession(payload, payloadSummary) {
+  async _tryAutoStartSession(payload, payloadSummary, { replaceActive = false } = {}) {
     if (!this.config.configured) return null
     const alwaysOn = this.loadAlwaysOnFlow()
     if (!alwaysOn || !isRcsMenuFlow(alwaysOn.flow)) return null
@@ -679,12 +710,17 @@ export class LiveDemoService {
       return null
     }
     const normalizedSender = normalizedAddress(senderRecipient)
-    if (this.store.list().some((s) =>
+    const activeForSender = this.store.list().filter((s) =>
       normalizedAddress(s.recipient) === normalizedSender &&
       (s.status === 'starting' || s.status === 'awaiting_trigger' || s.status === 'awaiting_reply')
-    )) {
-      this.recordDiagnostic({ type: 'auto_start_skipped', reason: 'Active session already exists for this sender.' })
-      return null
+    )
+    if (activeForSender.length > 0) {
+      if (!replaceActive) {
+        this.recordDiagnostic({ type: 'auto_start_skipped', reason: 'Active session already exists for this sender.' })
+        return null
+      }
+      for (const stale of activeForSender) this.stopSession(stale.id)
+      this.recordDiagnostic({ type: 'auto_start_replaced_sessions', count: activeForSender.length })
     }
     const scenarioCatalog = Array.isArray(alwaysOn.catalog) ? validateScenarioCatalog(alwaysOn.catalog, this.config) : {}
     const session = {
@@ -693,7 +729,7 @@ export class LiveDemoService {
       updatedAt: now(),
       status: 'awaiting_trigger',
       recipient: senderRecipient,
-      publicBaseUrl: null,
+      publicBaseUrl: this.config.publicBaseUrl ?? null,
       flow: alwaysOn.flow,
       scenarioCatalog,
       variables: { ...(alwaysOn.flow.variables ?? {}) },
@@ -852,8 +888,16 @@ export class LiveDemoService {
     const postbackId = payloadSummary.postbackId
     const text = payload.text ?? payload.message?.text
     let session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || ((candidate.status === 'awaiting_trigger' || candidate.status === 'awaiting_reply') && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
-    if (!session) {
-      const autoStarted = await this._tryAutoStartSession(payload, payloadSummary)
+    // "RCS MENU" is a global keyword: it restarts the menu even when the sender still has a session that
+    // is waiting for a reply (e.g. the menu was shown earlier and never tapped). It never overrides a
+    // duplicate delivery, a tap on a suggested reply, or a UI-created menu session already waiting for the trigger.
+    const keepsSession = session && (
+      session.processedInbound.includes(eventId) ||
+      (postbackId && session.correlation[postbackId]) ||
+      (session.status === 'awaiting_trigger' && isRcsMenuFlow(session.flow))
+    )
+    if (!session || !keepsSession) {
+      const autoStarted = await this._tryAutoStartSession(payload, payloadSummary, { replaceActive: Boolean(session) })
       if (autoStarted) session = this.store.get(autoStarted.id)
     }
     if (!session) {

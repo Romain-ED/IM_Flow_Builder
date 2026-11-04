@@ -23,6 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Generated at build time by scripts/export-always-on-flow.mjs
+server/generated
 # Local Live RCS session store (contains test-recipient transcript data)
 .live-rcs-sessions.json
 .live-rcs-sessions.json.*

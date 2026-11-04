@@ -396,14 +396,31 @@ describe('always-on flow auto-start', () => {
     expect(r2.status).toBe('awaiting_reply')
   })
 
-  it('does not auto-start a second session when the sender already has an active one', async () => {
+  it('restarts the menu when the sender sends the trigger again while a session is waiting for a reply', async () => {
     const service = makeVonageService()
-    // First trigger: auto-starts a session
-    await service.handleInbound(fakeInbound({ message_uuid: 'first', text: 'RCS MENU' }))
+    const first = await service.handleInbound(fakeInbound({ message_uuid: 'first', text: 'RCS MENU' }))
+    expect(first.status).toBe('awaiting_reply')
+    const second = await service.handleInbound(fakeInbound({ message_uuid: 'second', text: 'rcs menu' }))
+    expect(second.id).not.toBe(first.id)
+    expect(second.status).toBe('awaiting_reply')
+    expect(second.timeline[1].message).toMatchObject({ text: 'Welcome to the menu' })
+    const sessions = service.store.list()
+    expect(sessions.find((s) => s.id === first.id).status).toBe('stopped')
+    expect(sessions.filter((s) => s.status === 'awaiting_reply')).toHaveLength(1)
+  })
+
+  it('does not restart on a duplicate delivery of the same trigger event', async () => {
+    const service = makeVonageService()
+    const first = await service.handleInbound(fakeInbound({ message_uuid: 'dup', text: 'RCS MENU' }))
+    const again = await service.handleInbound(fakeInbound({ message_uuid: 'dup', text: 'RCS MENU' }))
+    expect(again.id).toBe(first.id)
     expect(service.store.list()).toHaveLength(1)
-    // Sender sends trigger again while session is still active — existing session handles it, no duplicate created
-    await service.handleInbound(fakeInbound({ message_uuid: 'second', text: 'RCS MENU' }))
-    expect(service.store.list()).toHaveLength(1)
+  })
+
+  it('reports an always-on flow that fails to load (e.g. flow id not allowlisted) in diagnostics', () => {
+    const service = makeVonageService()
+    service._alwaysOnFlowCache = undefined
+    expect(service.diagnostics().alwaysOnFlow).toMatch(/^error: /)
   })
 
   it('does not auto-start an inbound trigger for a non-menu flow', async () => {
@@ -435,7 +452,9 @@ describe('always-on flow auto-start', () => {
   it('exposes alwaysOnFlow status in public diagnostics', () => {
     const configWithPath = getLiveDemoConfig({ ...env, LIVE_RCS_ALWAYS_ON_FLOW_PATH: '/some/path.json' }, process.cwd())
     const configWithout = getLiveDemoConfig(env, process.cwd())
-    expect(new LiveDemoService(configWithPath, new MemoryStore(), new FakeRcsGateway()).diagnostics().alwaysOnFlow).toBe('configured')
+    const withPath = new LiveDemoService(configWithPath, new MemoryStore(), new FakeRcsGateway())
+    withPath._alwaysOnFlowCache = { flow: menuFlow, catalog: undefined }
+    expect(withPath.diagnostics().alwaysOnFlow).toBe('configured')
     expect(new LiveDemoService(configWithout, new MemoryStore(), new FakeRcsGateway()).diagnostics().alwaysOnFlow).toBe('not configured')
   })
 

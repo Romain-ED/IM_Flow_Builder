@@ -1,9 +1,10 @@
-import { createReadStream, existsSync, statSync } from 'node:fs'
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getLiveDemoConfig, LiveDemoService, summarizeInboundPayload, verifyWebhook } from './liveDemo.js'
 import { createShareLinks } from './shareLinks.js'
+import { isVcrRuntime } from './shareStore.js'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDirectory = join(projectRoot, 'dist')
@@ -246,8 +247,24 @@ async function handleWebhook(request, response, url, liveDemo) {
   }
 }
 
+const bundledAlwaysOnFlowPath = join(projectRoot, 'server', 'generated', 'always-on-rcs-menu.json')
+/** On VCR the build bundles the RCS MENU flow, so always-on needs no secret or manual file. */
+function withBundledAlwaysOnFlow(env) {
+  if (env.LIVE_RCS_ALWAYS_ON_FLOW_PATH || !isVcrRuntime(env) || !existsSync(bundledAlwaysOnFlowPath)) return env
+  return { ...env, LIVE_RCS_ALWAYS_ON_FLOW_PATH: bundledAlwaysOnFlowPath }
+}
+/** Flow ids in the build-generated always-on file; they need no entry in LIVE_RCS_ALLOWED_FLOW_IDS. */
+function bundledFlowIds() {
+  try {
+    const { flow, catalog } = JSON.parse(readFileSync(bundledAlwaysOnFlowPath, 'utf8'))
+    return [flow?.metadata?.id, ...(Array.isArray(catalog) ? catalog.map((entry) => entry?.flow?.metadata?.id) : [])].filter((id) => typeof id === 'string')
+  } catch {
+    return []
+  }
+}
 export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }) } = {}) {
-  const config = liveDemo?.config ?? getLiveDemoConfig(env, projectRoot)
+  const config = liveDemo?.config ?? getLiveDemoConfig(withBundledAlwaysOnFlow(env), projectRoot)
+  if (!liveDemo && config.alwaysOnFlowPath === bundledAlwaysOnFlowPath) config.trustedAlwaysOnFlowIds = bundledFlowIds()
   const service = liveDemo ?? new LiveDemoService(config)
   return createServer(async (request, response) => {
     const url = new URL(request.url || '/', 'http://localhost')

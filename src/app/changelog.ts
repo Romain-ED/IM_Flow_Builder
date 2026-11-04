@@ -11,6 +11,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.26.1',
+    date: '2026-11-04',
+    changes: [
+      'Fix: sending RCS MENU again now restarts the menu. Previously a sender with a session still waiting for a reply was silently ignored; that session is now stopped and a fresh menu starts.',
+      'Fix: the bundled always-on RCS MENU flow and its scenarios no longer need to be listed in LIVE_RCS_ALLOWED_FLOW_IDS, and /api/live/diagnostics now reports alwaysOnFlow load errors instead of failing silently.',
+    ],
+  },
+  {
     version: '0.26.0',
     date: '2026-11-04',
     changes: [
