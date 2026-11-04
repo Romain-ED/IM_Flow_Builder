@@ -32,3 +32,6 @@ server/generated
 .agents/
 .kiro/tasks/
 .playwright-mcp/
+
+# Compiled server (npm run build)
+dist-server

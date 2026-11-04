@@ -8,7 +8,7 @@ instance:
   build-script: ./build.sh
   entrypoint:
     - node
-    - server/index.js
+    - dist-server/index.js
   environment:
     - name: LIVE_RCS_MODE
       secret: LIVE_RCS_MODE
@@ -35,4 +35,4 @@ debug:
   entrypoint:
     - node
     - --inspect
-    - server/index.js
+    - dist-server/index.js

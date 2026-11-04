@@ -1,5 +1,19 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { resolveShareStore } from './shareStore.js'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import { resolveShareStore, type ShareStore } from './shareStore.js'
+import type { Env } from './types.js'
+
+interface RateLimit {
+  max: number
+  windowMs: number
+}
+export interface ShareLimits {
+  create: RateLimit
+  read: RateLimit
+  maxLinks: number
+  maxBytes: number
+}
+type Headers = Record<string, string>
 
 /**
  * Short, permanent, read-only share links.
@@ -18,7 +32,7 @@ import { resolveShareStore } from './shareStore.js'
 export const MAX_SOURCE_BYTES = 1_000_000
 const MAX_BODY_BYTES = MAX_SOURCE_BYTES + 4_096
 const ID_PATTERN = /^[A-Za-z0-9_-]{16,64}$/
-const DEFAULT_LIMITS = {
+const DEFAULT_LIMITS: ShareLimits = {
   /** Link creations per client IP per window. */
   create: { max: 20, windowMs: 10 * 60_000 },
   /** Link reads per client IP per window. */
@@ -28,11 +42,11 @@ const DEFAULT_LIMITS = {
   maxBytes: 100_000_000,
 }
 
-export function isValidShareId(id) {
+export function isValidShareId(id: unknown): id is string {
   return typeof id === 'string' && ID_PATTERN.test(id)
 }
 
-function sendJson(response, statusCode, body, extraHeaders = {}) {
+function sendJson(response: ServerResponse, statusCode: number, body: unknown, extraHeaders: Headers = {}) {
   response.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'X-Content-Type-Options': 'nosniff',
@@ -43,23 +57,23 @@ function sendJson(response, statusCode, body, extraHeaders = {}) {
   response.end(JSON.stringify(body))
 }
 
-function sendError(response, statusCode, code, message, extraHeaders) {
+function sendError(response: ServerResponse, statusCode: number, code: string, message: string, extraHeaders?: Headers) {
   sendJson(response, statusCode, { error: { code, message } }, extraHeaders)
 }
 
 /** Rightmost X-Forwarded-For entry (appended by the platform proxy), else the socket address. */
-function clientIp(request) {
+function clientIp(request: IncomingMessage): string {
   const forwarded = request.headers['x-forwarded-for']
   if (typeof forwarded === 'string' && forwarded.trim()) {
-    const last = forwarded.split(',').pop().trim()
+    const last = (forwarded.split(',').pop() ?? '').trim()
     if (last) return last
   }
   return request.socket?.remoteAddress ?? 'unknown'
 }
 
-function createRateLimiter(now) {
-  const windows = new Map()
-  return function hit(bucket, ip, { max, windowMs }) {
+function createRateLimiter(now: () => number) {
+  const windows = new Map<string, { count: number; resetAt: number }>()
+  return function hit(bucket: string, ip: string, { max, windowMs }: RateLimit): number {
     const key = `${bucket}|${ip}`
     const time = now()
     if (windows.size > 10_000) {
@@ -77,16 +91,16 @@ function createRateLimiter(now) {
 
 class BodyTooLargeError extends Error {}
 
-function readBody(request) {
+function readBody(request: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const declared = Number(request.headers['content-length'])
     if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
       reject(new BodyTooLargeError())
       return
     }
-    const chunks = []
+    const chunks: Buffer[] = []
     let length = 0
-    request.on('data', (chunk) => {
+    request.on('data', (chunk: Buffer) => {
       length += chunk.length
       if (length > MAX_BODY_BYTES) {
         reject(new BodyTooLargeError())
@@ -99,20 +113,26 @@ function readBody(request) {
   })
 }
 
-/**
- * @param {object} [options]
- * @param {NodeJS.ProcessEnv} [options.env]
- * @param {object} [options.store] key/value store (see shareStore.js); resolved from env when omitted
- * @param {object} [options.limits] overrides for DEFAULT_LIMITS
- * @param {() => number} [options.now]
- */
-export function createShareLinks({ env = process.env, store, limits = {}, now = Date.now } = {}) {
+export interface ShareLinksOptions {
+  env?: Env
+  /** Key/value store (see shareStore.ts); resolved from env when omitted. */
+  store?: ShareStore | null
+  /** Overrides for DEFAULT_LIMITS. */
+  limits?: Partial<ShareLimits>
+  now?: () => number
+}
+
+export interface ShareLinks {
+  handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean>
+}
+
+export function createShareLinks({ env = process.env, store, limits = {}, now = Date.now }: ShareLinksOptions = {}): ShareLinks {
   const config = { ...DEFAULT_LIMITS, ...limits }
   const hit = createRateLimiter(now)
-  let resolvedStore = store
+  let resolvedStore: ShareStore | null | undefined = store
   let storeResolved = store !== undefined
 
-  function getStore() {
+  function getStore(): ShareStore | null | undefined {
     if (!storeResolved) {
       resolvedStore = resolveShareStore(env)
       storeResolved = true
@@ -120,12 +140,12 @@ export function createShareLinks({ env = process.env, store, limits = {}, now = 
     return resolvedStore
   }
 
-  async function create(request, response, shareStore) {
+  async function create(request: IncomingMessage, response: ServerResponse, shareStore: ShareStore) {
     if (!/^application\/json\b/i.test(String(request.headers['content-type'] ?? ''))) {
       sendError(response, 415, 'SHARE_BAD_REQUEST', 'Content-Type must be application/json.')
       return
     }
-    let body
+    let body: Buffer
     try {
       body = await readBody(request)
     } catch (error) {
@@ -139,7 +159,7 @@ export function createShareLinks({ env = process.env, store, limits = {}, now = 
       }
       throw error
     }
-    let source
+    let source: unknown
     try {
       source = JSON.parse(body.toString('utf8'))?.source
     } catch {
@@ -185,7 +205,7 @@ export function createShareLinks({ env = process.env, store, limits = {}, now = 
     sendJson(response, 201, { id })
   }
 
-  async function read(response, shareStore, id) {
+  async function read(response: ServerResponse, shareStore: ShareStore, id: string) {
     if (!isValidShareId(id)) {
       sendError(response, 400, 'SHARE_INVALID_ID', 'Invalid share link id.')
       return
@@ -199,7 +219,7 @@ export function createShareLinks({ env = process.env, store, limits = {}, now = 
   }
 
   /** Returns true when the request was for /api/share and has been answered. */
-  async function handle(request, response, url) {
+  async function handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean> {
     const isCollection = url.pathname === '/api/share'
     const isItem = url.pathname.startsWith('/api/share/')
     if (!isCollection && !isItem) return false

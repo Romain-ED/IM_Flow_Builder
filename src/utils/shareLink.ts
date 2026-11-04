@@ -21,7 +21,7 @@ const BUILT_IN_PARAM = 'scenario'
 const PLATFORM_PARAM = 'platform'
 /** Upper bound on a decoded shared flow, so a crafted link can't inflate into something huge. */
 const MAX_DECODED_BYTES = 2 * 1024 * 1024
-/** Matches the server's id format (server/shareLinks.js). Checked before any request is made. */
+/** Matches the server's id format (server/shareLinks.ts). Checked before any request is made. */
 const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]{16,64}$/
 /** The server rejects sources over 1 MB; skip the round trip for those. */
 const MAX_SHORT_LINK_BYTES = 1_000_000

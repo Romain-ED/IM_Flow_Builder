@@ -839,7 +839,7 @@ until this was fixed).
   `vcr.yml`, the build step is `build.sh`, and the deployed application ID is
   `0ba99fd4-3f1f-45f9-b8a3-8a76ecf9ebe2`.
 - VCR serves the app at the domain root, so `vite.config.ts` defaults to
-  `base: '/'`. The VCR server entrypoint is `server/index.js`; it must keep
+  `base: '/'`. The VCR server entrypoint is `server/index.ts`, compiled to `dist-server/index.js`; it must keep
   listening on `VCR_PORT` and serving `GET /_/health`.
 - `.vcrignore` excludes local-only files from the deployment package. Do not
   add secrets, `.env` files, or `node_modules` to the VCR package.
@@ -896,4 +896,4 @@ limits.
 
 The VCR Node server is now part of the production deployment. It must continue to serve `GET /_/health`, static assets, and SPA fallback while preserving the isolated Live RCS namespaces: `GET /api/live/diagnostics`, authenticated `/api/live/*`, and `POST /webhooks/vonage/*`.
 
-Live delivery is **off by default**. Never expose or persist Vonage JWTs, webhook secrets, RCS sender IDs, test recipient numbers, or `LIVE_RCS_OPERATOR_TOKEN` in the client/source/scenario/localStorage. The recipient and flow allowlist are server-side. `server/liveDemo.js` deliberately fails closed for unverified Vonage rich-content payloads; do not replace that guard with guessed card/carousel JSON. Add a reviewed provider mapping plus redacted fixtures only after consulting the authenticated application reference. Keep `docs/LIVE_RCS_DEMO.md`, README, and the in-app changelog current when this operational contract changes.
+Live delivery is **off by default**. Never expose or persist Vonage JWTs, webhook secrets, RCS sender IDs, test recipient numbers, or `LIVE_RCS_OPERATOR_TOKEN` in the client/source/scenario/localStorage. The recipient and flow allowlist are server-side. `server/liveDemo.ts` deliberately fails closed for unverified Vonage rich-content payloads; do not replace that guard with guessed card/carousel JSON. Add a reviewed provider mapping plus redacted fixtures only after consulting the authenticated application reference. Keep `docs/LIVE_RCS_DEMO.md`, README, and the in-app changelog current when this operational contract changes.

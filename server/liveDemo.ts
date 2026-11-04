@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import type { Env, GatewayResult, Json, LiveAction, LiveContent, LiveDemoConfig, LiveMode, LiveSession, LiveSessionStore, RcsGateway } from './types.js'
 import { createApplicationJwt, toVonageRcsMessage, verifyVonageSignedWebhook } from './vonageRcs.js'
 
 const MAX_AUTO_HOPS = 50
@@ -10,17 +11,18 @@ const LIVE_SCHEMA_VERSION = 1
 const RCS_MENU_FLOW_ID = 'rcs-demo-menu'
 const PROVIDER_STATUSES = new Set(['submitted', 'delivered', 'read', 'rejected', 'undeliverable', 'failed', 'updated'])
 
-function enabled(value) {
+function enabled(value: unknown): boolean {
   return value === 'true' || value === '1'
 }
 
-export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()) {
-  const mode = ['disabled', 'fake', 'vonage'].includes(env.LIVE_RCS_MODE) ? env.LIVE_RCS_MODE : 'disabled'
+export function getLiveDemoConfig(env: Env = process.env, projectRoot = process.cwd()): LiveDemoConfig {
+  const requestedMode = env.LIVE_RCS_MODE
+  const mode: LiveMode = requestedMode === 'fake' || requestedMode === 'vonage' ? requestedMode : 'disabled'
   const allowedFlowIds = (env.LIVE_RCS_ALLOWED_FLOW_IDS ?? '').split(',').map((value) => value.trim()).filter(Boolean)
   const storageDurable = enabled(env.LIVE_RCS_STORAGE_DURABLE)
   const demoEphemeralStorage = enabled(env.LIVE_RCS_DEMO_EPHEMERAL_STORAGE)
   const configuredRecipient = validRecipient(env.LIVE_RCS_TEST_RECIPIENT)
-  const errors = []
+  const errors: string[] = []
   if (mode !== 'disabled' && !configuredRecipient) errors.push('LIVE_RCS_TEST_RECIPIENT must be a 7 to 15 digit phone number.')
   if (mode !== 'disabled' && !env.LIVE_RCS_OPERATOR_TOKEN) errors.push('LIVE_RCS_OPERATOR_TOKEN is required.')
   if (mode !== 'disabled' && allowedFlowIds.length === 0) errors.push('LIVE_RCS_ALLOWED_FLOW_IDS is required.')
@@ -58,7 +60,7 @@ export function getLiveDemoConfig(env = process.env, projectRoot = process.cwd()
 }
 
 /** Public origin used to resolve root-relative media for sessions not created from a browser request (always-on starts). */
-function configuredPublicBaseUrl(env) {
+function configuredPublicBaseUrl(env: Env): string | null {
   const value = (env.LIVE_RCS_PUBLIC_BASE_URL || env.VCR_INSTANCE_PUBLIC_URL || '').trim()
   if (!value) return null
   try {
@@ -68,7 +70,7 @@ function configuredPublicBaseUrl(env) {
   }
 }
 
-export function publicLiveDemoDiagnostics(config) {
+export function publicLiveDemoDiagnostics(config: LiveDemoConfig) {
   return {
     mode: config.mode,
     ready: config.configured,
@@ -86,35 +88,35 @@ export function publicLiveDemoDiagnostics(config) {
   }
 }
 
-function maskRecipient(value) {
+function maskRecipient(value: string): string {
   return value.length <= 4 ? '••••' : `${'•'.repeat(Math.max(4, value.length - 4))}${value.slice(-4)}`
 }
 
-function normalizedAddress(value) {
+function normalizedAddress(value: unknown): string {
   const normalized = String(value ?? '').replace(/[\s-]/g, '')
   return /^\+?\d+$/.test(normalized) ? normalized.replace(/^\+/, '') : normalized
 }
 
 /** RCS scenario-entry normalization: NFC, trim outer whitespace, lowercase; then full-string equality. */
-export function normalizeRcsEntryTrigger(value) {
+export function normalizeRcsEntryTrigger(value: unknown): string {
   return String(value ?? '').normalize('NFC').trim().toLowerCase()
 }
 
-function matchesRcsEntryTrigger(trigger, text) {
+function matchesRcsEntryTrigger(trigger: unknown, text: unknown): boolean {
   const normalizedTrigger = normalizeRcsEntryTrigger(trigger)
   return Boolean(normalizedTrigger) && normalizedTrigger === normalizeRcsEntryTrigger(text)
 }
 
-function isRcsMenuFlow(flow) {
+function isRcsMenuFlow(flow: Json): boolean {
   return flow?.metadata?.id === RCS_MENU_FLOW_ID
 }
 
-function validRecipient(value) {
+function validRecipient(value: unknown): string | null {
   const normalized = normalizedAddress(value)
   return /^\d{7,15}$/.test(normalized) ? `+${normalized}` : null
 }
 
-function assertVonageInboundIdentity(config, payload, recipient = config.recipient) {
+function assertVonageInboundIdentity(config: LiveDemoConfig, payload: Json, recipient: string | null = config.recipient) {
   if (config.mode !== 'vonage') return
   if (payload.channel !== 'rcs') throw new Error('Webhook channel is not RCS.')
   if (normalizedAddress(payload.from) !== normalizedAddress(recipient)) {
@@ -125,7 +127,7 @@ function assertVonageInboundIdentity(config, payload, recipient = config.recipie
   }
 }
 
-function assertVonageStatusIdentity(config, payload, recipient = config.recipient) {
+function assertVonageStatusIdentity(config: LiveDemoConfig, payload: Json, recipient: string | null = config.recipient) {
   if (config.mode !== 'vonage') return
   if (payload.channel !== 'rcs') throw new Error('Webhook channel is not RCS.')
   if (normalizedAddress(payload.to) !== normalizedAddress(recipient)) {
@@ -140,16 +142,16 @@ function now() {
   return new Date().toISOString()
 }
 
-function normalizeStore(raw) {
+function normalizeStore(raw: Json): { sessions: LiveSession[] } {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.sessions)) return { sessions: [] }
   return {
-    sessions: raw.sessions.map((session) => {
-      const normalized = {
+    sessions: raw.sessions.map((session: Json) => {
+      const normalized: Json = {
         ...session,
         timeline: Array.isArray(session.timeline) ? session.timeline : [],
         nextTimelineOrdinal: Number.isInteger(session.nextTimelineOrdinal)
           ? session.nextTimelineOrdinal
-          : Array.isArray(session.timeline) ? session.timeline.reduce((max, item) => Math.max(max, Number(item.ordinal) || 0), 0) + 1 : 1,
+          : Array.isArray(session.timeline) ? session.timeline.reduce((max: number, item: Json) => Math.max(max, Number(item.ordinal) || 0), 0) + 1 : 1,
         timelineTruncated: Boolean(session.timelineTruncated),
         pendingInput: session.pendingInput
           ? { ...session.pendingInput, inputType: session.pendingInput.inputType ?? 'text' }
@@ -170,13 +172,16 @@ function normalizeStore(raw) {
   }
 }
 
-export class FileLiveSessionStore {
-  constructor(path) {
+export class FileLiveSessionStore implements LiveSessionStore {
+  path: string
+  state: { sessions: LiveSession[] }
+
+  constructor(path: string) {
     this.path = path
     this.state = this.read()
   }
 
-  read() {
+  read(): { sessions: LiveSession[] } {
     try {
       return normalizeStore(JSON.parse(readFileSync(this.path, 'utf8')))
     } catch {
@@ -191,15 +196,15 @@ export class FileLiveSessionStore {
     renameSync(temporaryPath, this.path)
   }
 
-  list() {
+  list(): LiveSession[] {
     return this.state.sessions
   }
 
-  get(id) {
+  get(id: string): LiveSession | null {
     return this.state.sessions.find((session) => session.id === id) ?? null
   }
 
-  save(session) {
+  save(session: LiveSession): LiveSession {
     const index = this.state.sessions.findIndex((entry) => entry.id === session.id)
     if (index === -1) this.state.sessions.push(session)
     else this.state.sessions[index] = session
@@ -208,13 +213,13 @@ export class FileLiveSessionStore {
   }
 }
 
-export class FakeRcsGateway {
-  async send(content) {
+export class FakeRcsGateway implements RcsGateway {
+  async send(content: LiveContent): Promise<GatewayResult> {
     return { providerMessageId: `fake-${randomUUID()}`, status: 'submitted', content }
   }
 }
 
-function providerErrorDetail(payload) {
+function providerErrorDetail(payload: Json): string {
   if (!payload || typeof payload !== 'object') return ''
   const detail = payload.detail ?? payload.message ?? payload.error ?? payload.title
   if (typeof detail === 'string') return detail.slice(0, 500)
@@ -225,13 +230,16 @@ function providerErrorDetail(payload) {
   }
 }
 
-export class VonageRcsGateway {
-  constructor(config, fetchImpl = fetch) {
+export class VonageRcsGateway implements RcsGateway {
+  config: LiveDemoConfig
+  fetch: typeof fetch
+
+  constructor(config: LiveDemoConfig, fetchImpl: typeof fetch = fetch) {
     this.config = config
     this.fetch = fetchImpl
   }
 
-  async send(content, recipient = this.config.recipient) {
+  async send(content: LiveContent, recipient: string | null = this.config.recipient): Promise<GatewayResult> {
     const response = await this.fetch(this.config.vonageApiUrl, {
       method: 'POST',
       headers: {
@@ -241,7 +249,7 @@ export class VonageRcsGateway {
       body: JSON.stringify(toVonageRcsMessage(content, { ...this.config, recipient })),
       signal: AbortSignal.timeout(10_000),
     })
-    const payload = await response.json().catch(() => ({}))
+    const payload: Json = await response.json().catch(() => ({}))
     if (!response.ok) {
       const detail = providerErrorDetail(payload)
       throw new Error(`Vonage Messages API rejected the message (${response.status})${detail ? `: ${detail}` : '.'}`)
@@ -250,12 +258,12 @@ export class VonageRcsGateway {
   }
 }
 
-function event(session, type, details = {}) {
+function event(session: LiveSession, type: string, details: Record<string, unknown> = {}) {
   session.events.push({ id: randomUUID(), at: now(), type, ...details })
   if (session.events.length > MAX_EVENTS) session.events.splice(0, session.events.length - MAX_EVENTS)
 }
 
-function boundedText(value, limit = 1000) {
+function boundedText(value: unknown, limit = 1000): string {
   if (typeof value !== 'string') return ''
   const cleaned = Array.from(value).filter((character) => {
     const code = character.codePointAt(0) ?? 0
@@ -265,11 +273,11 @@ function boundedText(value, limit = 1000) {
   return chars.length > limit ? `${chars.slice(0, limit).join('')}…` : cleaned
 }
 
-function isSensitiveKey(key) {
+function isSensitiveKey(key: string): boolean {
   return /(password|secret|token|credential|auth|otp|pin|verification|code)/i.test(key)
 }
 
-function presenterVariables(session) {
+function presenterVariables(session: LiveSession) {
   const allowed = new Set(session.flow?.metadata?.livePublicVariables ?? [])
   return Object.fromEntries(Object.entries(session.variables ?? {}).filter(([key, value]) => {
     if (!allowed.has(key) || isSensitiveKey(key)) return false
@@ -277,7 +285,7 @@ function presenterVariables(session) {
   }).map(([key, value]) => [key, typeof value === 'string' ? boundedText(value, 256) : value]))
 }
 
-function presenterText(session, value) {
+function presenterText(session: LiveSession, value: unknown): string {
   let text = boundedText(value)
   for (const [key, value] of Object.entries(session.variables ?? {})) {
     if (isSensitiveKey(key) || !new Set(session.flow?.metadata?.livePublicVariables ?? []).has(key)) {
@@ -288,7 +296,7 @@ function presenterText(session, value) {
   return text
 }
 
-function presenterUrl(value) {
+function presenterUrl(value: unknown): string {
   if (typeof value !== 'string' || !value.trim()) return ''
   if (/Bearer\s+|eyJ[A-Za-z0-9_-]+\.|-----BEGIN [A-Z ]+-----/i.test(value)) return ''
   try {
@@ -306,13 +314,13 @@ function presenterUrl(value) {
   }
 }
 
-function displayAction(action) {
+function displayAction(action: Json) {
   if (!action || typeof action !== 'object' || typeof action.label !== 'string') return null
   if (action.kind === 'reply' || action.type === 'reply') return { type: 'reply', label: boundedText(action.label, 160) }
   return { type: 'display_only', label: boundedText(action.label, 160) }
 }
 
-function liveMessageFromContent(content, sender, session) {
+function liveMessageFromContent(content: Json, sender: string, session: LiveSession): Json {
   const base = { sender }
   if (!content || typeof content !== 'object') return null
   if (content.type === 'text') return { type: 'text', ...base, text: presenterText(session, content.text) }
@@ -345,7 +353,7 @@ function liveMessageFromContent(content, sender, session) {
     type: 'carousel',
     ...base,
     ...(content.mediaHeight ? { mediaHeight: content.mediaHeight } : {}),
-    cards: content.cards.map((card) => ({
+    cards: content.cards.map((card: Json) => ({
       id: boundedText(card.id, 160),
       ...(card.imageUrl || card.image ? { image: presenterUrl(card.imageUrl ?? card.image) } : {}),
       title: presenterText(session, card.title),
@@ -358,7 +366,7 @@ function liveMessageFromContent(content, sender, session) {
   return null
 }
 
-function previewForMessage(message) {
+function previewForMessage(message: Json): string {
   if (!message) return ''
   if (message.type === 'text') return message.text
   if (message.type === 'document') return message.title ?? message.filename
@@ -367,7 +375,7 @@ function previewForMessage(message) {
   return message.type
 }
 
-function appendTimeline(session, { sender, nodeId, message, at = now() }) {
+function appendTimeline(session: LiveSession, { sender, nodeId, message, at = now() }: { sender: string; nodeId?: string | null; message: Json; at?: string }) {
   if (!message) return null
   const item = {
     id: randomUUID(),
@@ -391,12 +399,12 @@ function appendTimeline(session, { sender, nodeId, message, at = now() }) {
   return item
 }
 
-function normalizedProviderStatus(value) {
+function normalizedProviderStatus(value: unknown): string {
   const status = String(value ?? '').toLowerCase()
   return PROVIDER_STATUSES.has(status) ? status : 'updated'
 }
 
-function presenterSnapshot(session) {
+function presenterSnapshot(session: LiveSession) {
   return {
     schemaVersion: LIVE_SCHEMA_VERSION,
     id: session.id,
@@ -413,7 +421,7 @@ function presenterSnapshot(session) {
   }
 }
 
-function safeDiagnostic(entry, index) {
+function safeDiagnostic(entry: Json, index: number) {
   return {
     id: String(index + 1),
     at: entry.at,
@@ -428,25 +436,25 @@ function safeDiagnostic(entry, index) {
 }
 
 /** Vonage's own rejection text ("Vonage Messages API rejected the message (422): ..."), with phone-like digit runs masked. */
-function providerRejection(error) {
+function providerRejection(error: unknown): string | null {
   if (typeof error !== 'string' || !error.startsWith('Vonage Messages API rejected the message')) return null
   return boundedText(error.replace(/\d{7,}/g, '[number]'), 400)
 }
 
-function matchTrigger(triggers, text) {
-  return (triggers ?? []).find((trigger) => trigger.keywords.some((keyword) => {
+function matchTrigger(triggers: Json[] | undefined, text: string): Json {
+  return (triggers ?? []).find((trigger: Json) => trigger.keywords.some((keyword: string) => {
     const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     return new RegExp(`\\b${escaped}\\b`, trigger.caseSensitive ? '' : 'i').test(text)
   })) ?? null
 }
 
 /** Allowlisted by the operator, or part of the server-bundled always-on file (trusted repo content, never browser-supplied). */
-function isAllowedFlowId(config, id) {
-  return config.allowedFlowIds.includes(id) || (config.trustedAlwaysOnFlowIds ?? []).includes(id)
+function isAllowedFlowId(config: LiveDemoConfig, id: unknown): boolean {
+  return config.allowedFlowIds.includes(id as string) || (config.trustedAlwaysOnFlowIds ?? []).includes(id as string)
 }
-function validateScenarioCatalog(catalog, config) {
+function validateScenarioCatalog(catalog: unknown, config: LiveDemoConfig): Record<string, Json> {
   if (!Array.isArray(catalog)) throw new Error('Live RCS scenario catalog must be an array.')
-  const targets = {}
+  const targets: Record<string, Json> = {}
   for (const entry of catalog) {
     const id = entry?.id
     const flow = entry?.flow
@@ -457,13 +465,13 @@ function validateScenarioCatalog(catalog, config) {
     if (!isAllowedFlowId(config, metadataId)) throw new Error(`Live RCS scenario "${id}" (flow "${metadataId}") is not allowlisted for Live RCS.`)
     if (flow.metadata?.channel !== 'rcs') throw new Error(`Live RCS scenario "${id}" must use the RCS channel.`)
     if (typeof flow.metadata?.trigger !== 'string' || !normalizeRcsEntryTrigger(flow.metadata.trigger)) throw new Error(`Live RCS scenario "${id}" requires a non-empty metadata.trigger.`)
-    if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node) => node?.id === flow.start)) throw new Error(`Live RCS scenario "${id}" is missing a valid start state.`)
+    if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node: Json) => node?.id === flow.start)) throw new Error(`Live RCS scenario "${id}" is missing a valid start state.`)
     targets[id] = flow
   }
   return targets
 }
 
-function evaluateCondition(condition, variables) {
+function evaluateCondition(condition: Json, variables: Record<string, Json>): boolean {
   const actual = variables[condition.variable]
   switch (condition.operator) {
     case 'equals': return actual === condition.value
@@ -476,21 +484,21 @@ function evaluateCondition(condition, variables) {
   }
 }
 
-function interpolate(value, variables) {
-  if (typeof value === 'string') return value.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => variables[key] == null ? '' : String(variables[key]))
-  if (Array.isArray(value)) return value.map((item) => interpolate(item, variables))
+function interpolate(value: Json, variables: Record<string, Json>): Json {
+  if (typeof value === 'string') return value.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_: string, key: string) => variables[key] == null ? '' : String(variables[key]))
+  if (Array.isArray(value)) return value.map((item: Json) => interpolate(item, variables))
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, interpolate(entry, variables)]))
   return value
 }
 
-function resolveMediaUrl(source, publicBaseUrl) {
+function resolveMediaUrl(source: unknown, publicBaseUrl?: string | null): string | undefined {
   if (typeof source !== 'string' || !source.trim() || source.trim().startsWith('//')) return undefined
   const value = source.trim()
   const isRootRelative = value.startsWith('/')
   const isHttpAbsolute = /^https?:\/\//i.test(value)
   if (!isRootRelative && !isHttpAbsolute) return undefined
   try {
-    const url = new URL(value, publicBaseUrl)
+    const url = new URL(value, publicBaseUrl ?? undefined)
     const localHttp = url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
     if (url.protocol !== 'https:' && !localHttp) return undefined
     return url.toString()
@@ -499,17 +507,17 @@ function resolveMediaUrl(source, publicBaseUrl) {
   }
 }
 
-function interactionId(nodeId, messageIndex, kind, index) {
+function interactionId(nodeId: string, messageIndex: number, kind: string, index: number): string {
   return `${nodeId}:m:${messageIndex}:${kind}:${index}`
 }
 
-function createAction(action, nodeId, messageIndex, index) {
+function createAction(action: Json, nodeId: string, messageIndex: number, index: number): LiveAction {
   if (action.type === 'reply') return { id: interactionId(nodeId, messageIndex, 'action', index), label: action.label, kind: 'reply', next: action.next, startScenarioId: action.startScenarioId, set: action.set }
   if (action.type === 'open_url') return { id: interactionId(nodeId, messageIndex, 'action', index), label: action.label, kind: 'open_url', url: action.url }
   throw new Error(`Unsupported Live RCS action type "${action.type}".`)
 }
 
-function inboundPostbackId(payload) {
+function inboundPostbackId(payload: Json): string | null {
   const source = payload ?? {}
   const candidates = [
     source.reply?.id,
@@ -531,14 +539,14 @@ function inboundPostbackId(payload) {
     source.data?.postback_data,
     source.data?.postbackData,
   ]
-  return candidates.find((value) => typeof value === 'string' && value) ?? null
+  return (candidates.find((value: unknown) => typeof value === 'string' && value) as string | undefined) ?? null
 }
 
-function objectKeys(value) {
+function objectKeys(value: unknown): string[] {
   return value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).sort() : []
 }
 
-export function summarizeInboundPayload(payload) {
+export function summarizeInboundPayload(payload: Json) {
   const source = payload ?? {}
   const text = source.text ?? source.message?.text
   return {
@@ -557,9 +565,9 @@ export function summarizeInboundPayload(payload) {
   }
 }
 
-function collectContent(session, node, variables) {
-  const content = []
-  let pendingInput = null
+function collectContent(session: LiveSession, node: Json, variables: Record<string, Json>): { content: LiveContent[]; pendingInput: Json } {
+  const content: LiveContent[] = []
+  let pendingInput: Json = null
   for (let index = 0; index < (node.messages ?? []).length; index++) {
     const message = interpolate(node.messages[index], variables)
     if (message.type === 'typing' || message.type === 'delay') continue
@@ -579,14 +587,14 @@ function collectContent(session, node, variables) {
       })
     }
     else if (message.type === 'document') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'file', url: resolveMediaUrl(message.url, session.publicBaseUrl), filename: message.filename, title: message.title, description: message.description })
-    else if (message.type === 'rich_card') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'card', title: message.title, description: message.description, url: resolveMediaUrl(message.image, session.publicBaseUrl), ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}), actions: (message.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, actionIndex)) })
-    else if (message.type === 'carousel') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'carousel', ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}), cards: message.cards.map((card, cardIndex) => ({ id: card.id, title: card.title, description: card.description ?? card.subtitle, imageUrl: resolveMediaUrl(card.image, session.publicBaseUrl), actions: (card.actions ?? []).map((action, actionIndex) => createAction(action, node.id, index, cardIndex * 10 + actionIndex)) })) })
+    else if (message.type === 'rich_card') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'card', title: message.title, description: message.description, url: resolveMediaUrl(message.image, session.publicBaseUrl), ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}), actions: (message.actions ?? []).map((action: Json, actionIndex: number) => createAction(action, node.id, index, actionIndex)) })
+    else if (message.type === 'carousel') content.push({ id: interactionId(node.id, index, 'content', 0), type: 'carousel', ...(message.mediaHeight ? { mediaHeight: message.mediaHeight } : {}), cards: message.cards.map((card: Json, cardIndex: number) => ({ id: card.id, title: card.title, description: card.description ?? card.subtitle, imageUrl: resolveMediaUrl(card.image, session.publicBaseUrl), actions: (card.actions ?? []).map((action: Json, actionIndex: number) => createAction(action, node.id, index, cardIndex * 10 + actionIndex)) })) })
     else if (message.type === 'suggested_replies') {
       if (!previous) throw new Error('Suggestions require a preceding content message.')
-      previous.replies = message.options.map((choice, optionIndex) => ({ id: interactionId(node.id, index, 'reply', optionIndex), label: choice.label, kind: 'reply', next: choice.next, set: choice.set }))
+      previous.replies = message.options.map((choice: Json, optionIndex: number) => ({ id: interactionId(node.id, index, 'reply', optionIndex), label: choice.label, kind: 'reply', next: choice.next, set: choice.set }))
     } else if (message.type === 'suggested_actions') {
       if (!previous) throw new Error('Suggestions require a preceding content message.')
-      previous.actions = message.actions.map((action, actionIndex) => createAction(action, node.id, index, actionIndex))
+      previous.actions = message.actions.map((action: Json, actionIndex: number) => createAction(action, node.id, index, actionIndex))
     } else if (message.type === 'input') {
       pendingInput = { variable: message.variable, next: message.next, inputType: message.inputType }
     } else {
@@ -596,12 +604,12 @@ function collectContent(session, node, variables) {
   if (node.actions?.length) {
     const previous = content.at(-1)
     if (!previous) throw new Error('Node actions require a preceding content message.')
-    previous.replies = node.actions.map((choice, choiceIndex) => ({ id: interactionId(node.id, node.messages?.length ?? 0, 'reply', choiceIndex), label: choice.label, kind: 'reply', next: choice.next, set: choice.set }))
+    previous.replies = node.actions.map((choice: Json, choiceIndex: number) => ({ id: interactionId(node.id, node.messages?.length ?? 0, 'reply', choiceIndex), label: choice.label, kind: 'reply', next: choice.next, set: choice.set }))
   }
   return { content, pendingInput }
 }
 
-function sessionDiagnosticsView(session) {
+function sessionDiagnosticsView(session: LiveSession) {
   return {
     id: session.id,
     status: session.status,
@@ -615,7 +623,19 @@ function sessionDiagnosticsView(session) {
 }
 
 export class LiveDemoService {
-  constructor(config, store = new FileLiveSessionStore(config.storagePath), gateway = config.mode === 'vonage' ? new VonageRcsGateway(config) : new FakeRcsGateway()) {
+  config: LiveDemoConfig
+  store: LiveSessionStore
+  gateway: RcsGateway
+  webhookReplayIds: Map<string, number>
+  diagnosticEvents: Json[]
+  _alwaysOnFlowCache: { flow: Json; catalog: Json[] | undefined } | null | undefined
+  _alwaysOnFlowError?: string
+
+  constructor(
+    config: LiveDemoConfig,
+    store: LiveSessionStore = new FileLiveSessionStore(config.storagePath),
+    gateway: RcsGateway = config.mode === 'vonage' ? new VonageRcsGateway(config) : new FakeRcsGateway(),
+  ) {
     this.config = config
     this.store = store
     this.gateway = gateway
@@ -633,7 +653,7 @@ export class LiveDemoService {
     return diagnostics
   }
 
-  recordDiagnostic(details) {
+  recordDiagnostic(details: Record<string, unknown>) {
     this.diagnosticEvents ??= []
     this.diagnosticEvents.push({ id: randomUUID(), at: now(), ...details })
     if (this.diagnosticEvents.length > MAX_EVENTS) this.diagnosticEvents.splice(0, this.diagnosticEvents.length - MAX_EVENTS)
@@ -645,7 +665,7 @@ export class LiveDemoService {
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
   }
 
-  diagnosticsLog(sessionId) {
+  diagnosticsLog(sessionId?: string) {
     const session = sessionId ? this.store.get(sessionId) : null
     return {
       generatedAt: now(),
@@ -654,7 +674,7 @@ export class LiveDemoService {
     }
   }
 
-  claimWebhookReplayId(jti) {
+  claimWebhookReplayId(jti: string | null | undefined): boolean {
     if (!jti) return true
     const nowMs = Date.now()
     for (const [key, expiresAt] of this.webhookReplayIds) {
@@ -665,7 +685,7 @@ export class LiveDemoService {
     return true
   }
 
-  authorize(token) {
+  authorize(token: string): boolean {
     return Boolean(this.config.operatorToken) && token === this.config.operatorToken
   }
 
@@ -681,7 +701,7 @@ export class LiveDemoService {
       if (!isAllowedFlowId(this.config, flow.metadata?.id)) throw new Error(`Always-on flow "${flow.metadata?.id}" is not allowlisted for Live RCS.`)
       if (flow.metadata?.channel !== 'rcs') throw new Error('Always-on flow must use the RCS channel.')
       if (typeof flow.metadata?.trigger !== 'string' || !normalizeRcsEntryTrigger(flow.metadata.trigger)) throw new Error('Always-on flow requires a non-empty metadata.trigger.')
-      if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node) => node?.id === flow.start)) throw new Error('Always-on flow is missing a valid start state.')
+      if (!Array.isArray(flow.nodes) || !flow.start || !flow.nodes.some((node: Json) => node?.id === flow.start)) throw new Error('Always-on flow is missing a valid start state.')
       if (catalog !== undefined) validateScenarioCatalog(Array.isArray(catalog) ? catalog : [], this.config)
       this._alwaysOnFlowCache = { flow, catalog: Array.isArray(catalog) ? catalog : undefined }
       return this._alwaysOnFlowCache
@@ -693,7 +713,7 @@ export class LiveDemoService {
     }
   }
 
-  async _tryAutoStartSession(payload, payloadSummary, { replaceActive = false } = {}) {
+  async _tryAutoStartSession(payload: Json, payloadSummary: ReturnType<typeof summarizeInboundPayload>, { replaceActive = false }: { replaceActive?: boolean } = {}): Promise<LiveSession | null> {
     if (!this.config.configured) return null
     const alwaysOn = this.loadAlwaysOnFlow()
     if (!alwaysOn || !isRcsMenuFlow(alwaysOn.flow)) return null
@@ -723,7 +743,7 @@ export class LiveDemoService {
       this.recordDiagnostic({ type: 'auto_start_replaced_sessions', count: activeForSender.length })
     }
     const scenarioCatalog = Array.isArray(alwaysOn.catalog) ? validateScenarioCatalog(alwaysOn.catalog, this.config) : {}
-    const session = {
+    const session: LiveSession = {
       id: randomUUID(),
       createdAt: now(),
       updatedAt: now(),
@@ -752,7 +772,7 @@ export class LiveDemoService {
     return session
   }
 
-  async createSession({ flow, variables = {}, recipient, publicBaseUrl, catalog }) {
+  async createSession({ flow, variables = {}, recipient, publicBaseUrl, catalog }: { flow?: Json; variables?: Record<string, Json>; recipient?: string; publicBaseUrl?: string; catalog?: unknown }) {
     if (!this.config.configured) throw new Error('Live RCS is not configured.')
     const selectedRecipient = recipient === undefined || recipient === '' ? validRecipient(this.config.recipient) : validRecipient(recipient)
     if (!selectedRecipient) throw new Error('Destination phone number must be 7 to 15 digits, optionally prefixed with +.')
@@ -770,7 +790,7 @@ export class LiveDemoService {
       throw new Error('A Live RCS session is already active for the selected recipient.')
     }
 
-    const session = {
+    const session: LiveSession = {
       id: randomUUID(),
       createdAt: now(),
       updatedAt: now(),
@@ -802,12 +822,12 @@ export class LiveDemoService {
     return presenterSnapshot(session)
   }
 
-  getSession(id) {
+  getSession(id: string) {
     const session = this.store.get(id)
     return session ? presenterSnapshot(session) : null
   }
 
-  async restartSession(id) {
+  async restartSession(id: string) {
     const session = this.store.get(id)
     if (!session) return null
     if (session.status === 'starting') throw new Error('Live session is already starting.')
@@ -836,9 +856,9 @@ export class LiveDemoService {
     return presenterSnapshot(session)
   }
 
-  async enterNode(session, nodeId, hops = 0) {
+  async enterNode(session: LiveSession, nodeId: string, hops = 0): Promise<void> {
     if (hops > MAX_AUTO_HOPS) throw new Error('Stopped after too many automatic live transitions.')
-    const node = session.flow.nodes.find((candidate) => candidate.id === nodeId)
+    const node = session.flow.nodes.find((candidate: Json) => candidate.id === nodeId)
     if (!node) throw new Error(`Live flow node "${nodeId}" does not exist.`)
     session.currentNodeId = nodeId
     session.pendingInput = null
@@ -855,7 +875,7 @@ export class LiveDemoService {
       const interactions = [
         ...(item.replies ?? []),
         ...(item.actions ?? []),
-        ...(item.type === 'carousel' ? item.cards.flatMap((card) => card.actions ?? []) : []),
+        ...(item.type === 'carousel' ? (item.cards ?? []).flatMap((card) => card.actions ?? []) : []),
       ]
       for (const interaction of interactions) {
         if (interaction.kind === 'reply') session.correlation[interaction.id] = interaction
@@ -880,14 +900,14 @@ export class LiveDemoService {
     session.updatedAt = now()
   }
 
-  async handleInbound(payload) {
+  async handleInbound(payload: Json) {
     const payloadSummary = summarizeInboundPayload(payload)
     this.recordDiagnostic({ type: 'inbound_received', ...payloadSummary })
     const eventId = payloadSummary.eventId
     if (!eventId) throw new Error('Inbound callback has no event identifier.')
     const postbackId = payloadSummary.postbackId
     const text = payload.text ?? payload.message?.text
-    let session = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || ((candidate.status === 'awaiting_trigger' || candidate.status === 'awaiting_reply') && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
+    let session: LiveSession | null | undefined = this.store.list().find((candidate) => candidate.processedInbound.includes(eventId) || (postbackId && candidate.correlation[postbackId]) || ((candidate.status === 'awaiting_trigger' || candidate.status === 'awaiting_reply') && (this.config.mode !== 'vonage' || normalizedAddress(payload.from) === normalizedAddress(candidate.recipient))))
     // "RCS MENU" is a global keyword: it restarts the menu even when the sender still has a session that
     // is waiting for a reply (e.g. the menu was shown earlier and never tapped). It never overrides a
     // duplicate delivery, a tap on a suggested reply, or a UI-created menu session already waiting for the trigger.
@@ -915,9 +935,9 @@ export class LiveDemoService {
       return presenterSnapshot(session)
     }
 
-    let next
+    let next: string | undefined
     let recognized = false
-    let recognizedReplyLabel = null
+    let recognizedReplyLabel: string | null = null
     if (session.status === 'awaiting_trigger' && isRcsMenuFlow(session.flow)) {
       if (typeof text === 'string' && text.trim()) {
         recognized = matchesRcsEntryTrigger(session.flow.metadata.trigger, text)
@@ -980,7 +1000,7 @@ export class LiveDemoService {
     return presenterSnapshot(session)
   }
 
-  stopSession(id) {
+  stopSession(id: string) {
     const session = this.store.get(id)
     if (!session) return null
     session.status = 'stopped'
@@ -992,7 +1012,7 @@ export class LiveDemoService {
     return presenterSnapshot(session)
   }
 
-  handleStatus(payload) {
+  handleStatus(payload: Json) {
     const providerMessageId = payload.message_uuid ?? payload.uuid ?? payload.message_id
     const status = payload.status ?? payload.message_status
     if (!providerMessageId || !status) throw new Error('Status callback has no provider message identifier or status.')
@@ -1000,6 +1020,7 @@ export class LiveDemoService {
     if (!session) throw new Error('No Live RCS session matches this status callback.')
     assertVonageStatusIdentity(this.config, payload, session.recipient)
     const outbound = session.outbound.find((entry) => entry.providerMessageId === providerMessageId)
+    if (!outbound) throw new Error('No Live RCS session matches this status callback.')
     const normalizedStatus = normalizedProviderStatus(status)
     outbound.status = normalizedStatus
     const updatedAt = now()
@@ -1012,10 +1033,10 @@ export class LiveDemoService {
   }
 }
 
-export function verifyWebhook(config, rawBody, authorization) {
+export function verifyWebhook(config: LiveDemoConfig, rawBody: string | Buffer, authorization: string | string[] | undefined) {
   return verifyVonageSignedWebhook(config, rawBody, authorization)
 }
 
-export function canReadStore(config) {
+export function canReadStore(config: LiveDemoConfig): boolean {
   return existsSync(config.storagePath)
 }

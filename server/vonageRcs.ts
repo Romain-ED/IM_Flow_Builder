@@ -1,12 +1,18 @@
+import type { Json, LiveAction, LiveContent, LiveReply, LiveCard, MediaHeight, VonageSendConfig } from './types.js'
 import { createHash, createHmac, createSign, randomUUID, timingSafeEqual } from 'node:crypto'
 
 const WEBHOOK_CLOCK_SKEW_SECONDS = 5 * 60
 
-function base64url(value) {
+type WebhookContext = ReturnType<typeof webhookContext>
+export type WebhookVerification =
+  | { valid: true; jti: string | null }
+  | ({ valid: false; reason: string } & Partial<WebhookContext>)
+
+function base64url(value: string): string {
   return Buffer.from(value).toString('base64url')
 }
 
-function parseJsonSegment(segment) {
+function parseJsonSegment(segment: string): Json {
   try {
     return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'))
   } catch {
@@ -14,13 +20,13 @@ function parseJsonSegment(segment) {
   }
 }
 
-function safeEqual(left, right) {
+function safeEqual(left: string, right: string): boolean {
   const leftBuffer = Buffer.from(left)
   const rightBuffer = Buffer.from(right)
   return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer)
 }
 
-function webhookContext(header, claims) {
+function webhookContext(header: Json, claims: Json) {
   return {
     webhookAlgorithm: header?.alg ?? null,
     webhookIssuer: claims?.iss ?? null,
@@ -29,12 +35,12 @@ function webhookContext(header, claims) {
   }
 }
 
-function normalizePrivateKey(value) {
-  return value?.replace(/\\n/g, '\n')
+function normalizePrivateKey(value: string): string {
+  return value.replace(/\\n/g, '\n')
 }
 
 /** Creates a short-lived application JWT when no explicit bearer token is configured. */
-export function createApplicationJwt(config, issuedAt = Math.floor(Date.now() / 1000)) {
+export function createApplicationJwt(config: Pick<VonageSendConfig, 'vonageJwt' | 'vonagePrivateKey' | 'vonageApplicationId'>, issuedAt = Math.floor(Date.now() / 1000)) {
   if (config.vonageJwt) return config.vonageJwt
   if (!config.vonagePrivateKey || !config.vonageApplicationId) {
     throw new Error('Vonage application credentials are not configured.')
@@ -58,7 +64,12 @@ export function createApplicationJwt(config, issuedAt = Math.floor(Date.now() / 
  * The payload hash is checked even over HTTPS so body parsing cannot accept a
  * token that was issued for different callback content.
  */
-export function verifyVonageSignedWebhook(config, rawBody, authorization, now = Math.floor(Date.now() / 1000)) {
+export function verifyVonageSignedWebhook(
+  config: Pick<VonageSendConfig, 'mode' | 'vonageSignatureSecret' | 'vonageApplicationId'>,
+  rawBody: string | Buffer,
+  authorization: string | string[] | undefined,
+  now = Math.floor(Date.now() / 1000),
+): WebhookVerification {
   if (config.mode === 'fake') return { valid: true, jti: null }
   if (config.mode !== 'vonage' || !config.vonageSignatureSecret) return { valid: false, reason: 'Signing is not configured.' }
   if (typeof authorization !== 'string' || !authorization.startsWith('Bearer ')) return { valid: false, reason: 'Missing bearer token.' }
@@ -90,7 +101,7 @@ export function verifyVonageSignedWebhook(config, rawBody, authorization, now = 
   return { valid: true, jti: claims.jti }
 }
 
-function baseRequest(content, config) {
+function baseRequest(content: LiveContent, config: VonageSendConfig) {
   return {
     to: config.recipient,
     from: config.rcsAgentId,
@@ -103,18 +114,18 @@ function baseRequest(content, config) {
  * RCS text fields are plain text. Keep the simulator's authoring shorthand
  * useful in the browser, but do not send its Markdown markers to the phone.
  */
-function toPlainRcsText(value) {
+function toPlainRcsText<T>(value: T): T | string {
   if (typeof value !== 'string') return value
-  return value.replace(/\*\*([^*]+)\*\*|_([^_]+)_/g, (_, bold, italic) => bold ?? italic)
+  return value.replace(/\*\*([^*]+)\*\*|_([^_]+)_/g, (_: string, bold?: string, italic?: string) => bold ?? italic ?? '')
 }
 
-function toSuggestions(content) {
-  const replies = (content.replies ?? []).map((reply) => ({
+function toSuggestions(content: { replies?: LiveReply[]; actions?: LiveAction[] }) {
+  const replies = (content.replies ?? []).map((reply: LiveReply) => ({
     type: 'reply',
     text: reply.label,
     postback_data: reply.id,
   }))
-  const actions = (content.actions ?? []).map((action) => {
+  const actions = (content.actions ?? []).map((action: LiveAction) => {
     if (action.kind === 'reply') {
       return { type: 'reply', text: action.label, postback_data: action.id }
     }
@@ -131,10 +142,10 @@ function toSuggestions(content) {
   return [...replies, ...actions]
 }
 
-const VONAGE_MEDIA_HEIGHTS = { short: 'SHORT', medium: 'MEDIUM', tall: 'TALL' }
-const vonageMediaHeight = (mediaHeight) => VONAGE_MEDIA_HEIGHTS[mediaHeight] ?? 'MEDIUM'
+const VONAGE_MEDIA_HEIGHTS: Record<MediaHeight, string> = { short: 'SHORT', medium: 'MEDIUM', tall: 'TALL' }
+const vonageMediaHeight = (mediaHeight?: MediaHeight): string => (mediaHeight && VONAGE_MEDIA_HEIGHTS[mediaHeight]) || 'MEDIUM'
 
-function cardPayload(card, mediaHeight) {
+function cardPayload(card: LiveCard, mediaHeight?: MediaHeight) {
   return {
     title: card.title,
     text: toPlainRcsText(card.description),
@@ -144,7 +155,7 @@ function cardPayload(card, mediaHeight) {
 }
 
 /** Maps the app's provider-neutral live content into Messages API RCS payloads. */
-export function toVonageRcsMessage(content, config) {
+export function toVonageRcsMessage(content: LiveContent, config: VonageSendConfig): Json {
   const request = baseRequest(content, config)
   const suggestions = toSuggestions(content)
   switch (content.type) {
@@ -175,7 +186,7 @@ export function toVonageRcsMessage(content, config) {
       return {
         ...request,
         message_type: 'carousel',
-        carousel: { cards: content.cards.map((card) => cardPayload(card, content.mediaHeight)) },
+        carousel: { cards: (content.cards ?? []).map((card) => cardPayload(card, content.mediaHeight)) },
         rcs: { card_width: 'MEDIUM' },
       }
     default:

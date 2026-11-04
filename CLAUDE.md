@@ -69,7 +69,7 @@ Hiding buttons isn't the guarantee:
 - Every editing/config store action starts with `isLocked()` and returns. `initialize()` loads the shared flow via `loadingSharedFlow`, a closure flag that briefly lifts the lock. **If you add a store action that edits scenarios, brand, variables or preferences, add the `isLocked()` guard.**
 - Bad payloads set `sharedLinkError`; `App.tsx` shows only that.
 - Links (`platform` = starting phone only): `#scenario=<built-in id>` (unmodified built-in), `#s=<id>` (short, server-stored, permanent), `#flow=<z.|r.payload>` (long, back-compat + fallback when the POST fails). All resolve via `readSharedSource()` in `utils/shareLink.ts` into the same `loadScenarioSource()`. Decoded size cap 2 MB.
-- Short links: `server/shareLinks.js` (`POST /api/share`, `GET /api/share/:id`, unauthenticated write → size/rate/dedupe/budget limits) over `server/shareStore.js` (VCR **account** state; instance state/disk/memory are not durable and must not be used; `SHARE_STORE_PATH` is local-dev only). Tests: `server/shareLinks.test.js`.
+- Short links: `server/shareLinks.ts` (`POST /api/share`, `GET /api/share/:id`, unauthenticated write → size/rate/dedupe/budget limits) over `server/shareStore.ts` (VCR **account** state; instance state/disk/memory are not durable and must not be used; `SHARE_STORE_PATH` is local-dev only). Tests: `server/shareLinks.test.js`.
 - Tests: `src/store/sharedLinkMode.test.tsx` (uses `vi.resetModules()`).
 
 ## Versioning — do this on every change
@@ -82,7 +82,7 @@ Hiding buttons isn't the guarantee:
 
 - Branches: `claude/messaging-flow-simulator-wboec4` (dev) and `main` (fast-forward after every push: `git branch -f main claude/messaging-flow-simulator-wboec4 && git push origin main`).
 - **Vonage Cloud Runtime (VCR) is the primary deployment target.** `npm run deploy` invokes the VCR CLI. Manifest `vcr.yml`, build step `build.sh`, application ID `0ba99fd4-3f1f-45f9-b8a3-8a76ecf9ebe2`.
-- VCR serves at the domain root, so `vite.config.ts` defaults to `base: '/'`. Entrypoint `server/index.js` must keep listening on `VCR_PORT` and serving `GET /_/health`.
+- VCR serves at the domain root, so `vite.config.ts` defaults to `base: '/'`. Entrypoint `server/index.ts` (compiled to `dist-server/index.js` by `npm run build`) must keep listening on `VCR_PORT` and serving `GET /_/health`.
 - `.vcrignore` excludes local-only files. Never add secrets, `.env` files, or `node_modules` to the VCR package.
 - If a GitHub MCP push 403s after a rename, call `add_repo` (Claude_Code_Remote MCP) for the new owner/repo, then re-push.
 
@@ -110,4 +110,4 @@ Outbound HTTPS goes through a policy proxy: `WebFetch`/`curl` to arbitrary domai
 
 The VCR Node server is part of the production deployment. It must keep serving `GET /_/health`, static assets, and SPA fallback while preserving the isolated Live RCS namespaces: `GET /api/live/diagnostics`, authenticated `/api/live/*`, and `POST /webhooks/vonage/*`.
 
-Live delivery is **off by default**. Never expose or persist Vonage JWTs, webhook secrets, RCS sender IDs, test recipient numbers, or `LIVE_RCS_OPERATOR_TOKEN` in client/source/scenario/localStorage. Recipient and flow allowlist are server-side. `server/liveDemo.js` deliberately fails closed for unverified Vonage rich-content payloads; do not replace that guard with guessed card/carousel JSON. Add a reviewed provider mapping plus redacted fixtures only after consulting the authenticated application reference. Keep `docs/LIVE_RCS_DEMO.md`, README, and the in-app changelog current.
+Live delivery is **off by default**. Never expose or persist Vonage JWTs, webhook secrets, RCS sender IDs, test recipient numbers, or `LIVE_RCS_OPERATOR_TOKEN` in client/source/scenario/localStorage. Recipient and flow allowlist are server-side. `server/liveDemo.ts` deliberately fails closed for unverified Vonage rich-content payloads; do not replace that guard with guessed card/carousel JSON. Add a reviewed provider mapping plus redacted fixtures only after consulting the authenticated application reference. Keep `docs/LIVE_RCS_DEMO.md`, README, and the in-app changelog current.

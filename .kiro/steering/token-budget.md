@@ -23,7 +23,7 @@ Keep context small. These rules apply to the orchestrator and to every workflow 
 
 - Do not read anything under `.agents/` unless the task names a specific file there. Those are finished run artifacts.
 - Do not read `docs/HISTORY.md` unless the task is about the history of a specific feature.
-- For large files (`src/store/simulatorStore.ts`, `server/liveDemo.js`, `src/app/changelog.ts`, `src/components/manual/ManualPage.tsx`), grep for the symbol first and read only that range. Never read them whole.
+- For large files (`src/store/simulatorStore.ts`, `server/liveDemo.ts`, `src/app/changelog.ts`, `src/components/manual/ManualPage.tsx`), grep for the symbol first and read only that range. Never read them whole.
 - Never read `package-lock.json`.
 - Prefer targeted browser checks (one element, one computed style) over full-page snapshots or screenshots.
 

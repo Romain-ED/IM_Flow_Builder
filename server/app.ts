@@ -1,16 +1,17 @@
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
-import { createServer } from 'node:http'
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getLiveDemoConfig, LiveDemoService, summarizeInboundPayload, verifyWebhook } from './liveDemo.js'
-import { createShareLinks } from './shareLinks.js'
+import { createShareLinks, type ShareLinks } from './shareLinks.js'
 import { isVcrRuntime } from './shareStore.js'
+import type { Env, Json } from './types.js'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDirectory = join(projectRoot, 'dist')
 const MAX_BODY_BYTES = 100_000
 
-const contentTypes = {
+const contentTypes: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
   '.gif': 'image/gif',
   '.html': 'text/html; charset=utf-8',
@@ -30,22 +31,22 @@ const contentTypes = {
   '.woff2': 'font/woff2',
 }
 
-function isInsideDist(filePath) {
+function isInsideDist(filePath: string): boolean {
   const pathFromDist = relative(distDirectory, filePath)
   return pathFromDist === '' || (!pathFromDist.startsWith('..') && !isAbsolute(pathFromDist))
 }
 
-function send(response, statusCode, body, contentType = 'text/plain; charset=utf-8') {
+function send(response: ServerResponse, statusCode: number, body: string, contentType = 'text/plain; charset=utf-8') {
   response.writeHead(statusCode, { 'Content-Type': contentType, 'Cache-Control': 'no-store' })
   response.end(body)
 }
 
-function sendJson(response, statusCode, body) {
+function sendJson(response: ServerResponse, statusCode: number, body: unknown) {
   send(response, statusCode, JSON.stringify(body), 'application/json; charset=utf-8')
 }
 
-function sendFile(request, response, filePath) {
-  let stats
+function sendFile(request: IncomingMessage, response: ServerResponse, filePath: string): boolean {
+  let stats: ReturnType<typeof statSync>
   try {
     stats = statSync(filePath)
   } catch {
@@ -63,8 +64,8 @@ function sendFile(request, response, filePath) {
   return true
 }
 
-function requestedFile(pathname) {
-  let decodedPath
+function requestedFile(pathname: string): string | null {
+  let decodedPath: string
   try {
     decodedPath = decodeURIComponent(pathname)
   } catch {
@@ -74,11 +75,11 @@ function requestedFile(pathname) {
   return isInsideDist(filePath) ? filePath : null
 }
 
-function readBody(request) {
+function readBody(request: IncomingMessage): Promise<Buffer> {
   return new Promise((resolveBody, reject) => {
-    const chunks = []
+    const chunks: Buffer[] = []
     let length = 0
-    request.on('data', (chunk) => {
+    request.on('data', (chunk: Buffer) => {
       length += chunk.length
       if (length > MAX_BODY_BYTES) {
         reject(new Error('Request body is too large.'))
@@ -92,7 +93,7 @@ function readBody(request) {
   })
 }
 
-function readJson(rawBody) {
+function readJson(rawBody: Buffer): Json {
   try {
     return JSON.parse(rawBody.toString('utf8'))
   } catch {
@@ -100,16 +101,16 @@ function readJson(rawBody) {
   }
 }
 
-function bearerToken(request) {
+function bearerToken(request: IncomingMessage): string {
   const header = request.headers.authorization
   return typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7) : ''
 }
 
-function errorEnvelope(code, message) {
+function errorEnvelope(code: string, message: string) {
   return { error: { code, message } }
 }
 
-function apiError(response, error) {
+function apiError(response: ServerResponse, error: unknown) {
   const rawMessage = error instanceof Error ? error.message : 'Unexpected server error.'
   const code = rawMessage.includes('not configured') ? 'LIVE_NOT_CONFIGURED'
     : rawMessage.includes('allowlisted') || rawMessage.includes('required') ? 'LIVE_INVALID_REQUEST'
@@ -118,24 +119,25 @@ function apiError(response, error) {
           : rawMessage.includes('Vonage') ? 'DELIVERY_FAILED'
             : 'LIVE_INVALID_REQUEST'
   const status = code === 'LIVE_NOT_CONFIGURED' ? 503 : code === 'LIVE_CONFLICT' ? 409 : code === 'SESSION_NOT_FOUND' ? 404 : code === 'DELIVERY_FAILED' ? 502 : 422
-  const messages = {
+  const messages: Record<string, string> = {
     LIVE_NOT_CONFIGURED: 'Live RCS is not configured.',
     LIVE_INVALID_REQUEST: 'The live RCS request is invalid.',
     LIVE_CONFLICT: 'A live RCS session is already active.',
     SESSION_NOT_FOUND: 'Live session not found.',
     DELIVERY_FAILED: 'Live message delivery failed.',
   }
-  const body = { ...errorEnvelope(code, messages[code]), ...(error?.liveSnapshot ? { id: error.liveSnapshot.id, liveSnapshot: error.liveSnapshot } : {}) }
+  const liveSnapshot = (error as { liveSnapshot?: { id?: string } } | null)?.liveSnapshot
+  const body = { ...errorEnvelope(code, messages[code] ?? messages.LIVE_INVALID_REQUEST ?? ''), ...(liveSnapshot ? { id: liveSnapshot.id, liveSnapshot } : {}) }
   sendJson(response, status, body)
 }
 
-function requestOrigin(request) {
+function requestOrigin(request: IncomingMessage): string {
   if (typeof request.headers.origin === 'string' && request.headers.origin) return request.headers.origin
-  const protocol = typeof request.headers['x-forwarded-proto'] === 'string' ? request.headers['x-forwarded-proto'].split(',')[0].trim() : 'http'
+  const protocol = typeof request.headers['x-forwarded-proto'] === 'string' ? (request.headers['x-forwarded-proto'].split(',')[0] ?? '').trim() : 'http'
   return `${protocol}://${request.headers.host ?? 'localhost'}`
 }
 
-async function handleApi(request, response, url, liveDemo) {
+async function handleApi(request: IncomingMessage, response: ServerResponse, url: URL, liveDemo: LiveDemoService): Promise<boolean> {
   if (request.method === 'GET' && url.pathname === '/api/live/diagnostics') {
     sendJson(response, 200, liveDemo.diagnostics())
     return true
@@ -161,21 +163,21 @@ async function handleApi(request, response, url, liveDemo) {
     }
     const restartMatch = url.pathname.match(/^\/api\/live\/sessions\/([\w-]+)\/restart$/)
     if (request.method === 'POST' && restartMatch) {
-      const session = await liveDemo.restartSession(restartMatch[1])
+      const session = await liveDemo.restartSession(restartMatch[1] as string)
       if (!session) sendJson(response, 404, errorEnvelope('SESSION_NOT_FOUND', 'Live session not found.'))
       else sendJson(response, 200, session)
       return true
     }
     const stopMatch = url.pathname.match(/^\/api\/live\/sessions\/([\w-]+)\/stop$/)
     if (request.method === 'POST' && stopMatch) {
-      const session = liveDemo.stopSession(stopMatch[1])
+      const session = liveDemo.stopSession(stopMatch[1] as string)
       if (!session) sendJson(response, 404, errorEnvelope('SESSION_NOT_FOUND', 'Live session not found.'))
       else sendJson(response, 200, session)
       return true
     }
     const sessionMatch = url.pathname.match(/^\/api\/live\/sessions\/([\w-]+)$/)
     if (request.method === 'GET' && sessionMatch) {
-      const session = liveDemo.getSession(sessionMatch[1])
+      const session = liveDemo.getSession(sessionMatch[1] as string)
       if (!session) {
         sendJson(response, 404, { error: 'Live session not found.' })
       } else {
@@ -190,9 +192,9 @@ async function handleApi(request, response, url, liveDemo) {
   return false
 }
 
-async function handleWebhook(request, response, url, liveDemo) {
+async function handleWebhook(request: IncomingMessage, response: ServerResponse, url: URL, liveDemo: LiveDemoService): Promise<boolean> {
   if (request.method !== 'POST' || !url.pathname.startsWith('/webhooks/vonage/')) return false
-  let payload = null
+  let payload: Json = null
   try {
     const rawBody = await readBody(request)
     const verification = verifyWebhook(liveDemo.config, rawBody, request.headers.authorization)
@@ -215,7 +217,7 @@ async function handleWebhook(request, response, url, liveDemo) {
     }
     payload = readJson(rawBody)
     liveDemo.recordDiagnostic({ type: 'webhook_received', route: url.pathname, ...summarizeInboundPayload(payload) })
-    let result
+    let result: Json
     if (url.pathname === '/webhooks/vonage/inbound') {
       result = await liveDemo.handleInbound(payload)
     } else if (url.pathname === '/webhooks/vonage/status') {
@@ -249,20 +251,26 @@ async function handleWebhook(request, response, url, liveDemo) {
 
 const bundledAlwaysOnFlowPath = join(projectRoot, 'server', 'generated', 'always-on-rcs-menu.json')
 /** On VCR the build bundles the RCS MENU flow, so always-on needs no secret or manual file. */
-function withBundledAlwaysOnFlow(env) {
+function withBundledAlwaysOnFlow(env: Env): Env {
   if (env.LIVE_RCS_ALWAYS_ON_FLOW_PATH || !isVcrRuntime(env) || !existsSync(bundledAlwaysOnFlowPath)) return env
   return { ...env, LIVE_RCS_ALWAYS_ON_FLOW_PATH: bundledAlwaysOnFlowPath }
 }
 /** Flow ids in the build-generated always-on file; they need no entry in LIVE_RCS_ALLOWED_FLOW_IDS. */
-function bundledFlowIds() {
+function bundledFlowIds(): string[] {
   try {
     const { flow, catalog } = JSON.parse(readFileSync(bundledAlwaysOnFlowPath, 'utf8'))
-    return [flow?.metadata?.id, ...(Array.isArray(catalog) ? catalog.map((entry) => entry?.flow?.metadata?.id) : [])].filter((id) => typeof id === 'string')
+    return [flow?.metadata?.id, ...(Array.isArray(catalog) ? catalog.map((entry: Json) => entry?.flow?.metadata?.id) : [])].filter((id): id is string => typeof id === 'string')
   } catch {
     return []
   }
 }
-export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }) } = {}) {
+export interface CreateAppOptions {
+  env?: Env
+  liveDemo?: LiveDemoService
+  shareLinks?: ShareLinks
+}
+
+export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }) }: CreateAppOptions = {}) {
   const config = liveDemo?.config ?? getLiveDemoConfig(withBundledAlwaysOnFlow(env), projectRoot)
   if (!liveDemo && config.alwaysOnFlowPath === bundledAlwaysOnFlowPath) config.trustedAlwaysOnFlowIds = bundledFlowIds()
   const service = liveDemo ?? new LiveDemoService(config)
