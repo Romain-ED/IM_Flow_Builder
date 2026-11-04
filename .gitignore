@@ -28,3 +28,7 @@ server/generated
 # Local Live RCS session store (contains test-recipient transcript data)
 .live-rcs-sessions.json
 .live-rcs-sessions.json.*
+# Agent/tooling run artifacts and browser automation output (kept on disk, not versioned)
+.agents/
+.kiro/tasks/
+.playwright-mcp/
