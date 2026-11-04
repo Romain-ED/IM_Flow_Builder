@@ -131,23 +131,30 @@ function now() {
 function normalizeStore(raw) {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.sessions)) return { sessions: [] }
   return {
-    sessions: raw.sessions.map((session) => ({
-      ...session,
-      timeline: Array.isArray(session.timeline) ? session.timeline : [],
-      nextTimelineOrdinal: Number.isInteger(session.nextTimelineOrdinal)
-        ? session.nextTimelineOrdinal
-        : Array.isArray(session.timeline) ? session.timeline.reduce((max, item) => Math.max(max, Number(item.ordinal) || 0), 0) + 1 : 1,
-      timelineTruncated: Boolean(session.timelineTruncated),
-      pendingInput: session.pendingInput
-        ? { ...session.pendingInput, inputType: session.pendingInput.inputType ?? 'text' }
-        : null,
-      provider: session.provider && typeof session.provider === 'object'
-        ? session.provider
-        : { latestStatus: null, updatedAt: null },
-      activity: session.activity && typeof session.activity === 'object'
-        ? session.activity
-        : { latestInbound: null, latestOutbound: null, latestProvider: null },
-    })),
+    sessions: raw.sessions.map((session) => {
+      const normalized = {
+        ...session,
+        timeline: Array.isArray(session.timeline) ? session.timeline : [],
+        nextTimelineOrdinal: Number.isInteger(session.nextTimelineOrdinal)
+          ? session.nextTimelineOrdinal
+          : Array.isArray(session.timeline) ? session.timeline.reduce((max, item) => Math.max(max, Number(item.ordinal) || 0), 0) + 1 : 1,
+        timelineTruncated: Boolean(session.timelineTruncated),
+        pendingInput: session.pendingInput
+          ? { ...session.pendingInput, inputType: session.pendingInput.inputType ?? 'text' }
+          : null,
+        provider: session.provider && typeof session.provider === 'object'
+          ? session.provider
+          : { latestStatus: null, updatedAt: null },
+        activity: session.activity && typeof session.activity === 'object'
+          ? session.activity
+          : { latestInbound: null, latestOutbound: null, latestProvider: null },
+      }
+      if (normalized.status === 'awaiting_trigger' && !isRcsMenuFlow(normalized.flow)) {
+        normalized.status = 'stopped'
+        normalized.updatedAt = now()
+      }
+      return normalized
+    }),
   }
 }
 
@@ -720,7 +727,10 @@ export class LiveDemoService {
     if (!this.config.allowedFlowIds.includes(flow.metadata.id)) throw new Error('This flow is not allowlisted for Live RCS.')
     if (!Array.isArray(flow.nodes) || !flow.start) throw new Error('Flow is missing nodes or start state.')
     const scenarioCatalog = catalog === undefined ? {} : validateScenarioCatalog(catalog, this.config)
-    if (this.store.list().some((session) => session.status === 'starting' || session.status === 'awaiting_trigger' || session.status === 'awaiting_reply')) {
+    if (this.store.list().some((session) =>
+      normalizedAddress(session.recipient) === normalizedAddress(selectedRecipient) &&
+      (session.status === 'starting' || session.status === 'awaiting_trigger' || session.status === 'awaiting_reply')
+    )) {
       throw new Error('A Live RCS session is already active for the selected recipient.')
     }
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { FakeRcsGateway, getLiveDemoConfig, LiveDemoService, verifyWebhook } from './liveDemo.js'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { FakeRcsGateway, FileLiveSessionStore, getLiveDemoConfig, LiveDemoService, verifyWebhook } from './liveDemo.js'
 
 class MemoryStore {
   constructor() { this.sessions = [] }
@@ -98,6 +101,27 @@ describe('LiveDemoService', () => {
       flow: { ...flow, metadata: { ...flow.metadata, trigger: '   ' } },
     })).rejects.toThrow('metadata.trigger')
   })
+  it('retires persisted non-menu trigger-waiting sessions so they cannot block a new start', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'live-demo-'))
+    const path = join(directory, 'sessions.json')
+    writeFileSync(path, JSON.stringify({ sessions: [{
+      id: 'legacy-session',
+      status: 'awaiting_trigger',
+      flow: { metadata: { id: 'test-live-flow', channel: 'rcs', trigger: 'START DEMO' } },
+      recipient: '+15551234567',
+    }] }))
+    try {
+      const store = new FileLiveSessionStore(path)
+      expect(store.get('legacy-session').status).toBe('stopped')
+      const service = new LiveDemoService(getLiveDemoConfig(env, process.cwd()), store, new FakeRcsGateway())
+      const started = await service.createSession({ flow })
+      expect(started.status).toBe('awaiting_reply')
+      expect(started.timeline).toHaveLength(1)
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
   it('updates the configured recipient status after normalizing its address', async () => {
     const config = getLiveDemoConfig({
       ...env,
@@ -413,5 +437,26 @@ describe('always-on flow auto-start', () => {
     const configWithout = getLiveDemoConfig(env, process.cwd())
     expect(new LiveDemoService(configWithPath, new MemoryStore(), new FakeRcsGateway()).diagnostics().alwaysOnFlow).toBe('configured')
     expect(new LiveDemoService(configWithout, new MemoryStore(), new FakeRcsGateway()).diagnostics().alwaysOnFlow).toBe('not configured')
+  })
+
+  it('does not block createSession for the configured recipient when an always-on session is active for a different sender', async () => {
+    const config = getLiveDemoConfig({ ...vonageEnv, LIVE_RCS_ALLOWED_FLOW_IDS: 'rcs-demo-menu' }, process.cwd())
+    const sessions = []
+    const store = {
+      list: () => sessions,
+      get: (id) => sessions.find((s) => s.id === id) ?? null,
+      save: (s) => { const i = sessions.findIndex((x) => x.id === s.id); if (i < 0) sessions.push(s); else sessions[i] = s },
+    }
+    const service = new LiveDemoService(config, store, new FakeRcsGateway())
+    service._alwaysOnFlowCache = { flow: menuFlow, catalog: undefined }
+    // Auto-start a session for a different customer sender (+15559990003)
+    await service.handleInbound(fakeInbound({ message_uuid: 'ao-1', text: 'RCS MENU', from: '+15559990003' }))
+    expect(service.store.list()).toHaveLength(1)
+    // UI presenter must still be able to start a session for the configured test recipient
+    await expect(service.createSession({
+      flow: menuFlow,
+      recipient: vonageEnv.LIVE_RCS_TEST_RECIPIENT,
+    })).resolves.toBeDefined()
+    expect(service.store.list()).toHaveLength(2)
   })
 })
