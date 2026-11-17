@@ -26,21 +26,23 @@ describe('simulator RCS entry triggers', () => {
     })
   })
 
-  it('waits for exact normalized entry text before starting an RCS flow', async () => {
+  it('starts an RCS flow automatically when it loads, without a typed entry trigger', async () => {
     const flow = JSON.parse(flowSource('rcs', 'START DEMO'))
     expect(useSimulatorStore.getState().loadScenarioSource(flowSource('rcs', 'START DEMO'), 'json')).toBe(true)
-    expect(useSimulatorStore.getState().currentNodeId).toBeNull()
-    expect(useSimulatorStore.getState().history).toHaveLength(0)
-
-    useSimulatorStore.getState().handleFreeText('START DEMO now')
-    expect(useSimulatorStore.getState().currentNodeId).toBeNull()
-    expect(useSimulatorStore.getState().history).toHaveLength(0)
-
-    useSimulatorStore.getState().handleFreeText('  start demo  ')
     await settle()
     expect(useSimulatorStore.getState().currentNodeId).toBe(flow.start)
-    expect(useSimulatorStore.getState().history[0].message).toMatchObject({ sender: 'user', text: '  start demo  ' })
-    expect(useSimulatorStore.getState().history[1].message).toMatchObject({ sender: 'business', text: 'Welcome' })
+    expect(useSimulatorStore.getState().history).toHaveLength(1)
+    expect(useSimulatorStore.getState().history[0].message).toMatchObject({ sender: 'business', text: 'Welcome' })
+  })
+
+  it('restarts an RCS flow automatically without a typed entry trigger', async () => {
+    const flow = JSON.parse(flowSource('rcs', 'START DEMO'))
+    useSimulatorStore.getState().loadScenarioSource(flowSource('rcs', 'START DEMO'), 'json')
+    await settle()
+    useSimulatorStore.getState().restart()
+    await settle()
+    expect(useSimulatorStore.getState().currentNodeId).toBe(flow.start)
+    expect(useSimulatorStore.getState().history).toHaveLength(1)
   })
 
   it('keeps WhatsApp automatic startup and permits duplicate missing triggers', async () => {
@@ -54,7 +56,7 @@ describe('simulator RCS entry triggers', () => {
     expect(second.success).toBe(true)
   })
 
-  it('starts each RCS Demo Menu selection immediately, while direct loads still wait for their trigger', async () => {
+  it('starts each RCS Demo Menu selection and direct RCS loads immediately', async () => {
     const targets = [
       { id: 'singapore-airlines', metadataId: 'singapore-airlines-boarding-pass' },
       { id: 'dominos-singapore-rcs-demo', metadataId: 'dominos-singapore-rcs-demo' },
@@ -63,7 +65,6 @@ describe('simulator RCS entry triggers', () => {
     for (const target of targets) {
       const targetId = target.id
       useSimulatorStore.getState().loadBuiltInScenario('rcs-demo-menu')
-      useSimulatorStore.getState().handleFreeText(' rcs menu ')
       await settle()
       const menuMessage = useSimulatorStore.getState().history.at(-1)?.message
       expect(menuMessage?.type).toBe('carousel')
@@ -81,13 +82,13 @@ describe('simulator RCS entry triggers', () => {
     }
 
     useSimulatorStore.getState().loadBuiltInScenario('singapore-airlines')
-    expect(useSimulatorStore.getState().currentNodeId).toBeNull()
-    expect(useSimulatorStore.getState().history).toHaveLength(0)
+    await settle()
+    expect(useSimulatorStore.getState().currentNodeId).toBe(useSimulatorStore.getState().flow?.start)
+    expect(useSimulatorStore.getState().history.at(-1)?.message.sender).toBe('business')
   })
 
   it('ignores unknown or non-RCS scenario-start ids', async () => {
     useSimulatorStore.getState().loadBuiltInScenario('rcs-demo-menu')
-    useSimulatorStore.getState().handleFreeText('RCS MENU')
     await settle()
     const before = useSimulatorStore.getState().flow?.metadata.id
     useSimulatorStore.getState().handleAction({ type: 'reply', label: 'Unknown', startScenarioId: 'missing' })

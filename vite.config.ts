@@ -57,6 +57,8 @@ export default defineConfig(() => {
           // marketing photo (the Beerlao event promo is ~2.5 MB) — raised
           // with headroom for future real assets, not tuned to one file.
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          // SSO routes must always reach the server, never the cached app shell.
+          navigateFallbackDenylist: [/^\/auth\//, /^\/api\//],
         },
       }),
     ],

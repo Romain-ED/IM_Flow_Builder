@@ -5,7 +5,7 @@ import { channelRenderers } from '../../channels/registry'
 import { channelThemes } from '../../channels/theme'
 import { computeMessageAttachments } from '../../engine/messageAttachment'
 import type { NormalizedMessage } from '../../engine/types'
-import { projectLiveSnapshot } from '../../live/liveSessionProjection'
+import { LIVE_UNKNOWN_NODE_ID, projectLiveSnapshot } from '../../live/liveSessionProjection'
 import { MessageRenderer } from '../../messages/MessageRenderer'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { PhoneFrame } from '../phone/PhoneFrame'
@@ -16,6 +16,7 @@ type ConversationSummary = {
   updatedAt: string
   messageCount: number
   lastMessage: { sender: string; at: string; preview: string } | null
+  unmatched: Array<{ id: string; at: string; text: string }>
   sessions: unknown[]
 }
 
@@ -49,10 +50,10 @@ function formatTime(value: string): string {
     : date.toLocaleDateString([], { day: 'numeric', month: 'short' })
 }
 
-type ThreadPart = { key: string; startedAt: string; status: string; timeline: NormalizedMessage[] }
+type ThreadPart = { key: string; startedAt: string; status: string | null; timeline: NormalizedMessage[] }
 
 function threadParts(conversation: ConversationSummary): ThreadPart[] {
-  return conversation.sessions.flatMap((snapshot) => {
+  const sessionParts = conversation.sessions.flatMap((snapshot): ThreadPart[] => {
     const result = projectLiveSnapshot(snapshot)
     if (!result.success) return []
     const { projection } = result
@@ -63,6 +64,18 @@ function threadParts(conversation: ConversationSummary): ThreadPart[] {
       timeline: projection.timeline,
     }]
   })
+  // Messages sent when no session was waiting for them. They have no flow, so they get no session divider.
+  const looseParts = (conversation.unmatched ?? []).flatMap((message): ThreadPart[] => {
+    const timestamp = Date.parse(message.at)
+    if (Number.isNaN(timestamp)) return []
+    return [{
+      key: `loose-${message.id}`,
+      startedAt: message.at,
+      status: null,
+      timeline: [{ runtimeId: `loose-${message.id}`, nodeId: LIVE_UNKNOWN_NODE_ID, timestamp, message: { type: 'text', sender: 'user', text: message.text } }],
+    }]
+  })
+  return [...sessionParts, ...looseParts].sort((a, b) => a.startedAt.localeCompare(b.startedAt))
 }
 
 function PasswordGate({ onSubmit, error, loading }: { onSubmit: (password: string) => void; error: string | null; loading: boolean }) {
@@ -182,7 +195,7 @@ function Thread({ conversation }: { conversation: ConversationSummary }) {
               )}
               {parts.map((part) => (
                 <Fragment key={part.key}>
-                  {part.timeline.length > 0 && (
+                  {part.status !== null && part.timeline.length > 0 && (
                     <p className="text-center text-[10.5px] text-slate-400 m-0">
                       Session started {formatTime(part.startedAt)} · {part.status.replaceAll('_', ' ')}
                     </p>

@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
+import { useContext, type ReactNode } from 'react'
 import type { Accent } from '../../utils/accents'
+import { HideSectionHeadingContext } from './sectionHeadingContext'
 
 export function SectionHeading({
   accent,
@@ -11,10 +12,12 @@ export function SectionHeading({
   tone?: 'light' | 'dark'
   children: ReactNode
 }) {
+  const hidden = useContext(HideSectionHeadingContext)
+  if (hidden) return null
   return (
     <span
       className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${
-        tone === 'dark' ? 'text-slate-400' : 'text-slate-500'
+        tone === 'dark' ? 'text-slate-500' : 'text-slate-500'
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} aria-hidden="true" />

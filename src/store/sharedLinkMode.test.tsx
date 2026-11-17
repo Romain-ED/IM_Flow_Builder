@@ -72,7 +72,6 @@ describe('read-only shared link', { timeout: 60_000 }, () => {
     store.getState().updateConfiguredVariable('customerName', 'Mallory')
     store.getState().togglePresenterMode()
     store.getState().setChannel('whatsapp')
-    store.getState().toggleCompareMode()
     store.getState().toggleDebugPanel()
 
     const s = store.getState()
@@ -80,7 +79,6 @@ describe('read-only shared link', { timeout: 60_000 }, () => {
     expect(s.flowSource).toBe(sourceBefore)
     expect(s.configuredVariables.customerName).not.toBe('Mallory')
     expect(s.presenterMode).toBe(false)
-    expect(s.compareMode).toBe(false)
     expect(s.debugPanelOpen).toBe(false)
     expect(s.customScenarios).toEqual([])
     expect(window.localStorage.length).toBe(0)

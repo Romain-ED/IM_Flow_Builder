@@ -128,7 +128,9 @@ describe('VCR server live routes', () => {
     })
     expect(ignored.status).toBe(202)
     const nonMenuAfterInbound = await fetch(`${origin}/api/live/sessions/${nonMenu.id}`, { headers })
-    expect((await nonMenuAfterInbound.json()).timeline).toHaveLength(1)
+    const afterTimeline = (await nonMenuAfterInbound.json()).timeline
+    expect(afterTimeline).toHaveLength(2)
+    expect(afterTimeline[1]).toMatchObject({ sender: 'user', message: { text: 'START DEMO' } })
 
     const stopped = await fetch(`${origin}/api/live/sessions/${nonMenu.id}/stop`, { method: 'POST', headers })
     expect(stopped.status).toBe(200)

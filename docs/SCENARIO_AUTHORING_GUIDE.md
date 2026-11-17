@@ -74,7 +74,7 @@ Set `brand.rcsProfile` when the RCS Info & options view needs authored identity 
 
 Image sources are app-relative paths (`/assets/...`) or HTTPS image URLs. Keep local profile banners, logos, avatars, and galleries in the owning `public/assets/<brand>` directory; never hotlink or cross-reference another brand. Failed image loads retain a neutral visual and do not remove profile contacts. RCS derives a deterministic normalized profile when `rcsProfile` is omitted; WhatsApp profile rendering remains unchanged.
 
-Every flow with `metadata.channel: rcs` must define a non-empty `metadata.trigger`. The browser simulator waits for this message before entering `start`. Live RCS uses the trigger as the exact phone entry message only for the RCS MENU flow (`metadata.id: rcs-demo-menu`); other Live RCS flows enter `start` when the presenter starts them. Normalize only by Unicode NFC, trimming surrounding whitespace, and deterministic `toLowerCase()` casing; then require full-string equality. Internal whitespace, punctuation, and all other characters are significant. Do not use keyword, substring, regex, or fuzzy matching. Entry triggers must be unique across built-in and saved custom scenarios; duplicate normalized values are rejected. WhatsApp flows may omit this field and retain their existing automatic start behavior.
+Every flow with `metadata.channel: rcs` must define a non-empty `metadata.trigger`. The browser simulator starts at `start` automatically when the scenario loads or restarts, without this message being sent first. Live RCS uses the trigger as the exact phone entry message only for the RCS MENU flow (`metadata.id: rcs-demo-menu`); other Live RCS flows enter `start` when the presenter starts them. Normalize only by Unicode NFC, trimming surrounding whitespace, and deterministic `toLowerCase()` casing; then require full-string equality. Internal whitespace, punctuation, and all other characters are significant. Do not use keyword, substring, regex, or fuzzy matching. Entry triggers must be unique across built-in and saved custom scenarios; duplicate normalized values are rejected. WhatsApp flows may omit this field and retain their existing automatic start behavior.
 
 This field is separate from the optional top-level `triggers` array below. Top-level triggers are legacy in-flow keyword shortcuts checked after the scenario has started; they are not scenario selectors.
 
@@ -89,7 +89,7 @@ Google Messages shows card media at a fixed height (`mediaHeight`: short 112, me
 
 ## Free text & triggers
 
-The user's composer is always typable after the browser simulator's RCS entry trigger has been accepted, not just when an `input` message is active — whatever they type then sends as an outgoing bubble. In Live RCS, the composer is available after the session starts; only RCS MENU requires a phone entry trigger. Before startup, unmatched RCS text is ignored by the browser simulator; Live RCS flows started from the simulator do not wait for phone text. `triggers`
+The user's composer is always typable, not just when an `input` message is active. Whatever they type sends as an outgoing bubble. In Live RCS, the composer is available after the session starts; only RCS MENU requires a phone entry trigger. Live RCS flows started from the simulator do not wait for phone text. `triggers`
 (top-level, sibling of `nodes`) are global keyword routes checked against
 every free-text send, regardless of the current node:
 

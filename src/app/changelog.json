@@ -1,19 +1,43 @@
 [
   {
+    "version": "0.30.1",
+    "date": "2026-11-17",
+    "changes": [
+      "Enhancement: RCS scenarios in the simulator start automatically when they load, restart, or are picked from the RCS Demo Menu. The presenter no longer has to send the scenario's trigger (for example SIA START) first. Live RCS trigger matching is unchanged."
+    ]
+  },
+  {
+    "version": "0.30.0",
+    "date": "2026-11-04",
+    "changes": [
+      "Enhancement: Singapore Airlines flow rebuilt in the V Bank / Domino's style with emoji-led rich cards and carousels. New steps: travel-documents check, cabin-upgrade carousel (Premium Economy, Business), extras carousel (baggage, meal pre-order, lounge), airport guide, Tokyo arrival card and a feedback prompt. Seat cards use tall media. Still live-safe (reply/open_url only).",
+      "Enhancement: the boarding pass is now a per-seat PNG (public/assets/singapore-airlines/boarding-pass-<seat>.png for 24C, 21A, 21C, 32A, 31A, 12A) chosen from the selected seat, replacing the static demo PDF (now unused).",
+      "Enhancement: Singapore Airlines RCS profile uses banner.jpg as banner and the 700x700 brand-logo.png as avatar and logo (the old SVG avatar rendered as clipped text)."
+    ]
+  },
+  {
+    "version": "0.29.0",
+    "date": "2026-11-04",
+    "changes": [
+      "Feature: Okta SSO sign-in for the app (Vonage Okta, OIDC). Webhooks and health check stay public."
+    ]
+  },
+  {
+    "version": "0.28.1",
+    "date": "2026-11-04",
+    "changes": [
+      "Fix: the Conversations page now shows every message a user sends. Free text or buttons the flow does not act on are added to the session timeline, and non-text messages show as a placeholder such as '[image message]'.",
+      "Fix: inbound messages that match no session (for example free text after a flow ended) are stored in unmatched-inbound.json next to the session file (500 message cap, deduped by event id) and merged into the phone's thread by number. Webhook responses are unchanged.",
+      "Note: the inbox lives on the same instance disk as live sessions, so it can be lost on redeploy."
+    ]
+  },
+  {
     "version": "0.28.0",
     "date": "2026-11-04",
     "changes": [
       "Feature: new Conversations page (header nav). Read-only inbox of live RCS sessions grouped by phone number, drawn in the RCS phone frame so I see what the user saw, including their inbound replies. Refreshes every 5s.",
       "Feature: save a name per phone number (pencil icon above the phone). Names are stored server-side (VCR account state on VCR, contact-names.json locally). Full numbers are shown, not masked.",
       "Note: the page is gated by a hardcoded password ('admin', checked server-side on GET /api/live/conversations and PUT /api/live/conversations/name). Replace with real auth before real users. Live sessions are still stored on the instance disk, so history can be lost on redeploy while names persist."
-    ]
-  },
-  {
-    "version": "0.27.0",
-    "date": "2026-11-04",
-    "changes": [
-      "Enhancement: Singapore Airlines flow rebuilt in the V Bank / Domino's style. Emoji-led rich cards replace plain text, and the flow adds a travel-documents check, a cabin-upgrade carousel, an extras carousel (baggage, meal pre-order, lounge), an airport-guide carousel, a Tokyo arrival card and a feedback prompt. Seat cards now use tall media. Still live-safe (reply/open_url only).",
-      "Note: new-artwork slots (premium economy, business, baggage, meal, lounge, checked-in, Tokyo) use stand-in images via the imgXxx variables at the top of singapore-airlines.yaml until the generated files are swapped in."
     ]
   },
   {

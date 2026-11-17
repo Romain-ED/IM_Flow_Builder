@@ -68,13 +68,15 @@ describe('LiveDemoService', () => {
 
     const ignoredTrigger = await service.handleInbound({ message_uuid: 'trigger-1', text: '  start demo  ' })
     expect(ignoredTrigger.status).toBe('awaiting_reply')
-    expect(ignoredTrigger.timeline).toHaveLength(1)
+    // The flow ignores the text, but the user's message stays visible in the conversation.
+    expect(ignoredTrigger.timeline).toHaveLength(2)
+    expect(ignoredTrigger.timeline[1]).toMatchObject({ sender: 'user', message: { type: 'text', text: 'start demo' } })
 
     const completed = await service.handleInbound({ message_uuid: 'inbound-1', reply: { id: 'welcome:m:1:reply:0' } })
     expect(completed.status).toBe('completed')
-    expect(completed.timeline).toHaveLength(3)
-    expect(completed.timeline[1].sender).toBe('user')
-    expect(completed.timeline[1].message).toMatchObject({ type: 'text', text: 'Continue' })
+    expect(completed.timeline).toHaveLength(4)
+    expect(completed.timeline[2].sender).toBe('user')
+    expect(completed.timeline[2].message).toMatchObject({ type: 'text', text: 'Continue' })
 
     const providerMessageId = service.store.get(started.id).outbound[0].providerMessageId
     const withStatus = service.handleStatus({ message_uuid: providerMessageId, status: 'read' })
@@ -90,11 +92,12 @@ describe('LiveDemoService', () => {
 
     const nearMatch = await service.handleInbound({ message_uuid: 'near-match', text: 'RCS MENU now' })
     expect(nearMatch.status).toBe('awaiting_trigger')
-    expect(nearMatch.timeline).toHaveLength(0)
+    expect(nearMatch.timeline).toHaveLength(1)
+    expect(nearMatch.timeline[0]).toMatchObject({ sender: 'user', message: { text: 'RCS MENU now' } })
 
     const exact = await service.handleInbound({ message_uuid: 'exact-after-near-match', text: ' rcs menu ' })
     expect(exact.status).toBe('completed')
-    expect(exact.timeline).toHaveLength(2)
+    expect(exact.timeline).toHaveLength(3)
     expect(waiting.id).toBe(exact.id)
 
     await expect(service.createSession({
@@ -438,6 +441,26 @@ describe('always-on flow auto-start', () => {
       service.handleInbound(fakeInbound({ message_uuid: 'no-match', text: 'HELLO' })),
     ).rejects.toThrow('No active Live RCS session matches this inbound event.')
     expect(service.store.list()).toHaveLength(0)
+  })
+  it('keeps free text and non-text messages that match no session for the Conversations page', async () => {
+    const service = makeVonageService()
+    await expect(service.handleInbound(fakeInbound({ message_uuid: 'loose-1', text: 'Is anyone there?' }))).rejects.toThrow('No active Live RCS session')
+    // A redelivery of the same event must not duplicate the message.
+    await expect(service.handleInbound(fakeInbound({ message_uuid: 'loose-1', text: 'Is anyone there?' }))).rejects.toThrow('No active Live RCS session')
+    await expect(service.handleInbound(fakeInbound({ message_uuid: 'loose-2', text: undefined, message_type: 'image' }))).rejects.toThrow('No active Live RCS session')
+
+    const conversations = service.conversations()
+    expect(conversations).toHaveLength(1)
+    expect(conversations[0].unmatched.map((message) => message.text)).toEqual(['Is anyone there?', '[image message]'])
+    expect(conversations[0].messageCount).toBe(2)
+    expect(conversations[0].lastMessage).toMatchObject({ sender: 'user', preview: '[image message]' })
+    expect(service.store.list()).toHaveLength(0)
+  })
+  it('ignores unmatched inbound messages that are not RCS or not addressed to the agent', async () => {
+    const service = makeVonageService()
+    await expect(service.handleInbound(fakeInbound({ message_uuid: 'sms-1', text: 'hi', channel: 'sms' }))).rejects.toThrow()
+    await expect(service.handleInbound(fakeInbound({ message_uuid: 'other-agent', text: 'hi', to: 'someone-else' }))).rejects.toThrow()
+    expect(service.conversations()).toHaveLength(0)
   })
 
   it('does not auto-start when LIVE_RCS_ALWAYS_ON_FLOW_PATH is not configured', async () => {

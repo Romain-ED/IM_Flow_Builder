@@ -51,7 +51,6 @@ export interface SimulatorState {
   sharedLinkError: string | null
   debugPanelOpen: boolean
   debugWarningsEnabled: boolean
-  compareMode: boolean
   /** True while the real device, rather than the browser simulator, owns the next interaction. */
   liveSessionActive: boolean
   /** Credentials for the current live session, held in memory only for phone controls. */
@@ -136,7 +135,6 @@ export interface SimulatorState {
   togglePresenterMode: () => void
   toggleDebugPanel: () => void
   toggleDebugWarnings: () => void
-  toggleCompareMode: () => void
   setChannel: (channel: ChannelId) => void
   setPhonePlatform: (platform: PhonePlatform) => void
   setStartNodeOverride: (nodeId: string | null) => void

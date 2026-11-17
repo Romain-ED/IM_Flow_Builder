@@ -48,6 +48,39 @@ npm start
 
 Open the simulator, select the Singapore Airlines RCS scenario, paste the token into **Live RCS demo**, and start the run. Fake sessions can be driven through the webhook routes for automated/manual testing.
 
+## Vonage Okta SSO (optional)
+
+`server/auth.ts` can gate the whole app (static files and `/api/*`) behind Okta OIDC (authorization code + PKCE, confidential client). It is **off unless `AUTH_ENABLED=true`**. `/_/health`, `/webhooks/vonage/*` and `/manifest.webmanifest` are never gated (webhooks keep their own JWT check). Sessions are stateless signed cookies (`HttpOnly`, `SameSite=Lax`, `Secure` over HTTPS, 8h by default), so any VCR instance can serve any request. The ID token is validated once at the callback. `/api/live/conversations*` still also require their bearer password.
+
+| Variable | Purpose |
+|---|---|
+| `AUTH_ENABLED` | `true` to turn the gate on. |
+| `OIDC_ISSUER_URL` | `https://login.okta.vonage.com` (org root; discovery is read from `/.well-known/openid-configuration`). |
+| `OIDC_CLIENT_ID` | Okta app client id (prod: `0oalpuyl2eRQCheE10i7`). |
+| `OIDC_CLIENT_SECRET` | Okta client secret. Secret only. |
+| `OIDC_WEB_REDIRECT_URI` | `<app origin>/api/auth/callback/okta`, exactly as registered in Okta. |
+| `SESSION_SECRET` | 16+ random characters signing the cookies. Rotating it signs everyone out. |
+| `SESSION_TTL_SECONDS` | Optional, default `28800`. |
+| `OIDC_ALLOWED_GROUPS` / `OIDC_GROUPS_CLAIM` | Optional comma-separated group allow-list (adds the `groups` scope) and claim name (default `groups`). |
+| `OIDC_POST_LOGOUT_REDIRECT_URI` | Optional, default app root. Must be registered in Okta. |
+| `AUTH_PUBLIC_SHARE` | `true` leaves `/api/share*` ungated. Default gated; the app shell is gated too, so `#s=` recipients still need to sign in. |
+
+If `AUTH_ENABLED=true` but a required value is missing, the server fails closed with a 503 page (health stays up).
+
+`vcr.yml` maps each name to a VCR secret of the same name, so create all of them before the deploy that enables it (values are prompted, so nothing lands in shell history):
+
+```bash
+vcr secret create --name AUTH_ENABLED           # false until ready, then true
+vcr secret create --name OIDC_ISSUER_URL
+vcr secret create --name OIDC_CLIENT_ID
+vcr secret create --name OIDC_CLIENT_SECRET
+vcr secret create --name OIDC_WEB_REDIRECT_URI
+vcr secret create --name SESSION_SECRET         # e.g. output of: openssl rand -hex 32
+vcr deploy
+```
+
+Routes: `GET /auth/signin?returnTo=/path`, `GET /api/auth/callback/okta`, `GET /auth/signout`. Sign-out sends `id_token_hint` when the ID token fits in the cookie. Local test: `npm run build`, export the variables with a dev client and `http://localhost:3000/api/auth/callback/okta` as redirect URI (must be registered), then `npm start`. After enabling, an already installed PWA may show the cached app shell once; reload to hit the gate (API calls still get 401).
+
 ## Vonage application checklist
 
 Before setting `LIVE_RCS_MODE=vonage`:
@@ -90,7 +123,7 @@ The **Live logs** page is protected by the operator token and polls the authenti
 - Use only `reply` or `open_url` actions in live RCS content. `system_action`, lists, simulator-only cards, and call/location/calendar/custom action variants fail preflight.
 - Keep RCS limits: text ≤ 3,000 UTF-8 characters; media URL ≤ 2,000 characters; file ≤ 100 MB; carousel 2–10 cards; reply chips ≤ 11; action chips/card buttons ≤ 4.
 
-The Singapore Airlines scenario is the reference live-safe flow. Its boarding pass is a public PDF asset rather than a local simulator download/wallet action.
+The Singapore Airlines scenario is the reference live-safe flow. Its boarding pass is a public per-seat PNG image (`boarding-pass-<seat>.png`) rather than a local simulator download/wallet action.
 
 
 ### Single-instance Developer Mode storage

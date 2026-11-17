@@ -68,15 +68,14 @@ The engine never imports React, and no message component hardcodes a specific de
 ```
 src/
   app/                    pages.ts (page routing type), version.ts, changelog.ts + changelog.json,
-                           ChannelContext.tsx (per-phone-screen channel override,
-                           used by Compare Mode)
+                           ChannelContext.tsx (per-phone-screen channel override)
   components/
     layout/               AppHeader (nav + version badge), Sidebar,
                            PresenterFloatingControls, SharedLinkFloatingControls
-    phone/                PhoneFrame, PhoneScreen, ComparePhones, ConversationView,
+    phone/                PhoneFrame, PhoneScreen, ConversationView,
                            Composer, MessageShell, ChoiceChips,
                            ActionButton, ListSheet, Toast, ExternalActionModal, …
-    controls/              ScenarioControls, ChannelSelector (+ Compare toggle),
+    controls/              ScenarioControls, ChannelSelector,
                            VariablesEditor, DebugOptions, PlaybackControls
     editor/                ScenarioEditorModal (paste/import/validate/export),
                            ToolbarButton
@@ -114,7 +113,7 @@ src/
 
   store/
     simulatorStore.ts        Zustand store: playback, variables, channel,
-                             compare mode, custom scenarios, presenter mode,
+                             custom scenarios, presenter mode,
                              snapshots for Back, persistence
     persistence.ts           localStorage read/write helpers (prefs, last
                              scenario, custom scenarios)
@@ -198,13 +197,13 @@ Image fields accept app-relative paths such as `/assets/acme/banner.svg` or HTTP
 
 ### Scenario entry triggers
 
-An RCS scenario must define one unique `metadata.trigger` message. The browser simulator waits for that message before entering `start`. For Live RCS, only the RCS MENU flow (`metadata.id: rcs-demo-menu`) waits for its exact normalized trigger from the destination phone; every other flow enters `start` when the presenter clicks **Start live RCS**. Matching is exact after only these deterministic normalization steps: Unicode NFC normalization, trimming surrounding whitespace, and `String.prototype.toLowerCase()` casing. Internal whitespace, punctuation, and all other characters remain significant, so this is not keyword, substring, regex, or fuzzy matching. A trigger such as `SIA START` therefore accepts ` sia start ` and `SIA START`, but not `SIA START please`.
+An RCS scenario must define one unique `metadata.trigger` message. The browser simulator starts an RCS scenario at `start` as soon as it loads or restarts, so nobody has to send the trigger first. For Live RCS, only the RCS MENU flow (`metadata.id: rcs-demo-menu`) waits for its exact normalized trigger from the destination phone; every other flow enters `start` when the presenter clicks **Start live RCS**. Matching is exact after only these deterministic normalization steps: Unicode NFC normalization, trimming surrounding whitespace, and `String.prototype.toLowerCase()` casing. Internal whitespace, punctuation, and all other characters remain significant, so this is not keyword, substring, regex, or fuzzy matching. A trigger such as `SIA START` therefore accepts ` sia start ` and `SIA START`, but not `SIA START please`.
 
 RCS entry triggers are unique across built-in and locally saved custom scenarios; imports and edits with a normalized duplicate are rejected. The existing top-level `triggers` array remains an optional in-flow keyword shortcut after startup and does not select scenarios. WhatsApp scenarios may omit `metadata.trigger` for backward compatibility and keep their existing automatic-start behavior.
 
 ### Free text & keyword triggers
 
-The composer is always typable — after an RCS scenario's entry trigger has been accepted, not just when an `input` message is active — so the user side of a demo can be driven by actually typing, not only tapping buttons. Before that entry message, unmatched RCS text is ignored and does not start or record a scenario.
+The composer is always typable, not only when an `input` message is active, so the user side of a demo can be driven by actually typing, not only tapping buttons.
 
 `triggers` at the flow's top level are global keyword routes, independent of whatever node is currently active: `{ keywords: [...], next: "<node id>", set?: {...} }`. A trigger matches when any of its keywords appears as a **whole word** in the typed text (case-insensitive by default; substring-inside-another-word doesn't count, so `cat` won't fire on "category") — the first matching trigger wins. This is meant as an "anytime" escape hatch, e.g. "type CANCEL anytime" or "type HELP anytime", the way real WhatsApp/RCS bots often implement keyword commands, and it takes priority even over a currently-active `input` field. If nothing matches and there's no active `input` field either, the typed message still sends — it just sits there with no automatic response, the same as a real bot that doesn't recognize what you typed.
 

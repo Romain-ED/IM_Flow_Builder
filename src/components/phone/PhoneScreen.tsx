@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import { channelRenderers } from '../../channels/registry'
 import { ChannelProvider } from '../../app/ChannelContext'
-import type { ChannelId } from '../../schema/flow'
 import { ConversationView } from './ConversationView'
 import { Composer } from './Composer'
 import { ListSheet } from './ListSheet'
@@ -12,16 +11,10 @@ import { Toast } from './Toast'
 import { LiveStateIndicator } from './LiveStateIndicator'
 import { BusinessProfileView } from './BusinessProfileView'
 
-interface PhoneScreenProps {
-  /** Pins this screen to a specific channel, used by Compare Mode. Defaults to the store's global channel. */
-  channelOverride?: ChannelId
-}
-
-export function PhoneScreen({ channelOverride }: PhoneScreenProps = {}) {
+export function PhoneScreen() {
   const flow = useSimulatorStore((s) => s.flow)
-  const storeChannel = useSimulatorStore((s) => s.channel)
+  const channel = useSimulatorStore((s) => s.channel)
   const configuredBrand = useSimulatorStore((s) => s.configuredBrand)
-  const channel = channelOverride ?? storeChannel
   const [profileOpen, setProfileOpen] = useState(false)
   const liveSessionActive = useSimulatorStore((s) => s.liveSessionActive)
 

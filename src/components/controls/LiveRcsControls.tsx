@@ -213,7 +213,7 @@ export function LiveRcsControls() {
   return (
     <div className="flex flex-col gap-2.5">
       <SectionHeading accent={sectionAccents.inspector} tone="dark">{isVBank ? 'Live RCS' : 'Live RCS demo'}</SectionHeading>
-      <p className={`flex items-center gap-1.5 rounded-md border border-sky-400/30 bg-sky-400/10 px-2 py-1.5 text-[11.5px] leading-4 ${darkNotices.indigo}`} role="status">
+      <p className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-[11.5px] leading-4 ${darkNotices.indigo}`} role="status">
         <Radio size={13} aria-hidden="true" /> {isVBank ? vBankModeNotice : 'Demo mode — simulated interaction unless a live provider is configured.'}
       </p>
       {isLoading && <p className={`flex items-center gap-1.5 text-[12px] m-0 ${darkSurface.body}`} role="status" aria-live="polite"><LoaderCircle size={13} className="animate-spin" aria-hidden="true" /> Working…</p>}
@@ -227,7 +227,7 @@ export function LiveRcsControls() {
       {diagnostics?.ready && (
         <>
           <p className={`text-[12px] leading-4 m-0 ${darkSurface.body}`}>
-            <span className="font-medium text-white">{diagnostics.mode === 'fake' ? 'Fake transport' : isVBank ? 'Configured recipient' : 'Configured fallback number'}:</span>{' '}
+            <span className="font-medium text-slate-900">{diagnostics.mode === 'fake' ? 'Fake transport' : isVBank ? 'Configured recipient' : 'Configured fallback number'}:</span>{' '}
             {diagnostics.recipient} · {diagnostics.storage}
           </p>
           {needsRcsScenario && <Notice icon={CircleAlert} tone="amber">Load an RCS-authored scenario before starting Live RCS.</Notice>}
@@ -283,8 +283,8 @@ export function LiveRcsControls() {
                 <p className="mt-1 m-0 truncate">Inbound: {activityLabel(liveProjection?.activity.latestInbound ?? null)}</p>
                 <p className="mt-1 m-0 truncate">Outbound: {activityLabel(liveProjection?.activity.latestOutbound ?? null)}</p>
                 {liveProjection?.activity.latestProvider && <p className="mt-1 m-0 truncate">Provider: {activityLabel(liveProjection.activity.latestProvider)}</p>}
-                {liveSyncState === 'stale' && <p className="mt-1 m-0 text-amber-300">Live view is stale; retaining the last valid snapshot.</p>}
-                {liveSyncState === 'error' && <p className="mt-1 m-0 text-rose-300">Live view is unavailable until a valid snapshot arrives.</p>}
+                {liveSyncState === 'stale' && <p className="mt-1 m-0 text-amber-700">Live view is stale; retaining the last valid snapshot.</p>}
+                {liveSyncState === 'error' && <p className="mt-1 m-0 text-rose-700">Live view is unavailable until a valid snapshot arrives.</p>}
               </div>
               <button type="button" onClick={() => void stop()} disabled={isLoading} className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium ${darkTints.rose} ${darkFocusRing} disabled:opacity-40 cursor-pointer`}>
                 <Square size={12} fill="currentColor" /> Stop live session

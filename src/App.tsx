@@ -8,7 +8,6 @@ import { PresenterFloatingControls } from './components/layout/PresenterFloating
 import { SharedLinkFloatingControls } from './components/layout/SharedLinkFloatingControls'
 import { PhoneFrame } from './components/phone/PhoneFrame'
 import { PhoneScreen } from './components/phone/PhoneScreen'
-import { ComparePhones } from './components/phone/ComparePhones'
 import { DebugDrawer } from './components/debug/DebugDrawer'
 import { ScenarioEditorModal } from './components/editor/ScenarioEditorModal'
 import { ScenariosPage } from './components/scenarios/ScenariosPage'
@@ -22,7 +21,6 @@ function App() {
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
   const sharedLinkMode = useSimulatorStore((s) => s.sharedLinkMode)
   const debugPanelOpen = useSimulatorStore((s) => s.debugPanelOpen)
-  const compareMode = useSimulatorStore((s) => s.compareMode)
   const phonePlatform = useSimulatorStore((s) => s.phonePlatform)
   const sharedLinkError = useSimulatorStore((s) => s.sharedLinkError)
   const flowLoaded = useSimulatorStore((s) => s.flow !== null)
@@ -97,21 +95,17 @@ function App() {
 
       {page === 'simulator' && (
         <div className="flex-1 min-h-0 flex">
-          <div className={`hidden lg:block w-[300px] shrink-0 border-r ${darkSurface.border} ${darkSurface.sidebar}`}>
-            <Sidebar onOpenEditor={() => setEditorOpen(true)} />
+          <div className={`hidden lg:block shrink-0 border-r ${darkSurface.border} ${darkSurface.sidebar}`}>
+            <Sidebar collapsible onOpenEditor={() => setEditorOpen(true)} />
           </div>
 
-          {compareMode ? (
-            <ComparePhones />
-          ) : (
-            <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
-              <div className="phone-viewport h-full w-full">
-                <PhoneFrame platform={phonePlatform}>
-                  <PhoneScreen />
-                </PhoneFrame>
-              </div>
-            </main>
-          )}
+          <main className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-y-auto bg-slate-50">
+            <div className="phone-viewport h-full w-full">
+              <PhoneFrame platform={phonePlatform}>
+                <PhoneScreen />
+              </PhoneFrame>
+            </div>
+          </main>
 
           {debugPanelOpen && (
             <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">
@@ -160,14 +154,12 @@ function MobileOverlay({
       <button type="button" aria-label="Close" className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className={`relative w-[86%] max-w-[340px] h-full shadow-2xl flex flex-col ${dark ? darkSurface.sidebar : 'bg-white'}`}>
         <div className={`flex items-center justify-between px-4 py-3 border-b shrink-0 ${dark ? darkSurface.border : 'border-slate-100'}`}>
-          <h2 className={`text-[14px] font-semibold m-0 ${dark ? 'text-white' : 'text-slate-900'}`}>{title}</h2>
+          <h2 className="text-[14px] font-semibold m-0 text-slate-900">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className={`h-8 w-8 flex items-center justify-center rounded-full cursor-pointer ${
-              dark ? `text-slate-300 hover:bg-slate-800 hover:text-white ${darkFocusRing}` : 'hover:bg-slate-100 text-slate-500'
-            }`}
+            className={`h-8 w-8 flex items-center justify-center rounded-full cursor-pointer text-slate-500 hover:bg-slate-100 hover:text-slate-900 ${darkFocusRing}`}
           >
             <X size={16} />
           </button>

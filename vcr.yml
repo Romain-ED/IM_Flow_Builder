@@ -28,6 +28,18 @@ instance:
       secret: LIVE_RCS_VONAGE_SIGNATURE_SECRET
     - name: LIVE_RCS_DEMO_EPHEMERAL_STORAGE
       secret: LIVE_RCS_DEMO_EPHEMERAL_STORAGE
+    - name: AUTH_ENABLED
+      secret: AUTH_ENABLED
+    - name: OIDC_ISSUER_URL
+      secret: OIDC_ISSUER_URL
+    - name: OIDC_CLIENT_ID
+      secret: OIDC_CLIENT_ID
+    - name: OIDC_CLIENT_SECRET
+      secret: OIDC_CLIENT_SECRET
+    - name: OIDC_WEB_REDIRECT_URI
+      secret: OIDC_WEB_REDIRECT_URI
+    - name: SESSION_SECRET
+      secret: IM_FLOW_SESSION_SECRET
   security:
     access: public
 debug:

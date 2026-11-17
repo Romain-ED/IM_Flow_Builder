@@ -5,8 +5,8 @@
 # represent real flight operations.
 #
 # Live-safe: only `reply` and `open_url` actions are used, so the flow runs
-# unchanged over Live RCS. Image slots marked "NEW ARTWORK" currently point at
-# existing assets; see the variables block to swap in the generated files.
+# unchanged over Live RCS. Image paths live in the "Image slots" variables;
+# boarding passes are one PNG per seat (boarding-pass-<SEAT>.png).
 version: "1.0"
 
 metadata:
@@ -22,9 +22,9 @@ metadata:
 brand:
   name: "Singapore Airlines"
   shortName: "Singapore Airlines"
-  avatar: "/assets/singapore-airlines/brand-avatar.svg"
-  logo: "/assets/singapore-airlines/brand-logo.svg"
-  banner: "/assets/singapore-airlines/aircraft-a350.png"
+  avatar: "/assets/singapore-airlines/brand-logo.png"
+  logo: "/assets/singapore-airlines/brand-logo.png"
+  banner: "/assets/singapore-airlines/banner.jpg"
   verified: true
   description: "Travel support and flight services"
   website: "https://singaporeair.example"
@@ -89,22 +89,21 @@ variables:
   checkedIn: false
 
   # ---- Image slots -------------------------------------------------
-  # Existing artwork is used wherever it fits. Slots marked NEW ARTWORK
-  # currently point at a stand-in; once the generated file is saved in
-  # public/assets/singapore-airlines/, change the value to the new path
-  # (a new filename avoids stale browser/provider caches).
+  # To replace an image, save it under a new filename in
+  # public/assets/singapore-airlines/ and change the value here (a new
+  # filename avoids stale browser/provider caches).
   imgAircraft: "/assets/singapore-airlines/aircraft-a350.png?v=0.17.6"          # 800x449
   imgSeatWindow: "/assets/singapore-airlines/seat-window.png?v=0.17.6"          # 800x560
   imgSeatAisle: "/assets/singapore-airlines/seat-aisle.png?v=0.17.6"            # 800x560
   imgSeatLegroom: "/assets/singapore-airlines/seat-legroom.png?v=0.17.6"        # 800x560
   imgWelcome: "/assets/singapore-airlines/banner.jpg"                           # 1456x800 branded hero
-  imgPremiumEconomy: "/assets/singapore-airlines/seat-legroom.png?v=0.17.6"     # NEW ARTWORK: cabin-premium-economy.jpg, 1728x960
-  imgBusiness: "/assets/singapore-airlines/seat-window.png?v=0.17.6"            # NEW ARTWORK: cabin-business.jpg, 1728x960
-  imgBaggage: "/assets/singapore-airlines/aircraft-a350.png?v=0.17.6"           # NEW ARTWORK: addon-baggage.jpg, 1728x960
-  imgMeal: "/assets/singapore-airlines/seat-aisle.png?v=0.17.6"                 # NEW ARTWORK: addon-meal.jpg, 1728x960
-  imgLounge: "/assets/singapore-airlines/seat-window.png?v=0.17.6"              # NEW ARTWORK: addon-lounge.jpg, 1728x960
-  imgCheckedIn: "/assets/singapore-airlines/banner.jpg"                         # NEW ARTWORK: checkin-complete.jpg, 1440x960
-  imgTokyo: "/assets/singapore-airlines/banner.jpg"                             # NEW ARTWORK: tokyo-arrival.jpg, 1440x960
+  imgPremiumEconomy: "/assets/singapore-airlines/cabin-premium-economy.jpg"   # 1728x960
+  imgBusiness: "/assets/singapore-airlines/cabin-business.jpg"   # 1728x960
+  imgBaggage: "/assets/singapore-airlines/addon-baggage.jpg"   # 1728x960
+  imgMeal: "/assets/singapore-airlines/addon-meal.jpg"   # 1728x960
+  imgLounge: "/assets/singapore-airlines/addon-lounge.jpg"   # 1728x960
+  imgCheckedIn: "/assets/singapore-airlines/checkin-complete.jpg"   # 1440x960
+  imgTokyo: "/assets/singapore-airlines/tokyo-arrival.jpg"   # 1440x960
 
 triggers:
   - keywords: [help, support]
@@ -625,13 +624,12 @@ nodes:
           🎫 Booking ref {{bookingReference}}
       - type: delay
         duration: 700
-      - type: document
+      - type: image
         sender: business
-        filename: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
-        title: "🎫 Your boarding pass"
-        description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
-        fileType: PDF
-        url: /assets/singapore-airlines/boarding-pass-demo.pdf
+        # One 1080x1350 file per seat: 24C, 21A, 21C, 32A, 31A, 12A
+        url: "/assets/singapore-airlines/boarding-pass-{{seat}}.png"
+        alt: "Boarding pass for {{flightNumber}}, seat {{seat}}"
+        caption: "🎫 Your boarding pass · {{originCode}} → {{destinationCode}} · Seat {{seat}}"
       - type: suggested_replies
         sender: business
         options:
@@ -778,13 +776,12 @@ nodes:
   - id: show_boarding_pass_again
     label: "Boarding pass (again)"
     messages:
-      - type: document
+      - type: image
         sender: business
-        filename: "BoardingPass-{{flightNumber}}-{{customerName}}.pdf"
-        title: "🎫 Your boarding pass"
-        description: "{{originCode}} → {{destinationCode}} · {{departureDate}}"
-        fileType: PDF
-        url: /assets/singapore-airlines/boarding-pass-demo.pdf
+        # One 1080x1350 file per seat: 24C, 21A, 21C, 32A, 31A, 12A
+        url: "/assets/singapore-airlines/boarding-pass-{{seat}}.png"
+        alt: "Boarding pass for {{flightNumber}}, seat {{seat}}"
+        caption: "🎫 Your boarding pass · {{originCode}} → {{destinationCode}} · Seat {{seat}}"
       - type: text
         sender: business
         text: |

@@ -6,8 +6,8 @@ const ChannelContext = createContext<ChannelId | null>(null)
 
 /**
  * Provides the channel a phone screen should render as. Normally that's
- * just the store's global `channel`, but Compare Mode renders several phone
- * screens at once, each pinned to a different channel — this lets every
+ * just the store's global `channel`, but a screen can be pinned to a different
+ * channel (e.g. the Conversations page is always RCS) — this lets every
  * descendant (conversation view, composer, message renderer…)
  * ask "which channel am I?" without prop-drilling it through every layer.
  */

@@ -5,6 +5,7 @@ import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path
 import { fileURLToPath } from 'node:url'
 import { getLiveDemoConfig, LiveDemoService, summarizeInboundPayload, verifyWebhook } from './liveDemo.js'
 import { isValidContactPhone, MAX_CONTACT_NAME_LENGTH, resolveContactNames, type ContactNames } from './contactNames.js'
+import { createAuth, type OidcProvider } from './auth.js'
 import { createShareLinks, type ShareLinks } from './shareLinks.js'
 import { isVcrRuntime } from './shareStore.js'
 import type { Env, Json } from './types.js'
@@ -303,16 +304,20 @@ export interface CreateAppOptions {
   liveDemo?: LiveDemoService
   shareLinks?: ShareLinks
   contactNames?: ContactNames
+  /** Test seam: replaces the real OpenID provider when AUTH_ENABLED=true. */
+  oidcProvider?: OidcProvider
 }
 
-export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }), contactNames: providedContactNames }: CreateAppOptions = {}) {
+export function createApp({ env = process.env, liveDemo, shareLinks = createShareLinks({ env }), contactNames: providedContactNames, oidcProvider }: CreateAppOptions = {}) {
   const config = liveDemo?.config ?? getLiveDemoConfig(withBundledAlwaysOnFlow(env), projectRoot)
   if (!liveDemo && config.alwaysOnFlowPath === bundledAlwaysOnFlowPath) config.trustedAlwaysOnFlowIds = bundledFlowIds()
   const service = liveDemo ?? new LiveDemoService(config)
   const contactNames = providedContactNames ?? resolveContactNames(env, config.storagePath)
+  const auth = createAuth(env, oidcProvider)
   return createServer(async (request, response) => {
     const url = new URL(request.url || '/', 'http://localhost')
     try {
+      if (await auth.handle(request, response, url)) return
       if (await shareLinks.handle(request, response, url)) return
       if (url.pathname.startsWith('/api/live/') && await handleApi(request, response, url, service, contactNames)) return
       if (url.pathname.startsWith('/webhooks/vonage/') && await handleWebhook(request, response, url, service)) return

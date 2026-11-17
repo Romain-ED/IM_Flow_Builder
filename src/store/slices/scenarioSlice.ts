@@ -133,8 +133,6 @@ export const createScenarioSlice = (ctx: StoreContext): StateCreator<SimulatorSt
       const validation = validateFlow(parsed.data)
       if (!validation.success || validation.flow.metadata.channel !== 'rcs') return
       get().loadFlow(validation.flow, match.source, 'yaml')
-      set({ startNodeOverride: validation.flow.start })
-      get().restart()
     },
 
     importCustomScenario: (source, formatHint, nameOverride) => {

@@ -2,7 +2,7 @@ import { PanelLeft, PanelRight, Maximize2, Minimize2, MessageSquareText, Monitor
 import { useSimulatorStore } from '../../store/simulatorStore'
 import type { AppPage } from '../../app/pages'
 import { APP_VERSION } from '../../app/version'
-import { darkFocusRing, darkSolids, darkSurface } from '../../utils/darkChrome'
+import { darkSolids, darkSurface } from '../../utils/darkChrome'
 
 interface AppHeaderProps {
   page: AppPage
@@ -11,14 +11,24 @@ interface AppHeaderProps {
   onToggleMobileDebug: () => void
 }
 
-const GHOST_BUTTON = `text-slate-300 hover:bg-slate-800 hover:text-white ${darkFocusRing}`
+// The header is dark, so it uses its own (light) focus ring instead of the shared one.
+const HEADER_FOCUS =
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'
+const GHOST_BUTTON = `text-slate-300 hover:bg-slate-800 hover:text-white ${HEADER_FOCUS}`
 
-const NAV_ITEMS: { id: AppPage; label: string; icon: typeof MonitorSmartphone }[] = [
+type NavItem = { id: AppPage; label: string; icon: typeof MonitorSmartphone }
+
+/** Where you work: shown as tabs in the center of the bar. */
+const PRIMARY_NAV: NavItem[] = [
   { id: 'simulator', label: 'Simulator', icon: MonitorSmartphone },
   { id: 'scenarios', label: 'Scenarios', icon: FolderCog },
-  { id: 'manual', label: 'Manual', icon: BookOpen },
   { id: 'conversations', label: 'Conversations', icon: MessagesSquare },
+]
+
+/** Reference and diagnostics: quieter icon buttons on the right. */
+const SECONDARY_NAV: NavItem[] = [
   { id: 'liveDiagnostics', label: 'Live logs', icon: ClipboardList },
+  { id: 'manual', label: 'Manual', icon: BookOpen },
 ]
 
 export function AppHeader({ page, onNavigate, onToggleMobileSidebar, onToggleMobileDebug }: AppHeaderProps) {
@@ -28,8 +38,8 @@ export function AppHeader({ page, onNavigate, onToggleMobileSidebar, onToggleMob
   const toggleDebugPanel = useSimulatorStore((s) => s.toggleDebugPanel)
 
   return (
-    <header className={`shrink-0 h-14 flex items-center justify-between gap-3 px-4 ${darkSurface.header}`}>
-      <div className="flex items-center gap-2 min-w-0">
+    <header className={`shrink-0 h-14 grid grid-cols-[1fr_auto_1fr] items-stretch gap-3 px-4 ${darkSurface.header}`}>
+      <div className="flex items-center gap-2.5 min-w-0">
         {page === 'simulator' && (
           <button
             type="button"
@@ -40,20 +50,22 @@ export function AppHeader({ page, onNavigate, onToggleMobileSidebar, onToggleMob
             <PanelLeft size={17} />
           </button>
         )}
-        <MessageSquareText size={19} className="text-indigo-400 shrink-0" aria-hidden="true" />
-        <h1 className="text-[14.5px] font-semibold text-white truncate m-0 hidden sm:block">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600" aria-hidden="true">
+          <MessageSquareText size={17} className="text-white" />
+        </span>
+        <h1 className="m-0 hidden min-w-0 truncate text-[14px] font-semibold text-white xl:block">
           Business Messaging Flow Simulator
         </h1>
         <span
-          className="shrink-0 text-[10px] font-semibold text-indigo-200 bg-indigo-500/20 border border-indigo-400/40 rounded-full px-1.5 py-0.5"
+          className="shrink-0 text-[10px] font-semibold text-slate-300 bg-slate-800 border border-slate-700 rounded-full px-1.5 py-0.5"
           title="App version"
         >
           v{APP_VERSION}
         </span>
       </div>
 
-      <nav className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1" aria-label="Pages">
-        {NAV_ITEMS.map((item) => {
+      <nav className="flex items-center gap-2" aria-label="Pages">
+        {PRIMARY_NAV.map((item) => {
           const Icon = item.icon
           const isActive = page === item.id
           return (
@@ -62,18 +74,22 @@ export function AppHeader({ page, onNavigate, onToggleMobileSidebar, onToggleMob
               type="button"
               onClick={() => onNavigate(item.id)}
               aria-current={isActive ? 'page' : undefined}
-              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium cursor-pointer transition-colors ${darkFocusRing} ${
-                isActive ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              aria-label={item.label}
+              title={item.label}
+              className={`flex h-9 items-center gap-1.5 rounded-lg border px-3.5 text-[13px] font-medium cursor-pointer transition-colors ${HEADER_FOCUS} ${
+                isActive
+                  ? 'border-indigo-300/60 bg-indigo-600 text-white shadow-sm'
+                  : 'border-slate-600 bg-slate-900 text-slate-200 hover:border-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <Icon size={14} />
-              <span className="hidden sm:inline">{item.label}</span>
+              <Icon size={15} aria-hidden="true" />
+              <span className="hidden md:inline">{item.label}</span>
             </button>
           )
         })}
       </nav>
 
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center justify-end gap-1 min-w-0">
         {page === 'simulator' && (
           <>
             <button
@@ -88,24 +104,47 @@ export function AppHeader({ page, onNavigate, onToggleMobileSidebar, onToggleMob
               type="button"
               onClick={toggleDebugPanel}
               aria-pressed={debugPanelOpen}
+              title="Show or hide the flow inspector"
               className={`hidden lg:flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium cursor-pointer transition-colors ${
                 debugPanelOpen ? `${darkSolids.teal}` : GHOST_BUTTON
               }`}
             >
-              <PanelRight size={14} /> Inspector
+              <PanelRight size={14} aria-hidden="true" /> Inspector
             </button>
             <button
               type="button"
               onClick={togglePresenterMode}
+              title="Full-screen phone view for presenting"
+              aria-label="Presenter mode"
               className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium cursor-pointer transition-colors ${
                 presenterMode ? darkSolids.violet : GHOST_BUTTON
               }`}
             >
-              {presenterMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              <span className="hidden sm:inline">Presenter mode</span>
+              {presenterMode ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
+              <span className="hidden xl:inline">Present</span>
             </button>
+            <span className="mx-1.5 h-5 w-px bg-slate-800" aria-hidden="true" />
           </>
         )}
+        {SECONDARY_NAV.map((item) => {
+          const Icon = item.icon
+          const isActive = page === item.id
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onNavigate(item.id)}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={item.label}
+              title={item.label}
+              className={`h-8 w-8 flex items-center justify-center rounded-md cursor-pointer transition-colors ${
+                isActive ? `bg-slate-800 text-white ${HEADER_FOCUS}` : GHOST_BUTTON
+              }`}
+            >
+              <Icon size={16} aria-hidden="true" />
+            </button>
+          )
+        })}
       </div>
     </header>
   )

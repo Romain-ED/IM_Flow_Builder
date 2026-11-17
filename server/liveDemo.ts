@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { createFileInbox, createMemoryInbox, type InboundInbox, type InboxMessage } from './inboundInbox.js'
 import type { Env, GatewayResult, Json, LiveAction, LiveContent, LiveDemoConfig, LiveMode, LiveSession, LiveSessionStore, RcsGateway } from './types.js'
 import { createApplicationJwt, toVonageRcsMessage, verifyVonageSignedWebhook } from './vonageRcs.js'
 
@@ -90,6 +91,15 @@ export function publicLiveDemoDiagnostics(config: LiveDemoConfig) {
 
 function maskRecipient(value: string): string {
   return value.length <= 4 ? '••••' : `${'•'.repeat(Math.max(4, value.length - 4))}${value.slice(-4)}`
+}
+
+/** What a user sent, as plain text for the conversation view. Non-text messages become a short placeholder. */
+function inboundDisplayText(payload: Json, postbackId: string | null | undefined): string {
+  const text = payload?.text ?? payload?.message?.text
+  if (typeof text === 'string' && text.trim()) return boundedText(text.trim(), 1000)
+  if (postbackId) return '[Tapped an option that is no longer active]'
+  const type = typeof payload?.message_type === 'string' && payload.message_type ? payload.message_type : 'unsupported'
+  return `[${boundedText(type, 40)} message]`
 }
 
 function normalizedAddress(value: unknown): string {
@@ -626,6 +636,7 @@ export class LiveDemoService {
   config: LiveDemoConfig
   store: LiveSessionStore
   gateway: RcsGateway
+  inbox: InboundInbox
   webhookReplayIds: Map<string, number>
   diagnosticEvents: Json[]
   _alwaysOnFlowCache: { flow: Json; catalog: Json[] | undefined } | null | undefined
@@ -635,10 +646,15 @@ export class LiveDemoService {
     config: LiveDemoConfig,
     store: LiveSessionStore = new FileLiveSessionStore(config.storagePath),
     gateway: RcsGateway = config.mode === 'vonage' ? new VonageRcsGateway(config) : new FakeRcsGateway(),
+    inbox?: InboundInbox,
   ) {
     this.config = config
     this.store = store
     this.gateway = gateway
+    // Only the default file-backed setup persists unmatched messages; injected stores (tests) stay in memory.
+    this.inbox = inbox ?? (store instanceof FileLiveSessionStore
+      ? createFileInbox(resolve(dirname(config.storagePath), 'unmatched-inbound.json'))
+      : createMemoryInbox())
     this.webhookReplayIds = new Map()
     this.diagnosticEvents = []
     this._alwaysOnFlowCache = undefined
@@ -665,29 +681,41 @@ export class LiveDemoService {
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
   }
 
-  /** Sessions grouped by phone number, newest conversation first. Includes full numbers: callers must authenticate. */
+  /** Sessions and unmatched inbound messages grouped by phone number, newest first. Includes full numbers: callers must authenticate. */
   conversations() {
-    const groups = new Map<string, LiveSession[]>()
-    for (const session of this.store.list()) {
-      const key = session.recipient || 'unknown'
-      groups.set(key, [...(groups.get(key) ?? []), session])
+    type Group = { phone: string; sessions: LiveSession[]; unmatched: InboxMessage[] }
+    const groups = new Map<string, Group>()
+    const groupFor = (phone: string, preferPhone: boolean): Group => {
+      const key = normalizedAddress(phone) || 'unknown'
+      let group = groups.get(key)
+      if (!group) {
+        group = { phone, sessions: [], unmatched: [] }
+        groups.set(key, group)
+      } else if (preferPhone) group.phone = phone
+      return group
     }
-    return [...groups.entries()]
-      .map(([recipient, sessions]) => {
+    for (const session of this.store.list()) groupFor(session.recipient || 'unknown', true).sessions.push(session)
+    for (const message of this.inbox.list()) {
+      groupFor(/^\d+$/.test(message.from) ? `+${message.from}` : message.from, false).unmatched.push(message)
+    }
+    return [...groups.values()]
+      .map(({ phone, sessions, unmatched }) => {
         const ordered = sessions.slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
-        const latest = ordered.reduce((best, session) => String(session.updatedAt) > String(best.updatedAt) ? session : best)
-        const lastItem = ordered.flatMap((session) => session.timeline ?? []).sort((a, b) => a.at.localeCompare(b.at)).at(-1)
+        const items = [
+          ...ordered.flatMap((session) => (session.timeline ?? []).map((item) => ({ sender: item.sender, at: item.at, preview: boundedText(previewForMessage(item.message), 120) }))),
+          ...unmatched.map((message) => ({ sender: 'user', at: message.at, preview: boundedText(message.text, 120) })),
+        ].sort((a, b) => a.at.localeCompare(b.at))
+        const updatedAt = [...ordered.map((session) => String(session.updatedAt)), ...unmatched.map((message) => message.at)].sort().at(-1) ?? ''
         return {
-          phone: recipient,
-          updatedAt: latest.updatedAt,
-          messageCount: ordered.reduce((total, session) => total + (session.timeline?.length ?? 0), 0),
-          lastMessage: lastItem
-            ? { sender: lastItem.sender, at: lastItem.at, preview: boundedText(previewForMessage(lastItem.message), 120) }
-            : null,
+          phone,
+          updatedAt,
+          messageCount: items.length,
+          lastMessage: items.at(-1) ?? null,
+          unmatched: unmatched.map(({ id, at, text }) => ({ id, at, text })),
           sessions: ordered.map((session) => presenterSnapshot(session)),
         }
       })
-      .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   }
 
   diagnosticsLog(sessionId?: string) {
@@ -946,6 +974,7 @@ export class LiveDemoService {
       if (autoStarted) session = this.store.get(autoStarted.id)
     }
     if (!session) {
+      this.recordUnmatchedInbound(payload, eventId, postbackId)
       this.recordDiagnostic({ type: 'inbound_unmatched_session', eventId, postbackId })
       throw new Error('No active Live RCS session matches this inbound event.')
     }
@@ -1006,6 +1035,13 @@ export class LiveDemoService {
     }
     if (!recognized) {
       this.recordDiagnostic({ type: 'inbound_unmatched', sessionId: session.id, eventId, postbackId, reason: postbackId ? 'No matching interaction correlation.' : 'No supported text or reply interaction found.' })
+      // The flow does not act on this message, but the user did send it, so keep it visible in the conversation.
+      session.processedInbound.push(eventId)
+      appendTimeline(session, {
+        sender: 'user',
+        nodeId: session.currentNodeId,
+        message: liveMessageFromContent({ type: 'text', text: inboundDisplayText(payload, postbackId) }, 'user', session),
+      })
       session.updatedAt = now()
       this.store.save(session)
       return presenterSnapshot(session)
@@ -1023,6 +1059,18 @@ export class LiveDemoService {
     session.updatedAt = now()
     this.store.save(session)
     return presenterSnapshot(session)
+  }
+
+  /** Keeps an inbound message that belongs to no session so the Conversations page can show it. Never throws. */
+  recordUnmatchedInbound(payload: Json, eventId: string, postbackId: string | null) {
+    try {
+      if (this.config.mode === 'vonage' && (payload.channel !== 'rcs' || normalizedAddress(payload.to) !== normalizedAddress(this.config.rcsAgentId))) return
+      const from = String(payload.from ?? '').trim()
+      if (!from) return
+      this.inbox.add({ id: eventId, from, at: now(), text: inboundDisplayText(payload, postbackId) })
+    } catch (error) {
+      this.recordDiagnostic({ type: 'inbox_write_error', error: error instanceof Error ? error.message : 'Could not store the inbound message.' })
+    }
   }
 
   stopSession(id: string) {

@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand'
 import { findNode, resolveAction, resolveBoardingPassAction, resolveChoice, resolveFreeText, resolveInputSubmission, resolveListRow } from '../../engine/ConversationEngine'
-import { matchTrigger, matchesScenarioTrigger } from '../../engine/triggerMatcher'
+import { matchTrigger } from '../../engine/triggerMatcher'
 import { consumeRcsTrailingSuggestions } from '../../engine/messageAttachment'
 import { downloadBoardingPassImage } from '../../utils/boardingPassFile'
 import { findActiveInput } from '../../utils/selectors'
@@ -63,21 +63,7 @@ export const createInteractionSlice = (ctx: StoreContext): StateCreator<Simulato
 
     handleFreeText: (text) => {
       const s = get()
-      if (s.liveSessionActive || !s.flow || !text.trim()) return
-
-      if (!s.currentNodeId) {
-        const trigger = s.flow.metadata.trigger
-        if (s.flow.metadata.channel !== 'rcs' || !trigger || !matchesScenarioTrigger(trigger, text)) return
-        const entryNodeId = s.startNodeOverride ?? s.flow.start
-        const entryMessage = resolveFreeText(entryNodeId, text, null).userMessage
-        if (!entryMessage) return
-        set((state) => ({
-          history: [...state.history, entryMessage],
-          events: [...state.events, { type: 'user_action', at: Date.now(), nodeId: entryNodeId, label: text }],
-        }))
-        void get().goToNode(entryNodeId)
-        return
-      }
+      if (s.liveSessionActive || !s.flow || !s.currentNodeId || !text.trim()) return
 
       // A node-level `freeTextNext` swallows any typed text (even a global
       // trigger keyword): the text is sent and the flow moves on, unanalysed.

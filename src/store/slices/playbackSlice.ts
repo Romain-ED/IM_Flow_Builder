@@ -118,7 +118,6 @@ export const createPlaybackSlice = (ctx: StoreContext): StateCreator<SimulatorSt
         activeListSheet: null,
         boardingPassPreview: null,
       })
-      if (s.flow.metadata.channel === 'rcs' && s.flow.metadata.trigger && !s.startNodeOverride) return
       void get().goToNode(s.startNodeOverride ?? s.flow.start)
     },
 
