@@ -24,10 +24,10 @@ export default defineConfig(() => {
       VitePWA({
         registerType: 'autoUpdate',
         base,
-        includeAssets: ['favicon.svg'],
+        includeAssets: ['favicon.ico'],
         manifest: {
-          name: 'Business Messaging Flow Simulator',
-          short_name: 'Msg Simulator',
+          name: 'IM Flow Builder',
+          short_name: 'IM Flow Builder',
           description:
             'Interactive, browser-only prototyping tool for conversational business messaging journeys (RCS, WhatsApp Business).',
           theme_color: '#0f172a',

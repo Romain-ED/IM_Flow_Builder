@@ -1,6 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useSimulatorStore } from './store/simulatorStore'
+import { BUILT_IN_SCENARIOS } from './scenarios'
 import type { AppPage } from './app/pages'
 import { AppHeader } from './components/layout/AppHeader'
 import { Sidebar } from './components/layout/Sidebar'
@@ -11,6 +12,8 @@ import { PhoneScreen } from './components/phone/PhoneScreen'
 import { DebugDrawer } from './components/debug/DebugDrawer'
 import { ScenarioEditorModal } from './components/editor/ScenarioEditorModal'
 import { ScenariosPage } from './components/scenarios/ScenariosPage'
+import { FlowChartPage } from './components/flowchart/FlowChartPage'
+import { buildChartScenarioOptions } from './components/flowchart/chartScenario'
 import { ManualPage } from './components/manual/ManualPage'
 import { LiveDiagnosticsPage } from './components/live/LiveDiagnosticsPage'
 import { ConversationsPage } from './components/live/ConversationsPage'
@@ -24,8 +27,14 @@ function App() {
   const phonePlatform = useSimulatorStore((s) => s.phonePlatform)
   const sharedLinkError = useSimulatorStore((s) => s.sharedLinkError)
   const flowLoaded = useSimulatorStore((s) => s.flow !== null)
+  const customScenarios = useSimulatorStore((s) => s.customScenarios)
+  const chartOptions = useMemo(
+    () => buildChartScenarioOptions(BUILT_IN_SCENARIOS, customScenarios),
+    [customScenarios],
+  )
 
   const [page, setPage] = useState<AppPage>('simulator')
+  const [chartKey, setChartKey] = useState<string | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [mobileDebugOpen, setMobileDebugOpen] = useState(false)
@@ -88,7 +97,23 @@ function App() {
         onToggleMobileDebug={() => setMobileDebugOpen(true)}
       />
 
-      {page === 'scenarios' && <ScenariosPage onNavigateToSimulator={() => setPage('simulator')} />}
+      {page === 'scenarios' && (
+        <ScenariosPage
+          onNavigateToSimulator={() => setPage('simulator')}
+          onOpenFlowChart={(key) => {
+            setChartKey(key)
+            setPage('flowChart')
+          }}
+        />
+      )}
+      {page === 'flowChart' && (
+        <FlowChartPage
+          options={chartOptions}
+          selectedKey={chartKey}
+          onSelect={setChartKey}
+          onBack={() => setPage('scenarios')}
+        />
+      )}
       {page === 'manual' && <ManualPage />}
       {page === 'liveDiagnostics' && <LiveDiagnosticsPage />}
       {page === 'conversations' && <ConversationsPage />}

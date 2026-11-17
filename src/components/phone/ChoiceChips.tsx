@@ -8,9 +8,11 @@ interface ChoiceChipsProps {
   interactive: boolean
   onSelect: (choice: Choice) => void
   ariaLabel?: string
+  /** Flow chart anchor ID for each chip, in the same order as `choices`. Undefined on the phone. */
+  anchors?: (string | undefined)[]
 }
 
-export function ChoiceChips({ choices, channel, interactive, onSelect, ariaLabel }: ChoiceChipsProps) {
+export function ChoiceChips({ choices, channel, interactive, onSelect, ariaLabel, anchors }: ChoiceChipsProps) {
   const theme = channelThemes[channel]
   const isRcs = channel === 'rcs'
 
@@ -21,6 +23,7 @@ export function ChoiceChips({ choices, channel, interactive, onSelect, ariaLabel
           <button
             key={choice.value ?? choice.label ?? i}
             type="button"
+            data-chart-anchor={anchors?.[i]}
             disabled={!interactive}
             onClick={() => interactive && onSelect(choice)}
             className={`animate-choice-chip px-4 py-2.5 text-[13.5px] font-medium text-center transition-colors ${theme.chipText} ${i > 0 ? 'border-t border-slate-200' : ''} ${interactive ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
@@ -39,6 +42,7 @@ export function ChoiceChips({ choices, channel, interactive, onSelect, ariaLabel
         <button
           key={choice.value ?? choice.label ?? i}
           type="button"
+          data-chart-anchor={anchors?.[i]}
           disabled={!interactive}
           onClick={() => interactive && onSelect(choice)}
           className={`${isRcs ? 'inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2.5 text-[13.5px]' : 'rounded-full px-3.5 py-2 text-[13px] font-medium'} animate-choice-chip transition-colors ${theme.chipBg} ${theme.chipBorder} ${theme.chipText} ${interactive ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}

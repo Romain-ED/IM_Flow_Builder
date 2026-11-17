@@ -19,6 +19,7 @@ import { LiveRcsControls } from '../controls/LiveRcsControls'
 import { HideSectionHeadingContext } from '../common/sectionHeadingContext'
 import { sectionAccents, type Accent } from '../../utils/accents'
 import { darkFocusRing, darkSurface } from '../../utils/darkChrome'
+import { assetUrl } from '../../utils/assetUrl'
 
 type SectionId = 'scenario' | 'device' | 'live' | 'debug'
 
@@ -42,10 +43,10 @@ interface SectionTone {
 }
 
 const TONES = {
-  indigo: { section: 'border-indigo-200 bg-indigo-50', header: 'bg-indigo-100 hover:bg-indigo-200/70', rail: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200', divider: 'bg-indigo-200' },
-  violet: { section: 'border-violet-200 bg-violet-50', header: 'bg-violet-100 hover:bg-violet-200/70', rail: 'bg-violet-100 text-violet-700 hover:bg-violet-200', divider: 'bg-violet-200' },
-  teal: { section: 'border-teal-200 bg-teal-50', header: 'bg-teal-100 hover:bg-teal-200/70', rail: 'bg-teal-100 text-teal-700 hover:bg-teal-200', divider: 'bg-teal-200' },
-  amber: { section: 'border-amber-200 bg-amber-50', header: 'bg-amber-100 hover:bg-amber-200/70', rail: 'bg-amber-100 text-amber-700 hover:bg-amber-200', divider: 'bg-amber-200' },
+  indigo: { section: 'border-indigo-300 bg-indigo-50', header: 'bg-indigo-100 hover:bg-indigo-200/70', rail: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200', divider: 'bg-indigo-200' },
+  violet: { section: 'border-violet-300 bg-violet-50', header: 'bg-violet-100 hover:bg-violet-200/70', rail: 'bg-violet-100 text-violet-700 hover:bg-violet-200', divider: 'bg-violet-200' },
+  teal: { section: 'border-teal-300 bg-teal-50', header: 'bg-teal-100 hover:bg-teal-200/70', rail: 'bg-teal-100 text-teal-700 hover:bg-teal-200', divider: 'bg-teal-200' },
+  amber: { section: 'border-amber-300 bg-amber-50', header: 'bg-amber-100 hover:bg-amber-200/70', rail: 'bg-amber-100 text-amber-700 hover:bg-amber-200', divider: 'bg-amber-200' },
 } satisfies Record<string, SectionTone>
 
 const PLAYBACK_TONE = { section: 'border-rose-200 bg-rose-50', rail: 'bg-rose-100 text-rose-700 hover:bg-rose-200' }
@@ -139,6 +140,13 @@ export function Sidebar({ onOpenEditor, collapsible = false }: { onOpenEditor: (
 
       {/* Kept mounted while the rail is shown so inputs (phone number, token) keep their state. */}
       <div className={`${rail ? 'hidden' : 'flex'} min-h-0 flex-1 flex-col`}>
+        <div className={`shrink-0 border-b p-4 ${darkSurface.border}`}>
+          <img
+            src={assetUrl('/im-flow-builder-logo.png')}
+            alt="IM Flow Builder"
+            className="block w-full rounded-lg bg-slate-700"
+          />
+        </div>
         {collapsible && (
           <div className={`flex shrink-0 items-center justify-between border-b px-4 py-2 ${darkSurface.border}`}>
             <span className={`text-[11px] font-semibold uppercase tracking-wide ${darkSurface.muted}`}>Controls</span>
@@ -155,20 +163,22 @@ export function Sidebar({ onOpenEditor, collapsible = false }: { onOpenEditor: (
         )}
 
         <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto">
-          {SECTIONS.map((section) => (
-            <SidebarSection
-              key={section.id}
-              id={section.id}
-              title={section.title}
-              icon={section.icon}
-              accent={section.accent}
-              tone={section.tone}
-              open={prefs.open[section.id]}
-              onToggle={() => toggleSection(section.id)}
-            >
-              {sectionBodies[section.id]}
-            </SidebarSection>
-          ))}
+          <div className="flex flex-col gap-3 py-3">
+            {SECTIONS.map((section) => (
+              <SidebarSection
+                key={section.id}
+                id={section.id}
+                title={section.title}
+                icon={section.icon}
+                accent={section.accent}
+                tone={section.tone}
+                open={prefs.open[section.id]}
+                onToggle={() => toggleSection(section.id)}
+              >
+                {sectionBodies[section.id]}
+              </SidebarSection>
+            ))}
+          </div>
         </div>
 
         <div className={`shrink-0 border-t p-4 ${PLAYBACK_TONE.section}`}>
@@ -200,7 +210,7 @@ function SidebarSection({
 }) {
   const panelId = `sidebar-section-${id}`
   return (
-    <section className={`border-b ${tone.section}`}>
+    <section className={`border-b-2 ${tone.section}`}>
       <h3 className="m-0">
         <button
           type="button"
@@ -219,7 +229,7 @@ function SidebarSection({
           />
         </button>
       </h3>
-      <div id={panelId} className={`${open ? 'flex' : 'hidden'} flex-col gap-4 px-4 pb-4`}>
+      <div id={panelId} className={`${open ? 'flex' : 'hidden'} flex-col gap-4 px-4 pt-4 pb-4`}>
         <HideSectionHeadingContext.Provider value={true}>{children}</HideSectionHeadingContext.Provider>
       </div>
     </section>

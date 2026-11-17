@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.31.0",
+    "date": "2026-11-17",
+    "changes": [
+      "Feature: Flow chart page. Each scenario card (and the Scenarios page picker) opens the flow as a zoomable chart. Every step shows its real RCS or WhatsApp messages (rich cards, carousels, suggestion chips, lists) at phone scale, and an arrow leaves each button with its label. Condition steps show their branch, and unreachable steps are dimmed. Read-only.",
+      "Enhancement: flow chart layout uses elkjs with fixed ports per button; carousels show every card in one strip at Google's 296 DP card width. The phone simulator is unchanged."
+    ]
+  },
+  {
     "version": "0.30.1",
     "date": "2026-11-17",
     "changes": [

@@ -1,11 +1,13 @@
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
+import { actionAnchor } from '../engine/flowAnchors'
 import { MessageShell } from '../components/phone/MessageShell'
 import { ImageWithFallback } from '../components/common/ImageWithFallback'
 import { FormattedText } from '../components/common/FormattedText'
 import { ActionButton } from '../components/phone/ActionButton'
 import { RCS_ACTION_STACK } from '../channels/rcs/cardStyles'
 import { RCS_STANDALONE_TARGET_RATIOS } from '../channels/rcs/mediaRatios'
+import { useChartMessageIndex } from './chartAnchorContext'
 
 interface RichCardProps {
   message: NormalizedMessage
@@ -17,10 +19,12 @@ interface RichCardProps {
 const WHATSAPP_MEDIA_HEIGHTS: Record<string, string> = { short: 'h-28', medium: 'h-44', tall: 'h-64' }
 
 export function RichCard({ message, channel, interactive, timestampLabel }: RichCardProps) {
+  const messageIndex = useChartMessageIndex()
   if (message.message.type !== 'rich_card') return null
   const { sender, header, image, title, description, footer, mediaHeight, orientation, actions } = message.message
   const isRcs = channel === 'rcs'
   const hasActions = Boolean(actions && actions.length > 0)
+  const actionAnchorAt = (i: number) => (messageIndex === null ? undefined : actionAnchor(messageIndex, i))
 
   if (isRcs) {
     const horizontal = orientation === 'horizontal' && Boolean(image)
@@ -37,7 +41,14 @@ export function RichCard({ message, channel, interactive, timestampLabel }: Rich
         {hasActions && (
           <div className={`${RCS_ACTION_STACK} px-3 pb-3 pt-1`}>
             {actions!.map((action, i) => (
-              <ActionButton key={i} action={action} channel={channel} interactive={interactive} variant="block" />
+              <ActionButton
+                key={i}
+                action={action}
+                channel={channel}
+                interactive={interactive}
+                variant="block"
+                anchor={actionAnchorAt(i)}
+              />
             ))}
           </div>
         )}
@@ -94,7 +105,14 @@ export function RichCard({ message, channel, interactive, timestampLabel }: Rich
       {hasActions && (
         <div className="flex flex-col">
           {actions!.map((action, i) => (
-            <ActionButton key={i} action={action} channel={channel} interactive={interactive} variant="block" />
+            <ActionButton
+              key={i}
+              action={action}
+              channel={channel}
+              interactive={interactive}
+              variant="block"
+              anchor={actionAnchorAt(i)}
+            />
           ))}
         </div>
       )}

@@ -27,6 +27,21 @@ export const RCS_CAROUSEL_TARGET_RATIOS: Record<MediaHeight, number> = {
   tall: 1.5,
 }
 
+/** Google's vertical rich card media heights, in DP. */
+export const RCS_MEDIA_HEIGHT_DP: Record<MediaHeight, number> = {
+  short: 112,
+  medium: 168,
+  tall: 264,
+}
+
+/**
+ * Aspect ratio of carousel media in a card of the given width, from Google's
+ * media heights. The flow chart uses this with Google's 296 DP medium card width.
+ */
+export function googleCarouselCardRatio(cardWidth: number, mediaHeight: MediaHeight): number {
+  return cardWidth / RCS_MEDIA_HEIGHT_DP[mediaHeight]
+}
+
 /** Crops above this share of the image's width or height are flagged. */
 export const RCS_CROP_WARNING_THRESHOLD = 0.1
 

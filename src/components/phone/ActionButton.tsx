@@ -10,9 +10,11 @@ interface ActionButtonProps {
   channel: ChannelId
   interactive: boolean
   variant?: 'chip' | 'block'
+  /** Flow chart anchor ID. Undefined on the phone. */
+  anchor?: string
 }
 
-export function ActionButton({ action, channel, interactive, variant = 'chip' }: ActionButtonProps) {
+export function ActionButton({ action, channel, interactive, variant = 'chip', anchor }: ActionButtonProps) {
   const handleAction = useSimulatorStore((s) => s.handleAction)
   const theme = channelThemes[channel]
   const isRcs = channel === 'rcs'
@@ -33,6 +35,7 @@ export function ActionButton({ action, channel, interactive, variant = 'chip' }:
   return (
     <button
       type="button"
+      data-chart-anchor={anchor}
       className={`${baseClasses} ${!interactive ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
       style={variant === 'chip' ? undefined : {}}
       disabled={!interactive}

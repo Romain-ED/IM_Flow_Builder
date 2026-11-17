@@ -1,1 +1,1 @@
-export type AppPage = 'simulator' | 'scenarios' | 'manual' | 'liveDiagnostics' | 'conversations'
+export type AppPage = 'simulator' | 'scenarios' | 'flowChart' | 'manual' | 'liveDiagnostics' | 'conversations'

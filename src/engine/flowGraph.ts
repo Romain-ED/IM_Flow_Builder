@@ -1,4 +1,12 @@
 import type { FlowDefinition, FlowNode } from '../schema/flow'
+import {
+  NODE_ANCHOR,
+  actionAnchor,
+  cardActionAnchor,
+  nodeActionAnchor,
+  optionAnchor,
+  rowAnchor,
+} from './flowAnchors'
 
 export type GraphNodeKind = 'condition' | 'terminal' | 'normal' | 'unreached'
 
@@ -19,6 +27,13 @@ export interface GraphEdge {
   kind: 'condition-then' | 'condition-else' | 'flow'
 }
 
+export interface AnchoredEdge extends GraphEdge {
+  /** The button that causes this transition, or `NODE_ANCHOR` when no button does. */
+  anchor: string
+  /** Text of the button, when a button causes the transition. */
+  label?: string
+}
+
 export interface FlowGraphLayout {
   nodes: GraphNode[]
   edges: GraphEdge[]
@@ -32,59 +47,87 @@ const COLUMN_SPACING = 224
 const ROW_SPACING = 78
 const MARGIN = 24
 
-/** Every node id a given node can transition to, deduplicated, in a stable order. */
-export function outgoingEdges(node: FlowNode): GraphEdge[] {
-  const edges: GraphEdge[] = []
-  const seen = new Set<string>()
-  const add = (to: string | undefined, kind: GraphEdge['kind']) => {
-    if (!to || seen.has(`${kind}:${to}`)) return
-    seen.add(`${kind}:${to}`)
-    edges.push({ from: node.id, to, kind })
+/**
+ * Every transition a node can make, with the button that causes it. Each button
+ * gets its own entry, even when two buttons lead to the same node. Node-level
+ * transitions (next, free text, condition branches) share `NODE_ANCHOR` and
+ * are deduplicated.
+ */
+export function anchoredEdges(node: FlowNode): AnchoredEdge[] {
+  const edges: AnchoredEdge[] = []
+  const seenNodeLevel = new Set<string>()
+  const add = (to: string | undefined, kind: GraphEdge['kind'], anchor: string, label?: string) => {
+    if (!to) return
+    if (anchor === NODE_ANCHOR) {
+      if (seenNodeLevel.has(`${kind}:${to}`)) return
+      seenNodeLevel.add(`${kind}:${to}`)
+    }
+    edges.push({ from: node.id, to, kind, anchor, label })
   }
 
   if (node.condition) {
-    add(node.then, 'condition-then')
-    add(node.else, 'condition-else')
+    add(node.then, 'condition-then', NODE_ANCHOR, 'then')
+    add(node.else, 'condition-else', NODE_ANCHOR, 'else')
   }
-  add(node.next, 'flow')
-  add(node.freeTextNext, 'flow')
-  for (const action of node.actions ?? []) add(action.next, 'flow')
+  add(node.next, 'flow', NODE_ANCHOR)
+  add(node.freeTextNext, 'flow', NODE_ANCHOR)
+  const nodeActions = node.actions ?? []
+  nodeActions.forEach((choice, j) => add(choice.next, 'flow', nodeActionAnchor(j), choice.label))
 
-  for (const message of node.messages ?? []) {
+  const authored = node.messages ?? []
+  authored.forEach((message, i) => {
     switch (message.type) {
       case 'suggested_replies':
-        for (const option of message.options) add(option.next, 'flow')
+        message.options.forEach((option, j) => add(option.next, 'flow', optionAnchor(i, j), option.label))
         break
-      case 'list':
+      case 'list': {
+        let rowIndex = 0
         for (const section of message.sections) {
-          for (const row of section.rows) add(row.next, 'flow')
+          for (const row of section.rows) {
+            add(row.next, 'flow', rowAnchor(i, rowIndex), row.title)
+            rowIndex += 1
+          }
         }
         break
+      }
       case 'input':
       case 'otp':
       case 'payment_request':
       case 'calendar_event':
       case 'whatsapp_flow':
-        add(message.next, 'flow')
+        add(message.next, 'flow', NODE_ANCHOR)
         break
       case 'carousel':
-        for (const card of message.cards) {
-          for (const action of card.actions ?? []) {
-            if (action.type === 'reply') add(action.next, 'flow')
-          }
-        }
+        message.cards.forEach((card, c) => {
+          const cardActions = card.actions ?? []
+          cardActions.forEach((action, j) => {
+            if (action.type === 'reply') add(action.next, 'flow', cardActionAnchor(i, c, j), action.label)
+          })
+        })
         break
       default:
         if ('actions' in message && Array.isArray(message.actions)) {
-          for (const action of message.actions) {
+          message.actions.forEach((action, j) => {
             if (action.type === 'reply' || action.type === 'download' || action.type === 'add_to_wallet') {
-              add(action.next, 'flow')
+              add(action.next, 'flow', actionAnchor(i, j), action.label)
             }
-          }
+          })
         }
     }
-  }
+  })
 
+  return edges
+}
+
+/** Every node id a given node can transition to, deduplicated, in a stable order. */
+export function outgoingEdges(node: FlowNode): GraphEdge[] {
+  const seen = new Set<string>()
+  const edges: GraphEdge[] = []
+  for (const { from, to, kind } of anchoredEdges(node)) {
+    if (seen.has(`${kind}:${to}`)) continue
+    seen.add(`${kind}:${to}`)
+    edges.push({ from, to, kind })
+  }
   return edges
 }
 

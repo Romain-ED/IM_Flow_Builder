@@ -103,7 +103,10 @@ src/
     templateRenderer.ts     safe {{variable}} substitution (regex only, no eval)
     conditionEvaluator.ts   equals / not_equals / exists / contains / >/< 
     flowValidator.ts        Zod parse + duplicate-id / dangling-reference checks
-    flowGraph.ts             pure BFS layout engine for the visual graph view
+    flowGraph.ts             pure BFS layout engine for the visual graph view; per-button transitions (anchoredEdges)
+    flowAnchors.ts           stable IDs for each button, shared by the chart and the phone's data-chart-anchor
+    flowChartItems.ts        per-step bubbles for the flow chart page (same attachment rules as the live chat)
+    flowChartLayout.ts       elkjs layout for the flow chart page: fixed button ports, orthogonal routes
     eventStore.ts           ConversationEvent union + variable-diff helper
     types.ts                NormalizedMessage, PlayStep, NodeOutcome, …
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, Copy, FileJson, FileText, Pencil, Trash2, Link2, Check, Eye } from 'lucide-react'
+import { Play, Copy, FileJson, FileText, Pencil, Trash2, Link2, Check, Eye, Waypoints } from 'lucide-react'
 
 interface ScenarioCardProps {
   name: string
@@ -8,6 +8,7 @@ interface ScenarioCardProps {
   meta?: string
   onLoad: () => void
   onView: () => void
+  onFlowChart?: () => void
   onDuplicate: () => void
   onExportJson: () => void
   onExportYaml: () => void
@@ -23,6 +24,7 @@ export function ScenarioCard({
   meta,
   onLoad,
   onView,
+  onFlowChart,
   onDuplicate,
   onExportJson,
   onExportYaml,
@@ -75,6 +77,16 @@ export function ScenarioCard({
         >
           <Eye size={12.5} /> View
         </button>
+        {onFlowChart && (
+          <button
+            type="button"
+            onClick={onFlowChart}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 cursor-pointer"
+            title="Flow chart with realistic message previews"
+          >
+            <Waypoints size={12.5} /> Flow chart
+          </button>
+        )}
         {onEdit && (
           <button
             type="button"

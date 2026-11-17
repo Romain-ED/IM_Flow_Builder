@@ -8,8 +8,10 @@ import { FormattedText } from '../components/common/FormattedText'
 import { ActionButton } from '../components/phone/ActionButton'
 import { channelThemes } from '../channels/theme'
 import { assetUrl } from '../utils/assetUrl'
+import { cardActionAnchor } from '../engine/flowAnchors'
+import { useChartMessageIndex } from './chartAnchorContext'
 import { RCS_ACTION_STACK } from '../channels/rcs/cardStyles'
-import { RCS_CAROUSEL_TARGET_RATIOS } from '../channels/rcs/mediaRatios'
+import { RCS_CAROUSEL_TARGET_RATIOS, googleCarouselCardRatio } from '../channels/rcs/mediaRatios'
 
 /**
  * RCS carousel media is fluid in Google Messages rather than a fixed
@@ -23,9 +25,14 @@ interface CarouselProps {
   message: NormalizedMessage
   channel: ChannelId
   interactive: boolean
+  /**
+   * Flow chart only: every card at this fixed width (RCS), shown in one strip
+   * with no scrolling. Undefined on the phone, which uses a fluid width.
+   */
+  cardWidth?: number
 }
 
-export function Carousel({ message, channel, interactive }: CarouselProps) {
+export function Carousel({ message, channel, interactive, cardWidth }: CarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   if (message.message.type !== 'carousel') return null
@@ -43,7 +50,11 @@ export function Carousel({ message, channel, interactive }: CarouselProps) {
       <div className="w-full min-w-0 group/carousel">
         <div
           ref={scrollerRef}
-          className="flex min-w-0 gap-2.5 overflow-x-auto overscroll-x-contain no-scrollbar scroll-smooth snap-x snap-mandatory pb-1"
+          className={
+            cardWidth === undefined
+              ? 'flex min-w-0 gap-2.5 overflow-x-auto overscroll-x-contain no-scrollbar scroll-smooth snap-x snap-mandatory pb-1'
+              : 'flex w-max gap-2.5 pb-1'
+          }
           role="list"
           aria-label="Carousel of options"
         >
@@ -57,10 +68,11 @@ export function Carousel({ message, channel, interactive }: CarouselProps) {
               radiusClass={theme.cardRadius}
               onImageClick={() => setSelectedIndex(index)}
               mediaHeight={mediaHeight}
+              cardWidth={cardWidth}
             />
           ))}
         </div>
-        {cards.length > 1 && interactive && (
+        {cards.length > 1 && interactive && cardWidth === undefined && (
           <>
             <button
               type="button"
@@ -101,6 +113,7 @@ function CarouselCardView({
   radiusClass,
   onImageClick,
   mediaHeight,
+  cardWidth,
 }: {
   card: CarouselCard
   cardIndex: number
@@ -109,14 +122,16 @@ function CarouselCardView({
   radiusClass: string
   onImageClick: () => void
   mediaHeight: MediaHeight
+  cardWidth?: number
 }) {
+  const messageIndex = useChartMessageIndex()
   const isRcs = channel === 'rcs'
 
   return (
     <div
       role="listitem"
       className={`relative shrink-0 snap-start overflow-hidden ${isRcs ? 'bg-[#f0f4f9]' : 'border border-slate-200 bg-white shadow-sm'} ${radiusClass} flex flex-col ${!interactive ? 'opacity-60' : ''}`}
-      style={{ width: isRcs ? 'min(calc(100% - 16px), 418px)' : '200px' }}
+      style={{ width: isRcs ? (cardWidth ? `${cardWidth}px` : 'min(calc(100% - 16px), 418px)') : '200px' }}
     >
       {card.image && (
         <button
@@ -129,7 +144,11 @@ function CarouselCardView({
             src={card.image}
             alt={card.title}
             className={`block ${isRcs ? 'w-full object-cover' : 'h-28 w-full object-cover'}`}
-            style={isRcs ? { aspectRatio: carouselAspectRatio(mediaHeight) } : undefined}
+            style={
+              isRcs
+                ? { aspectRatio: cardWidth ? `${googleCarouselCardRatio(cardWidth, mediaHeight)} / 1` : carouselAspectRatio(mediaHeight) }
+                : undefined
+            }
           />
         </button>
       )}
@@ -150,7 +169,16 @@ function CarouselCardView({
       </div>
       {card.actions && card.actions.length > 0 && (
         <div className={isRcs ? `${RCS_ACTION_STACK} px-3 pb-3 pt-1` : 'flex flex-col border-t border-slate-100'}>
-          {card.actions.map((action, i) => <ActionButton key={i} action={action} channel={channel} interactive={interactive} variant="block" />)}
+          {card.actions.map((action, i) => (
+            <ActionButton
+              key={i}
+              action={action}
+              channel={channel}
+              interactive={interactive}
+              variant="block"
+              anchor={messageIndex === null ? undefined : cardActionAnchor(messageIndex, cardIndex, i)}
+            />
+          ))}
         </div>
       )}
       <span className="sr-only">Carousel card {cardIndex + 1}</span>

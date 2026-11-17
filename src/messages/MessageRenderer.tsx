@@ -26,6 +26,7 @@ import { ProductCatalogMessage } from './ProductCatalogMessage'
 import { WhatsappFlowMessage } from './WhatsappFlowMessage'
 import { SystemActionMessage } from './SystemActionMessage'
 import { AlertTriangle } from 'lucide-react'
+import { CHART_CARD_WIDTH, WHATSAPP_CAROUSEL_CARD_WIDTH } from '../engine/flowChartItems'
 
 interface MessageRendererProps {
   message: NormalizedMessage
@@ -40,9 +41,16 @@ interface MessageRendererProps {
   trailingActions?: TrailingActionItem[]
   /** Prevents every simulator interaction and side effect in the live mirror. */
   readOnly?: boolean
+  /**
+   * Flow chart preview: draws the message as it looks on the phone, trailing
+   * buttons included, without the simulator's timestamps, fallback notes, or
+   * current-node state. The caller must make the content inert, because
+   * buttons here still look enabled.
+   */
+  previewOnly?: boolean
 }
 
-export function MessageRenderer({ message, channel, trailingActions, readOnly = false }: MessageRendererProps) {
+export function MessageRenderer({ message, channel, trailingActions, readOnly = false, previewOnly = false }: MessageRendererProps) {
   const currentNodeId = useSimulatorStore((s) => s.currentNodeId)
   const debugWarningsEnabled = useSimulatorStore((s) => s.debugWarningsEnabled)
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
@@ -50,21 +58,22 @@ export function MessageRenderer({ message, channel, trailingActions, readOnly = 
   const showTimestamps = useSimulatorStore((s) => s.flow?.defaults?.showTimestamps ?? true)
   const locale = useSimulatorStore((s) => s.flow?.defaults?.locale)
 
-  const interactive = !readOnly && isMessageInteractive(message, currentNodeId)
+  const interactive = previewOnly || (!readOnly && isMessageInteractive(message, currentNodeId))
   const capabilities = channelCapabilities[channel]
   const supported = isMessageTypeSupported(capabilities, message.message.type)
   // Hidden in presenter mode (a live demo) and shared-link mode (an
   // external viewer) alike — both are "just show the conversation" views
   // with no debug-toggle UI reachable to turn these back on anyway, since
   // sharedLinkMode hides the sidebar the toggle itself lives in.
-  const showFallbackNote = !supported && debugWarningsEnabled && !presenterMode && !sharedLinkMode
+  const showFallbackNote = !previewOnly && !supported && debugWarningsEnabled && !presenterMode && !sharedLinkMode
   // Only worth checking real structural limits (button counts, label
   // lengths, carousel size...) when the channel natively renders this type —
   // a message already falling back to a generic component isn't subject to
   // the native platform's constraints in the first place.
   const capabilityWarning = supported ? getCapabilityWarning(capabilities, message.message) : null
-  const showCapabilityWarning = Boolean(capabilityWarning) && debugWarningsEnabled && !presenterMode && !sharedLinkMode
-  const timestampLabel = showTimestamps ? formatTime(message.timestamp, locale) : undefined
+  const showCapabilityWarning =
+    !previewOnly && Boolean(capabilityWarning) && debugWarningsEnabled && !presenterMode && !sharedLinkMode
+  const timestampLabel = showTimestamps && !previewOnly ? formatTime(message.timestamp, locale) : undefined
   const deliveryState = message.message.sender === 'user' ? 'read' : undefined
   const sender = message.message.sender ?? 'business'
 
@@ -85,7 +94,15 @@ export function MessageRenderer({ message, channel, trailingActions, readOnly = 
           <span>{capabilityWarning}</span>
         </div>
       )}
-      {renderContent(message, channel, interactive, timestampLabel, deliveryState, readOnly ? undefined : trailingActions)}
+      {renderContent(
+        message,
+        channel,
+        interactive,
+        timestampLabel,
+        deliveryState,
+        readOnly && !previewOnly ? undefined : trailingActions,
+        previewOnly ? (channel === 'rcs' ? CHART_CARD_WIDTH : WHATSAPP_CAROUSEL_CARD_WIDTH) : undefined,
+      )}
     </div>
   )
 }
@@ -97,6 +114,7 @@ function renderContent(
   timestampLabel: string | undefined,
   deliveryState: 'read' | undefined,
   trailingActions: TrailingActionItem[] | undefined,
+  carouselCardWidth: number | undefined,
 ) {
   switch (message.message.type) {
     case 'text':
@@ -118,7 +136,7 @@ function renderContent(
     case 'rich_card':
       return <RichCard message={message} channel={channel} interactive={interactive} timestampLabel={timestampLabel} />
     case 'carousel':
-      return <Carousel message={message} channel={channel} interactive={interactive} />
+      return <Carousel message={message} channel={channel} interactive={interactive} cardWidth={carouselCardWidth} />
     case 'suggested_replies':
       return <SuggestedReplies message={message} channel={channel} interactive={interactive} />
     case 'suggested_actions':

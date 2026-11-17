@@ -16,6 +16,8 @@ export interface TrailingActionItem {
   label: string
   icon?: LucideIcon
   onClick: () => void
+  /** Flow chart anchor ID for this button. Undefined everywhere else. */
+  anchor?: string
 }
 
 interface MessageShellProps {
@@ -107,6 +109,7 @@ export function MessageShell({
                   <button
                     key={item.key}
                     type="button"
+                    data-chart-anchor={item.anchor}
                     disabled={!interactive}
                     onClick={() => interactive && item.onClick()}
                     className={`flex items-center justify-center gap-1.5 px-4 py-2.5 text-[13.5px] font-medium text-center transition-colors ${theme.chipText} ${

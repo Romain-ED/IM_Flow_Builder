@@ -12,7 +12,8 @@ interface ImageWithFallbackProps {
 export function ImageWithFallback({ src, alt, className = '', style }: ImageWithFallbackProps) {
   const [errored, setErrored] = useState(false)
 
-  if (!src || errored) {
+  // A URL that still has a {{variable}} placeholder can never load. Show the fallback without requesting it.
+  if (!src || errored || src.includes('{{')) {
     return (
       <div
         className={`flex flex-col items-center justify-center gap-1 bg-slate-100 text-slate-400 ${className}`}

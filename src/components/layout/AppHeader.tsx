@@ -1,8 +1,9 @@
-import { PanelLeft, PanelRight, Maximize2, Minimize2, MessageSquareText, MonitorSmartphone, FolderCog, BookOpen, ClipboardList, MessagesSquare } from 'lucide-react'
+import { PanelLeft, PanelRight, Maximize2, Minimize2, MonitorSmartphone, FolderCog, BookOpen, ClipboardList, MessagesSquare } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
 import type { AppPage } from '../../app/pages'
 import { APP_VERSION } from '../../app/version'
 import { darkSolids, darkSurface } from '../../utils/darkChrome'
+import { assetUrl } from '../../utils/assetUrl'
 
 interface AppHeaderProps {
   page: AppPage
@@ -50,11 +51,13 @@ export function AppHeader({ page, onNavigate, onToggleMobileSidebar, onToggleMob
             <PanelLeft size={17} />
           </button>
         )}
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600" aria-hidden="true">
-          <MessageSquareText size={17} className="text-white" />
-        </span>
+        <img
+          src={assetUrl('/im-flow-builder-logo-small.png')}
+          alt=""
+          className="h-8 w-8 shrink-0 object-contain"
+        />
         <h1 className="m-0 hidden min-w-0 truncate text-[14px] font-semibold text-white xl:block">
-          Business Messaging Flow Simulator
+          IM Flow Builder
         </h1>
         <span
           className="shrink-0 text-[10px] font-semibold text-slate-300 bg-slate-800 border border-slate-700 rounded-full px-1.5 py-0.5"

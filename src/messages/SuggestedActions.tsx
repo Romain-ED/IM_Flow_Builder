@@ -1,6 +1,8 @@
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
+import { actionAnchor } from '../engine/flowAnchors'
 import { ActionButton } from '../components/phone/ActionButton'
+import { useChartMessageIndex } from './chartAnchorContext'
 
 interface SuggestedActionsProps {
   message: NormalizedMessage
@@ -9,12 +11,20 @@ interface SuggestedActionsProps {
 }
 
 export function SuggestedActions({ message, channel, interactive }: SuggestedActionsProps) {
+  const messageIndex = useChartMessageIndex()
   if (message.message.type !== 'suggested_actions') return null
   return (
     <div className="flex w-full justify-end pr-1">
       <div className="flex w-full flex-wrap justify-end gap-2" aria-label="Suggested actions">
         {message.message.actions.map((action, i) => (
-          <ActionButton key={i} action={action} channel={channel} interactive={interactive} variant="chip" />
+          <ActionButton
+            key={i}
+            action={action}
+            channel={channel}
+            interactive={interactive}
+            variant="chip"
+            anchor={messageIndex === null ? undefined : actionAnchor(messageIndex, i)}
+          />
         ))}
       </div>
     </div>

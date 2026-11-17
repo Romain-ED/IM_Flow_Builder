@@ -9,6 +9,8 @@ import { ScenarioCard } from './ScenarioCard'
 import { CustomScenarioEditorModal } from './CustomScenarioEditorModal'
 import { ScenarioPreviewModal } from './ScenarioPreviewModal'
 import { ScenarioConfigurationPage } from './ScenarioConfigurationPage'
+import { chartScenarioKey } from '../flowchart/chartScenario'
+
 function downloadText(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime })
   const url = URL.createObjectURL(blob)
@@ -64,7 +66,13 @@ function exportScenario(
   }
 }
 
-export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator: () => void }) {
+export function ScenariosPage({
+  onNavigateToSimulator,
+  onOpenFlowChart,
+}: {
+  onNavigateToSimulator: () => void
+  onOpenFlowChart: (scenarioKey: string) => void
+}) {
   const customScenarios = useSimulatorStore((s) => s.customScenarios)
   const loadBuiltInScenario = useSimulatorStore((s) => s.loadBuiltInScenario)
   const loadCustomScenario = useSimulatorStore((s) => s.loadCustomScenario)
@@ -138,6 +146,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                 badge="Built-in"
                 onLoad={() => loadAndReturn(() => loadBuiltInScenario(scenario.id))}
                 onView={() => setPreviewState({ name: scenario.name, source: scenario.source })}
+                onFlowChart={() => onOpenFlowChart(chartScenarioKey('builtin', scenario.id))}
                 onDuplicate={() =>
                   setEditorState({ open: true, seedSource: scenario.source, seedName: `Copy of ${scenario.name}` })
                 }
@@ -169,6 +178,7 @@ export function ScenariosPage({ onNavigateToSimulator }: { onNavigateToSimulator
                   meta={`Updated ${new Date(scenario.updatedAt).toLocaleString()}`}
                   onLoad={() => loadAndReturn(() => loadCustomScenario(scenario.id))}
                   onView={() => setPreviewState({ name: scenario.name, source: scenario.source })}
+                  onFlowChart={() => onOpenFlowChart(chartScenarioKey('custom', scenario.id))}
                   onEdit={() => editCustomScenario(scenario.id)}
                   onDuplicate={() => duplicateAsCustomScenario(scenario.source, scenario.format, scenario.name)}
                   onExportJson={() => exportScenario(scenario.name, scenario.source, 'json', scenario.configuredVariables, scenario.configuredBrand)}

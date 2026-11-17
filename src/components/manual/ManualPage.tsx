@@ -10,7 +10,7 @@ export function ManualPage() {
       <div className="max-w-3xl mx-auto px-6 py-8 flex flex-col gap-10">
         <header className="flex flex-col gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-[20px] font-semibold text-slate-900 m-0">Business Messaging Flow Simulator</h1>
+            <h1 className="text-[20px] font-semibold text-slate-900 m-0">IM Flow Builder</h1>
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 bg-amber-100 text-amber-700">
               <Sparkles size={11} /> Beta
             </span>
@@ -191,6 +191,8 @@ nodes: [ ...FlowNode ]`}</CodeBlock>
             discrete snapshots taken before each interaction rather than rewinding an arbitrary point mid-animation.
             The flow graph viewer is read-only — it's built for navigating and understanding a flow, not yet for
             dragging nodes around or editing fields inline (that's still done in the JSON/YAML editor).
+            The Flow chart page (Scenarios, then "Flow chart" on a card) is also read-only. It draws each step with
+            its real message bubbles and an arrow for each button.
           </P>
           <P>
             Planned next: inline field editing directly on the graph, multi-scenario demo playlists, and an
