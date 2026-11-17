@@ -2,7 +2,9 @@ import { Wallet2 } from 'lucide-react'
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { MessageShell } from '../components/phone/MessageShell'
+import { buttonAnchor } from '../engine/flowAnchors'
 import { useSimulatorStore } from '../store/simulatorStore'
+import { useChartMessageIndex } from './chartAnchorContext'
 
 interface PaymentRequestMessageProps {
   message: NormalizedMessage
@@ -13,6 +15,7 @@ interface PaymentRequestMessageProps {
 
 export function PaymentRequestMessage({ message, channel, interactive, timestampLabel }: PaymentRequestMessageProps) {
   const simulateCardAction = useSimulatorStore((s) => s.simulateCardAction)
+  const messageIndex = useChartMessageIndex()
   if (message.message.type !== 'payment_request') return null
   const { title, description, amount, next, set } = message.message
 
@@ -30,6 +33,7 @@ export function PaymentRequestMessage({ message, channel, interactive, timestamp
       </div>
       <button
         type="button"
+        data-chart-anchor={messageIndex === null ? undefined : buttonAnchor(messageIndex)}
         disabled={!interactive}
         onClick={() =>
           interactive && simulateCardAction(`Payment simulated — ${amount} charged (demo)`, next, set)

@@ -1,7 +1,10 @@
 import type { FlowDefinition, FlowNode } from '../schema/flow'
 import {
+  CONDITION_ELSE_ANCHOR,
+  CONDITION_THEN_ANCHOR,
   NODE_ANCHOR,
   actionAnchor,
+  buttonAnchor,
   cardActionAnchor,
   nodeActionAnchor,
   optionAnchor,
@@ -66,8 +69,8 @@ export function anchoredEdges(node: FlowNode): AnchoredEdge[] {
   }
 
   if (node.condition) {
-    add(node.then, 'condition-then', NODE_ANCHOR, 'then')
-    add(node.else, 'condition-else', NODE_ANCHOR, 'else')
+    add(node.then, 'condition-then', CONDITION_THEN_ANCHOR, 'then')
+    add(node.else, 'condition-else', CONDITION_ELSE_ANCHOR, 'else')
   }
   add(node.next, 'flow', NODE_ANCHOR)
   add(node.freeTextNext, 'flow', NODE_ANCHOR)
@@ -91,11 +94,13 @@ export function anchoredEdges(node: FlowNode): AnchoredEdge[] {
         break
       }
       case 'input':
+        add(message.next, 'flow', NODE_ANCHOR)
+        break
       case 'otp':
       case 'payment_request':
       case 'calendar_event':
       case 'whatsapp_flow':
-        add(message.next, 'flow', NODE_ANCHOR)
+        add(message.next, 'flow', buttonAnchor(i))
         break
       case 'carousel':
         message.cards.forEach((card, c) => {

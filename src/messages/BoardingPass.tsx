@@ -3,6 +3,8 @@ import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { DEFAULT_BOARDING_PASS_ACTIONS } from '../schema/messages'
 import { MessageShell } from '../components/phone/MessageShell'
+import { actionAnchor } from '../engine/flowAnchors'
+import { useChartMessageIndex } from './chartAnchorContext'
 import { QrPlaceholder, BarcodePlaceholder } from '../components/common/CodePlaceholder'
 import { useSimulatorStore } from '../store/simulatorStore'
 
@@ -16,6 +18,7 @@ interface BoardingPassProps {
 
 export function BoardingPass({ message, channel, interactive, timestampLabel, compact }: BoardingPassProps) {
   const handleBoardingPassAction = useSimulatorStore((s) => s.handleBoardingPassAction)
+  const messageIndex = useChartMessageIndex()
   if (message.message.type !== 'boarding_pass') return null
   const bp = message.message
   const actions = bp.actions ?? DEFAULT_BOARDING_PASS_ACTIONS
@@ -77,6 +80,7 @@ export function BoardingPass({ message, channel, interactive, timestampLabel, co
           <button
             key={i}
             type="button"
+            data-chart-anchor={messageIndex === null ? undefined : actionAnchor(messageIndex, i)}
             disabled={!interactive}
             onClick={() => interactive && handleBoardingPassAction(action, message)}
             className={`w-full py-2.5 text-[13.5px] font-medium transition-colors ${i > 0 ? 'border-t border-slate-100' : ''} ${

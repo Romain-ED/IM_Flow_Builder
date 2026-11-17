@@ -24,6 +24,15 @@ export function cardActionAnchor(messageIndex: number, cardIndex: number, action
   return `message-${messageIndex}-card-${cardIndex}-action-${actionIndex}`
 }
 
+/** The single button of a message that moves the flow on: OTP, payment, calendar, WhatsApp flow. */
+export function buttonAnchor(messageIndex: number): string {
+  return `message-${messageIndex}-button`
+}
+
+/** Condition branches leave from separate points on the node's right edge, so they do not overlap. */
+export const CONDITION_THEN_ANCHOR = 'condition-then'
+export const CONDITION_ELSE_ANCHOR = 'condition-else'
+
 /** A button from the node-level `actions` list, shown after the node's messages. */
 export function nodeActionAnchor(actionIndex: number): string {
   return `node-action-${actionIndex}`

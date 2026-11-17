@@ -6,7 +6,7 @@ import {
   buildChartNodeItems,
   type ChartNodeItems,
 } from '../../engine/flowChartItems'
-import { NODE_ANCHOR } from '../../engine/flowAnchors'
+import { CONDITION_ELSE_ANCHOR, CONDITION_THEN_ANCHOR, NODE_ANCHOR } from '../../engine/flowAnchors'
 import { anchoredEdges, computeFlowGraphLayout, type AnchoredEdge } from '../../engine/flowGraph'
 import { layoutFlowChart, type FlowChartLayout, type LayoutEdge, type LayoutNode, type LayoutPort } from '../../engine/flowChartLayout'
 import { channelThemes } from '../../channels/theme'
@@ -22,6 +22,8 @@ const portId = (nodeId: string, anchor: string) => `${nodeId}::out::${anchor}`
 
 /** Vertical center of a button inside its node, or the node's middle for a node-level edge. */
 function portCenterY(nodeHeight: number, measured: MeasuredNode | undefined, anchor: string): number {
+  if (anchor === CONDITION_THEN_ANCHOR) return nodeHeight * 0.3
+  if (anchor === CONDITION_ELSE_ANCHOR) return nodeHeight * 0.7
   const box = anchor === NODE_ANCHOR ? undefined : measured?.anchors[anchor]
   const y = box ? box.y + box.height / 2 : nodeHeight / 2
   return Math.min(Math.max(y, 0), nodeHeight)

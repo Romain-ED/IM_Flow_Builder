@@ -2,7 +2,9 @@ import { Workflow } from 'lucide-react'
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { MessageShell } from '../components/phone/MessageShell'
+import { buttonAnchor } from '../engine/flowAnchors'
 import { useSimulatorStore } from '../store/simulatorStore'
+import { useChartMessageIndex } from './chartAnchorContext'
 
 interface WhatsappFlowMessageProps {
   message: NormalizedMessage
@@ -13,6 +15,7 @@ interface WhatsappFlowMessageProps {
 
 export function WhatsappFlowMessage({ message, channel, interactive, timestampLabel }: WhatsappFlowMessageProps) {
   const simulateCardAction = useSimulatorStore((s) => s.simulateCardAction)
+  const messageIndex = useChartMessageIndex()
   if (message.message.type !== 'whatsapp_flow') return null
   const { title, description, cta, next, set } = message.message
 
@@ -30,6 +33,7 @@ export function WhatsappFlowMessage({ message, channel, interactive, timestampLa
       </div>
       <button
         type="button"
+        data-chart-anchor={messageIndex === null ? undefined : buttonAnchor(messageIndex)}
         disabled={!interactive}
         onClick={() => interactive && simulateCardAction('Flow completed (simulated)', next, set)}
         className={`w-full py-2.5 text-[13.5px] font-semibold border-t border-slate-100 transition-colors ${

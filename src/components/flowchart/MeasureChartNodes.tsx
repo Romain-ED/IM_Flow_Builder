@@ -4,12 +4,12 @@ import type { GraphNode } from '../../engine/flowGraph'
 import type { ChartNodeItems } from '../../engine/flowChartItems'
 import { ChartNodeBubbles, ChartNodeFrame } from './ChartNode'
 import { chartFrameWidth } from './chartFrame'
-import type { Box } from './connectorGeometry'
+import type { AnchorBox } from './connectorGeometry'
 
 /** Rendered size of one node, plus the box of each of its buttons relative to the node's top-left. */
 export interface MeasuredNode {
   height: number
-  anchors: Record<string, Box>
+  anchors: Record<string, AnchorBox>
 }
 
 interface MeasureChartNodesProps {
@@ -35,7 +35,7 @@ export function MeasureChartNodes({ nodes, itemsById, channel, onMeasure }: Meas
       root.querySelectorAll<HTMLElement>('[data-measure-node]').forEach((element) => {
         const nodeId = element.dataset.measureNode ?? ''
         const origin = element.getBoundingClientRect()
-        const anchors: Record<string, Box> = {}
+        const anchors: Record<string, AnchorBox> = {}
         element.querySelectorAll<HTMLElement>('[data-chart-anchor]').forEach((button) => {
           const anchorId = button.dataset.chartAnchor ?? ''
           const box = button.getBoundingClientRect()
@@ -44,6 +44,7 @@ export function MeasureChartNodes({ nodes, itemsById, channel, onMeasure }: Meas
             y: box.top - origin.top,
             width: box.width,
             height: box.height,
+            label: button.textContent?.trim() ?? '',
           }
         })
         measured[nodeId] = { height: origin.height, anchors }

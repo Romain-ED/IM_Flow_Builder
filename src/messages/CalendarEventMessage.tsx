@@ -2,7 +2,9 @@ import { CalendarPlus } from 'lucide-react'
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { MessageShell } from '../components/phone/MessageShell'
+import { buttonAnchor } from '../engine/flowAnchors'
 import { useSimulatorStore } from '../store/simulatorStore'
+import { useChartMessageIndex } from './chartAnchorContext'
 
 interface CalendarEventMessageProps {
   message: NormalizedMessage
@@ -13,6 +15,7 @@ interface CalendarEventMessageProps {
 
 export function CalendarEventMessage({ message, channel, interactive, timestampLabel }: CalendarEventMessageProps) {
   const simulateCardAction = useSimulatorStore((s) => s.simulateCardAction)
+  const messageIndex = useChartMessageIndex()
   if (message.message.type !== 'calendar_event') return null
   const { title, description, startTime, endTime, location, next, set } = message.message
 
@@ -34,6 +37,7 @@ export function CalendarEventMessage({ message, channel, interactive, timestampL
       </div>
       <button
         type="button"
+        data-chart-anchor={messageIndex === null ? undefined : buttonAnchor(messageIndex)}
         disabled={!interactive}
         onClick={() => interactive && simulateCardAction('Added to calendar (simulated)', next, set)}
         className={`w-full py-2.5 text-[13.5px] font-semibold border-t border-slate-100 transition-colors ${

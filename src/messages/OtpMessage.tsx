@@ -3,7 +3,9 @@ import { ShieldCheck } from 'lucide-react'
 import type { ChannelId } from '../schema/flow'
 import type { NormalizedMessage } from '../engine/types'
 import { MessageShell } from '../components/phone/MessageShell'
+import { buttonAnchor } from '../engine/flowAnchors'
 import { useSimulatorStore } from '../store/simulatorStore'
+import { useChartMessageIndex } from './chartAnchorContext'
 
 interface OtpMessageProps {
   message: NormalizedMessage
@@ -14,6 +16,7 @@ interface OtpMessageProps {
 
 export function OtpMessage({ message, channel, interactive, timestampLabel }: OtpMessageProps) {
   const handleOtpSubmit = useSimulatorStore((s) => s.handleOtpSubmit)
+  const messageIndex = useChartMessageIndex()
   const length = message.message.type === 'otp' ? (message.message.codeLength ?? 6) : 6
   const [digits, setDigits] = useState<string[]>(() => Array(length).fill(''))
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -64,6 +67,7 @@ export function OtpMessage({ message, channel, interactive, timestampLabel }: Ot
       </div>
       <button
         type="button"
+        data-chart-anchor={messageIndex === null ? undefined : buttonAnchor(messageIndex)}
         disabled={!interactive || !complete}
         onClick={() => interactive && complete && handleOtpSubmit(message, code)}
         className="w-full rounded-lg py-2 text-[13px] font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"

@@ -9,6 +9,11 @@ export interface Box {
   height: number
 }
 
+/** Box of a button inside its node, with the text the button shows. */
+export interface AnchorBox extends Box {
+  label?: string
+}
+
 export interface ConnectorGeometry {
   key: string
   kind: AnchoredEdge['kind']
@@ -56,13 +61,14 @@ export function polylineMidpoint(points: Point[]): Point {
  * @param edges Edges in the same order they were given to the layout.
  * @param routes Route per `edgeId(index)` from the layout, in absolute chart coordinates.
  * @param placed Absolute box of each placed node.
- * @param anchorsByNode Box of each button, relative to its node's top-left.
+ * @param anchorsByNode Box of each button, relative to its node's top-left. The
+ *   button's rendered text labels the arrow, so the label matches what the user sees.
  */
 export function buildConnectorGeometry(
   edges: AnchoredEdge[],
   routes: Record<string, Point[]>,
   placed: Map<string, Box>,
-  anchorsByNode: Record<string, Record<string, Box>>,
+  anchorsByNode: Record<string, Record<string, AnchorBox>>,
 ): ConnectorGeometry[] {
   const geometry: ConnectorGeometry[] = []
   edges.forEach((edge, index) => {
@@ -80,7 +86,7 @@ export function buildConnectorGeometry(
       key: `${id}:${edge.from}:${edge.anchor}:${edge.to}`,
       kind: edge.kind,
       d: polylinePath(points),
-      label: edge.label,
+      label: anchorBox?.label || edge.label,
       labelX: middle.x,
       labelY: middle.y,
     })

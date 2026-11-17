@@ -71,12 +71,27 @@ describe('anchoredEdges', () => {
     ])
   })
 
-  it('gives condition branches the node anchor and labels them then and else', () => {
+  it('gives condition branches their own anchors and labels them then and else', () => {
     const branch = node({ id: 'check', condition: { variable: 'ok', equals: true }, then: 'yes', else: 'no' })
 
     expect(anchoredEdges(branch).map((edge) => [edge.kind, edge.anchor, edge.label])).toEqual([
-      ['condition-then', 'node', 'then'],
-      ['condition-else', 'node', 'else'],
+      ['condition-then', 'condition-then', 'then'],
+      ['condition-else', 'condition-else', 'else'],
+    ])
+  })
+
+  it('gives the single button of OTP, payment, calendar, and WhatsApp flow steps a button anchor', () => {
+    const steps = node({
+      id: 'pay',
+      messages: [
+        { type: 'payment_request', title: 'Pay', amount: '5', next: 'paid' },
+        { type: 'input', variable: 'name', next: 'after_input' },
+      ],
+    })
+
+    expect(anchoredEdges(steps).map((edge) => [edge.anchor, edge.to])).toEqual([
+      ['message-0-button', 'paid'],
+      ['node', 'after_input'],
     ])
   })
 })
