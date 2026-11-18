@@ -16,7 +16,6 @@ export interface LiveDemoConfig {
   allowedFlowIds: string[]
   /** Flow ids from the build-generated always-on file; set by app.ts, never from the browser. */
   trustedAlwaysOnFlowIds?: string[]
-  operatorToken: string
   vonageJwt: string
   vonagePrivateKey: string
   vonageApplicationId: string

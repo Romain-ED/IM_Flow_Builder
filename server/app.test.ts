@@ -27,7 +27,6 @@ async function startTestServer(allowedFlowIds = 'test-live-flow') {
   const config = getLiveDemoConfig({
     LIVE_RCS_MODE: 'fake',
     LIVE_RCS_TEST_RECIPIENT: '+15551234567',
-    LIVE_RCS_OPERATOR_TOKEN: 'operator-token',
     LIVE_RCS_ALLOWED_FLOW_IDS: allowedFlowIds,
   }, process.cwd())
   const app = createApp({ liveDemo: new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway()), contactNames: createContactNames(createMemoryShareStore()) })
@@ -50,35 +49,22 @@ describe('VCR server live routes', () => {
     expect(await diagnostics.json()).toMatchObject({ mode: 'fake', ready: true, recipient: expect.stringContaining('4567') })
   })
 
-  it('requires an operator token before creating a live session', async () => {
+  it('lists conversations without a bearer token (access is controlled by the Okta gate)', async () => {
     const origin = await startTestServer()
-    const response = await fetch(`${origin}/api/live/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    const response = await fetch(`${origin}/api/live/conversations`)
 
-    expect(response.status).toBe(401)
-    expect(await response.json()).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized.' } })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual([])
   })
 
-  it('lists conversations only with the conversations password', async () => {
+  it('saves and clears a contact name', async () => {
     const origin = await startTestServer()
-    const denied = await fetch(`${origin}/api/live/conversations`, { headers: { Authorization: 'Bearer wrong' } })
-    const missing = await fetch(`${origin}/api/live/conversations`)
-    const allowed = await fetch(`${origin}/api/live/conversations`, { headers: { Authorization: 'Bearer admin' } })
-
-    expect(denied.status).toBe(401)
-    expect(missing.status).toBe(401)
-    expect(allowed.status).toBe(200)
-    expect(await allowed.json()).toEqual([])
-  })
-
-  it('saves and clears a contact name behind the conversations password', async () => {
-    const origin = await startTestServer()
-    const put = (body: unknown, password = 'admin') => fetch(`${origin}/api/live/conversations/name`, {
+    const put = (body: unknown) => fetch(`${origin}/api/live/conversations/name`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${password}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
 
-    expect((await put({ phone: '+15551234567', name: 'Alice' }, 'wrong')).status).toBe(401)
     expect((await put({ phone: 'not-a-phone', name: 'Alice' })).status).toBe(422)
     expect((await put({ phone: '+15551234567', name: 'x'.repeat(61) })).status).toBe(422)
 
@@ -95,13 +81,13 @@ describe('VCR server live routes', () => {
       body: JSON.stringify({ message_uuid: 'orphan-trigger', text: 'RCS MENU', from: '+15559990003' }),
     })
     expect(inbound.status).toBeGreaterThanOrEqual(400)
-    const list = await fetch(`${origin}/api/live/sessions`, { headers: { Authorization: 'Bearer operator-token' } })
+    const list = await fetch(`${origin}/api/live/sessions`)
     expect(await list.json()).toHaveLength(0)
   })
 
   it('creates non-menu sessions immediately and keeps inbound entry triggers menu-only', async () => {
     const origin = await startTestServer('test-live-flow,rcs-demo-menu')
-    const headers = { Authorization: 'Bearer operator-token', 'Content-Type': 'application/json' }
+    const headers = { 'Content-Type': 'application/json' }
     const nonMenuFlow = {
       metadata: { id: 'test-live-flow', channel: 'rcs', trigger: 'START DEMO' },
       start: 'welcome',
@@ -163,7 +149,6 @@ describe('Vonage signed webhook route', () => {
     const config = getLiveDemoConfig({
       LIVE_RCS_MODE: 'vonage',
       LIVE_RCS_TEST_RECIPIENT: '+15551234567',
-      LIVE_RCS_OPERATOR_TOKEN: 'operator-token',
       LIVE_RCS_ALLOWED_FLOW_IDS: 'test-live-flow',
       LIVE_RCS_RCS_AGENT_ID: 'agent-123',
       LIVE_RCS_VONAGE_APPLICATION_ID: 'application-123',

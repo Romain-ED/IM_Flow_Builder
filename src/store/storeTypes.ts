@@ -55,7 +55,6 @@ export interface SimulatorState {
   liveSessionActive: boolean
   /** Credentials for the current live session, held in memory only for phone controls. */
   liveSessionId: string | null
-  liveOperatorToken: string
   liveProjection: LiveProjection | null
   liveSyncState: 'idle' | 'fresh' | 'stale' | 'error'
   liveLastSyncedAt: number | null
@@ -139,7 +138,7 @@ export interface SimulatorState {
   setPhonePlatform: (platform: PhonePlatform) => void
   setStartNodeOverride: (nodeId: string | null) => void
   setLiveSessionActive: (active: boolean) => void
-  setLiveSessionCredentials: (sessionId: string | null, operatorToken?: string) => void
+  setLiveSessionId: (sessionId: string | null) => void
   syncLiveSnapshot: (snapshot: unknown) => boolean
   markLiveProjectionStale: (error?: string) => void
   clearLiveProjection: () => void

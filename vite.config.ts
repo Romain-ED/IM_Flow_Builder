@@ -16,7 +16,11 @@ export default defineConfig(() => {
     // (port 3000) next to `npm run dev`. Without it the proxy fails, the share
     // POST errors and "Copy share link" falls back to the long #flow= link.
     server: {
-      proxy: { '/api/share': `http://127.0.0.1:${process.env.SHARE_API_PORT || 3000}` },
+      proxy: {
+        '/api/share': `http://127.0.0.1:${process.env.SHARE_API_PORT || 3000}`,
+        // Live RCS diagnostics, sessions, and logs. Without this, Vite serves index.html for these paths.
+        '/api/live': `http://127.0.0.1:${process.env.SHARE_API_PORT || 3000}`,
+      },
     },
     plugins: [
       react(),

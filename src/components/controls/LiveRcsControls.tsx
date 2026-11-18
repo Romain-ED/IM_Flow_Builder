@@ -29,12 +29,11 @@ function publicBaseUrl() {
   return typeof window === 'undefined' ? undefined : window.location.origin
 }
 
-async function api<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: {
       ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
   })
@@ -57,9 +56,8 @@ export function LiveRcsControls() {
   const syncLiveSnapshot = useSimulatorStore((state) => state.syncLiveSnapshot)
   const markLiveProjectionStale = useSimulatorStore((state) => state.markLiveProjectionStale)
   const setLiveSessionActive = useSimulatorStore((state) => state.setLiveSessionActive)
-  const setLiveSessionCredentials = useSimulatorStore((state) => state.setLiveSessionCredentials)
+  const setLiveSessionId = useSimulatorStore((state) => state.setLiveSessionId)
   const [diagnostics, setDiagnostics] = useState<LiveDiagnostics | null>(null)
-  const [operatorToken, setOperatorToken] = useState('')
   const [destinationPhone, setDestinationPhone] = useState('')
   const [session, setSession] = useState<LiveSession | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -123,7 +121,7 @@ export function LiveRcsControls() {
     let cancelled = false
     const poll = async () => {
       try {
-        const next = await api<LiveSession>(`/api/live/sessions/${session.id}`, operatorToken)
+        const next = await api<LiveSession>(`/api/live/sessions/${session.id}`)
         if (!cancelled) {
           setSession(next)
           syncLiveSnapshot(next)
@@ -138,10 +136,10 @@ export function LiveRcsControls() {
     void poll()
     const timer = window.setInterval(() => void poll(), 2_500)
     return () => { cancelled = true; window.clearInterval(timer) }
-  }, [liveSessionActive, markLiveProjectionStale, operatorToken, session?.id, syncLiveSnapshot])
+  }, [liveSessionActive, markLiveProjectionStale, session?.id, syncLiveSnapshot])
 
   async function start() {
-    if (!liveFlow || !diagnostics?.ready || !preflight?.success || !operatorToken || offline) return
+    if (!liveFlow || !diagnostics?.ready || !preflight?.success || offline) return
     const selectedRecipient = destinationPhone.trim() || diagnostics.recipient
     const confirmation = isVBank
       ? `Start a live RCS session for ${selectedRecipient}? This sends real messages when Vonage mode is configured.`
@@ -150,7 +148,7 @@ export function LiveRcsControls() {
     setIsLoading(true)
     setError(null)
     try {
-      const started = await api<LiveSession>('/api/live/sessions', operatorToken, {
+      const started = await api<LiveSession>('/api/live/sessions', {
         method: 'POST',
         body: JSON.stringify({
           flow: liveFlow,
@@ -160,14 +158,14 @@ export function LiveRcsControls() {
         }),
       })
       setSession(started)
-      setLiveSessionCredentials(started.id, operatorToken)
+      setLiveSessionId(started.id)
       syncLiveSnapshot(started)
       setLiveSessionActive(true)
     } catch (startError) {
       const recovery = startError as Error & { liveSnapshot?: LiveSnapshot; id?: string }
       if (recovery.liveSnapshot && recovery.id) {
         setSession(recovery.liveSnapshot)
-        setLiveSessionCredentials(recovery.id, operatorToken)
+        setLiveSessionId(recovery.id)
         syncLiveSnapshot(recovery.liveSnapshot)
         setLiveSessionActive(true)
       }
@@ -178,10 +176,10 @@ export function LiveRcsControls() {
   }
 
   async function stop() {
-    if (!session || !operatorToken) return
+    if (!session) return
     setIsLoading(true)
     try {
-      const stopped = await api<LiveSession>(`/api/live/sessions/${session.id}/stop`, operatorToken, { method: 'POST' })
+      const stopped = await api<LiveSession>(`/api/live/sessions/${session.id}/stop`, { method: 'POST' })
       setSession(stopped)
       setLiveSessionActive(false)
     } catch (stopError) {
@@ -196,7 +194,7 @@ export function LiveRcsControls() {
     setIsLoading(false)
     setSession(null)
     setLiveSessionActive(false)
-    setLiveSessionCredentials(null)
+    setLiveSessionId(null)
     setDestinationPhone('')
     try { window.localStorage.removeItem(persistenceKey) } catch { /* best effort */ }
     useSimulatorStore.getState().clearLiveProjection()
@@ -205,7 +203,7 @@ export function LiveRcsControls() {
 
   const issues: LiveRcsIssue[] = preflight?.errors ?? []
   const needsRcsScenario = Boolean(flow && flow.metadata.channel !== 'rcs')
-  const canStart = Boolean(diagnostics?.ready && preflight?.success && catalogIssues.length === 0 && operatorToken && !offline && !session && channel === 'rcs')
+  const canStart = Boolean(diagnostics?.ready && preflight?.success && catalogIssues.length === 0 && !offline && !session && channel === 'rcs')
   const vBankModeNotice = diagnostics?.mode === 'fake'
     ? 'Messages remain in this browser until a live provider is configured.'
     : 'Messages are sent through the configured RCS service when available.'
@@ -257,17 +255,6 @@ export function LiveRcsControls() {
                   className={darkField}
                 />
                 <span className={`text-[11px] leading-4 ${darkSurface.muted}`}>{isVBank ? 'Enter a server-authorized recipient number. Leave blank to use the configured recipient.' : 'Enter any 7–15 digit testing-user number. Leave blank to use the server-configured fallback.'}</span>
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className={`text-[11.5px] ${darkSurface.muted}`}>Operator access token (not stored)</span>
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={operatorToken}
-                  onChange={(event) => setOperatorToken(event.target.value)}
-                  placeholder="Paste access token"
-                  className={darkField}
-                />
               </label>
             </>
           )}

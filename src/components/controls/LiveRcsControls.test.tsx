@@ -47,7 +47,7 @@ describe('LiveRcsControls', () => {
     expect(screen.queryByRole('button', { name: /Start live RCS/i })).not.toBeInTheDocument()
   })
 
-  it('shows a passing preflight and protects the start action until an operator token is supplied', async () => {
+  it('shows a passing preflight and enables the start action without an access token', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       json: async () => ({ mode: 'fake', ready: true, recipient: '••••4567', allowedFlowIds: ['live-test'], storage: 'development file store', errors: [] }),
     }))
@@ -55,8 +55,8 @@ describe('LiveRcsControls', () => {
     render(<LiveRcsControls />)
 
     expect(await screen.findByText(/Flow passes strict Live RCS preflight/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Start live RCS/i })).toBeDisabled()
-    expect(screen.getByLabelText(/Operator access token/i)).toHaveValue('')
+    expect(screen.getByRole('button', { name: /Start live RCS/i })).toBeEnabled()
+    expect(screen.queryByLabelText(/access token/i)).not.toBeInTheDocument()
   })
 
   it('posts the selected non-menu flow when Start live RCS is clicked', async () => {
@@ -83,7 +83,6 @@ describe('LiveRcsControls', () => {
 
     render(<LiveRcsControls />)
     expect(await screen.findByText(/Flow passes strict Live RCS preflight/i)).toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText(/Operator access token/i), { target: { value: 'operator-token' } })
     fireEvent.click(screen.getByRole('button', { name: /Start live RCS/i }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/live/sessions', expect.objectContaining({ method: 'POST' })))

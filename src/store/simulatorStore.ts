@@ -41,7 +41,6 @@ export const useSimulatorStore = create<SimulatorState>((set, get, api) => {
     debugWarningsEnabled: true,
     liveSessionActive: false,
     liveSessionId: null,
-    liveOperatorToken: '',
     liveProjection: null,
     liveSyncState: 'idle',
     liveLastSyncedAt: null,

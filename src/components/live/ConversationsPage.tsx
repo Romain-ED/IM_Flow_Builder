@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { AlertCircle, ArrowDownLeft, ArrowUpRight, Check, Lock, LoaderCircle, MessagesSquare, Pencil, X } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Check, LoaderCircle, MessagesSquare, Pencil, X } from 'lucide-react'
 import { ChannelProvider } from '../../app/ChannelContext'
 import { channelRenderers } from '../../channels/registry'
 import { channelThemes } from '../../channels/theme'
@@ -21,22 +21,19 @@ type ConversationSummary = {
 }
 
 const POLL_MS = 5_000
-const STORAGE_KEY = 'conversations-password'
 
-async function fetchConversations(password: string): Promise<ConversationSummary[]> {
-  const response = await fetch('/api/live/conversations', { headers: { Authorization: `Bearer ${password}` } })
-  if (response.status === 401) throw new Error('Incorrect password.')
+async function fetchConversations(): Promise<ConversationSummary[]> {
+  const response = await fetch('/api/live/conversations')
   if (!response.ok) throw new Error(`Could not load conversations (${response.status}).`)
   return await response.json() as ConversationSummary[]
 }
 
-async function saveName(password: string, phone: string, name: string): Promise<string | null> {
+async function saveName(phone: string, name: string): Promise<string | null> {
   const response = await fetch('/api/live/conversations/name', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${password}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone, name }),
   })
-  if (response.status === 401) throw new Error('Incorrect password.')
   if (!response.ok) throw new Error('Could not save the name.')
   return ((await response.json()) as { name: string | null }).name
 }
@@ -76,42 +73,6 @@ function threadParts(conversation: ConversationSummary): ThreadPart[] {
     }]
   })
   return [...sessionParts, ...looseParts].sort((a, b) => a.startedAt.localeCompare(b.startedAt))
-}
-
-function PasswordGate({ onSubmit, error, loading }: { onSubmit: (password: string) => void; error: string | null; loading: boolean }) {
-  const [value, setValue] = useState('')
-  return (
-    <main className="flex-1 min-h-0 flex items-center justify-center bg-slate-50 p-6">
-      <form
-        onSubmit={(event) => { event.preventDefault(); onSubmit(value) }}
-        className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-3"
-      >
-        <div className="flex items-center gap-2 text-indigo-700">
-          <Lock size={18} />
-          <h2 className="text-base font-semibold text-slate-900 m-0">Conversations</h2>
-        </div>
-        <p className="text-[12.5px] text-slate-600 m-0">Enter the password to view customer conversations.</p>
-        <input
-          type="password"
-          autoComplete="off"
-          autoFocus
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          placeholder="Password"
-          aria-label="Password"
-          className="rounded-lg border border-slate-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-200"
-        />
-        {error && (
-          <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12.5px] text-rose-700">
-            <AlertCircle size={15} className="shrink-0 mt-0.5" /> <span>{error}</span>
-          </div>
-        )}
-        <button type="submit" disabled={!value || loading} className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
-          {loading && <LoaderCircle size={14} className="animate-spin" />} Unlock
-        </button>
-      </form>
-    </main>
-  )
 }
 
 function NameEditor({ conversation, onSave }: { conversation: ConversationSummary; onSave: (name: string) => Promise<void> }) {
@@ -214,63 +175,30 @@ function Thread({ conversation }: { conversation: ConversationSummary }) {
 }
 
 export function ConversationsPage() {
-  const [password, setPassword] = useState(() => sessionStorage.getItem(STORAGE_KEY) ?? '')
-  const [unlocked, setUnlocked] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [selectedId, setSelectedId] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
-  async function unlock(candidate: string) {
-    setLoading(true)
-    setError(null)
-    try {
-      const next = await fetchConversations(candidate)
-      sessionStorage.setItem(STORAGE_KEY, candidate)
-      setPassword(candidate)
-      setConversations(next)
-      setUnlocked(true)
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Could not load conversations.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Re-use a password saved earlier in this browser tab.
+  // Load on mount, then refresh on an interval.
   useEffect(() => {
-    if (password) void unlock(password)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    if (!unlocked) return
     let cancelled = false
-    const timer = window.setInterval(() => {
-      fetchConversations(password)
-        .then((next) => { if (!cancelled) { setConversations(next); setError(null) } })
-        .catch((pollError) => {
-          if (cancelled) return
-          if (pollError instanceof Error && pollError.message === 'Incorrect password.') {
-            sessionStorage.removeItem(STORAGE_KEY)
-            setUnlocked(false)
-          }
-          setError(pollError instanceof Error ? pollError.message : 'Could not refresh conversations.')
-        })
-    }, POLL_MS)
+    const load = () => fetchConversations()
+      .then((next) => { if (!cancelled) { setConversations(next); setError(null) } })
+      .catch((loadError) => { if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Could not refresh conversations.') })
+    void load()
+    const timer = window.setInterval(() => void load(), POLL_MS)
     return () => { cancelled = true; window.clearInterval(timer) }
-  }, [unlocked, password])
+  }, [])
 
   useEffect(() => {
     setSelectedId((current) => current && conversations.some((c) => c.phone === current) ? current : conversations[0]?.phone ?? '')
   }, [conversations])
 
   async function rename(phone: string, name: string) {
-    const saved = await saveName(password, phone, name)
+    const saved = await saveName(phone, name)
     setConversations((current) => current.map((conversation) => conversation.phone === phone ? { ...conversation, name: saved } : conversation))
   }
 
-  if (!unlocked) return <PasswordGate onSubmit={(value) => void unlock(value)} error={error} loading={loading} />
 
   const selected = conversations.find((c) => c.phone === selectedId) ?? null
 

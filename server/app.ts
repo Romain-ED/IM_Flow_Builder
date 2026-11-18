@@ -1,5 +1,4 @@
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
-import { createHash, timingSafeEqual } from 'node:crypto'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -104,20 +103,6 @@ function readJson(rawBody: Buffer): Json {
   }
 }
 
-function bearerToken(request: IncomingMessage): string {
-  const header = request.headers.authorization
-  return typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7) : ''
-}
-
-// Temporary hardcoded gate for the read-only Conversations page; replace with real auth.
-const CONVERSATIONS_PASSWORD = 'admin'
-
-function isConversationsPassword(candidate: string): boolean {
-  const expected = createHash('sha256').update(CONVERSATIONS_PASSWORD).digest()
-  const actual = createHash('sha256').update(candidate).digest()
-  return timingSafeEqual(expected, actual)
-}
-
 function errorEnvelope(code: string, message: string) {
   return { error: { code, message } }
 }
@@ -155,19 +140,11 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
     return true
   }
   if (request.method === 'GET' && url.pathname === '/api/live/conversations') {
-    if (!isConversationsPassword(bearerToken(request))) {
-      sendJson(response, 401, errorEnvelope('UNAUTHORIZED', 'Incorrect password.'))
-      return true
-    }
     const names = await contactNames.all()
     sendJson(response, 200, liveDemo.conversations().map((conversation) => ({ ...conversation, name: names[conversation.phone] ?? null })))
     return true
   }
   if (request.method === 'PUT' && url.pathname === '/api/live/conversations/name') {
-    if (!isConversationsPassword(bearerToken(request))) {
-      sendJson(response, 401, errorEnvelope('UNAUTHORIZED', 'Incorrect password.'))
-      return true
-    }
     const body = readJson(await readBody(request))
     if (!isValidContactPhone(body?.phone) || typeof body?.name !== 'string' || body.name.trim().length > MAX_CONTACT_NAME_LENGTH) {
       sendJson(response, 422, errorEnvelope('INVALID_CONTACT', `Provide a phone number and a name of at most ${MAX_CONTACT_NAME_LENGTH} characters.`))
@@ -175,10 +152,6 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
     }
     const names = await contactNames.set(body.phone, body.name)
     sendJson(response, 200, { phone: body.phone, name: names[body.phone] ?? null })
-    return true
-  }
-  if (!liveDemo.authorize(bearerToken(request))) {
-    sendJson(response, 401, errorEnvelope('UNAUTHORIZED', 'Unauthorized.'))
     return true
   }
   try {

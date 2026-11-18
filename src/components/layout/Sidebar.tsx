@@ -19,7 +19,6 @@ import { LiveRcsControls } from '../controls/LiveRcsControls'
 import { HideSectionHeadingContext } from '../common/sectionHeadingContext'
 import { sectionAccents, type Accent } from '../../utils/accents'
 import { darkFocusRing, darkSurface } from '../../utils/darkChrome'
-import { assetUrl } from '../../utils/assetUrl'
 
 type SectionId = 'scenario' | 'device' | 'live' | 'debug'
 
@@ -43,7 +42,7 @@ interface SectionTone {
 }
 
 const TONES = {
-  indigo: { section: 'border-indigo-300 bg-indigo-50', header: 'bg-indigo-100 hover:bg-indigo-200/70', rail: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200', divider: 'bg-indigo-200' },
+  sky: { section: 'border-sky-300 bg-sky-50', header: 'bg-sky-100 hover:bg-sky-200/70', rail: 'bg-sky-100 text-sky-700 hover:bg-sky-200', divider: 'bg-sky-200' },
   violet: { section: 'border-violet-300 bg-violet-50', header: 'bg-violet-100 hover:bg-violet-200/70', rail: 'bg-violet-100 text-violet-700 hover:bg-violet-200', divider: 'bg-violet-200' },
   teal: { section: 'border-teal-300 bg-teal-50', header: 'bg-teal-100 hover:bg-teal-200/70', rail: 'bg-teal-100 text-teal-700 hover:bg-teal-200', divider: 'bg-teal-200' },
   amber: { section: 'border-amber-300 bg-amber-50', header: 'bg-amber-100 hover:bg-amber-200/70', rail: 'bg-amber-100 text-amber-700 hover:bg-amber-200', divider: 'bg-amber-200' },
@@ -52,7 +51,7 @@ const TONES = {
 const PLAYBACK_TONE = { section: 'border-rose-200 bg-rose-50', rail: 'bg-rose-100 text-rose-700 hover:bg-rose-200' }
 
 const SECTIONS: { id: SectionId; title: string; icon: LucideIcon; accent: Accent; tone: SectionTone }[] = [
-  { id: 'scenario', title: 'Scenario', icon: FileText, accent: sectionAccents.scenario, tone: TONES.indigo },
+  { id: 'scenario', title: 'Scenario', icon: FileText, accent: { ...sectionAccents.scenario, dot: 'bg-sky-500' }, tone: TONES.sky },
   { id: 'device', title: 'Channel & device', icon: Smartphone, accent: sectionAccents.channel, tone: TONES.violet },
   { id: 'live', title: 'Live RCS', icon: Radio, accent: sectionAccents.inspector, tone: TONES.teal },
   { id: 'debug', title: 'Debug', icon: Bug, accent: sectionAccents.debug, tone: TONES.amber },
@@ -140,22 +139,15 @@ export function Sidebar({ onOpenEditor, collapsible = false }: { onOpenEditor: (
 
       {/* Kept mounted while the rail is shown so inputs (phone number, token) keep their state. */}
       <div className={`${rail ? 'hidden' : 'flex'} min-h-0 flex-1 flex-col`}>
-        <div className={`shrink-0 border-b p-4 ${darkSurface.border}`}>
-          <img
-            src={assetUrl('/im-flow-builder-logo.png')}
-            alt="IM Flow Builder"
-            className="block w-full rounded-lg bg-slate-700"
-          />
-        </div>
         {collapsible && (
-          <div className={`flex shrink-0 items-center justify-between border-b px-4 py-2 ${darkSurface.border}`}>
-            <span className={`text-[11px] font-semibold uppercase tracking-wide ${darkSurface.muted}`}>Controls</span>
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-600 px-4 py-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">Controls</span>
             <button
               type="button"
               onClick={() => setCollapsed(true)}
               aria-label="Collapse controls"
               title="Collapse to icons"
-              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-900 ${darkFocusRing}`}
+              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-300 hover:bg-slate-600 hover:text-white ${darkFocusRing}`}
             >
               <PanelLeftClose size={16} />
             </button>
@@ -236,7 +228,7 @@ function SidebarSection({
   )
 }
 
-const NEUTRAL_RAIL = 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+const NEUTRAL_RAIL = 'text-slate-300 hover:bg-slate-600 hover:text-white'
 
 function RailButton({
   icon: Icon,

@@ -6,7 +6,7 @@ Live RCS turns an existing RCS-authored simulator flow into a two-way session fo
 
 1. A presenter loads an RCS-authored flow and opens **Live RCS demo** in the sidebar.
 2. The browser runs strict preflight: only native RCS text/media/file/card/carousel content, public media URLs, supported `reply`/`open_url` actions, and valid suggestion attachments may run.
-3. The presenter supplies a short-lived operator token. It is held only in browser memory.
+3. The presenter, signed in through Okta SSO, starts the session. No separate operator token is used.
 4. The server normalizes the requested destination and creates a persistent session only when it matches the configured test recipient. RCS MENU (`metadata.id: rcs-demo-menu`) enters `awaiting_trigger` and sends nothing until the exact `RCS MENU` message arrives from the destination phone. Every other RCS flow enters its `start` node immediately and sends its first live messages when the presenter starts the session.
 5. Vonage inbound and status callbacks advance the same flow graph and are shown in the presenter panel by polling. When `LIVE_RCS_ALWAYS_ON_FLOW_PATH` is configured, the exact `RCS MENU` message from any real customer automatically creates and runs a menu session for that sender, independent of the presenter UI.
 
@@ -20,7 +20,6 @@ Set these as encrypted VCR environment variables. Never add them to `.env`, the 
 |---|---:|---|
 | `LIVE_RCS_MODE` | Yes to enable | `fake` for local/development exercise; `vonage` for provider delivery; omit or use `disabled` otherwise. |
 | `LIVE_RCS_TEST_RECIPIENT` | Enabled modes | The sole normalized E.164 destination permitted for Live RCS sessions. It must be pre-registered as a testing user in the RCS agent. |
-| `LIVE_RCS_OPERATOR_TOKEN` | Enabled modes | Random operator-only bearer token entered for each presenter session; do not reuse a Vonage credential. |
 | `LIVE_RCS_ALLOWED_FLOW_IDS` | Enabled modes | Comma-separated RCS `metadata.id` values allowed to create sessions, e.g. `singapore-airlines-boarding-pass`. |
 | `LIVE_RCS_STORE_PATH` | Recommended | Path to a **VCR durable volume** JSON store. Default is a local file for development only. |
 | `LIVE_RCS_STORAGE_DURABLE` | Vonage production | Set to `true` only after `LIVE_RCS_STORE_PATH` is backed by a shared durable store. |
@@ -41,16 +40,15 @@ Use this only on a local machine or a protected VCR environment. It exercises th
 ```bash
 export LIVE_RCS_MODE=fake
 export LIVE_RCS_TEST_RECIPIENT='+15551234567'
-export LIVE_RCS_OPERATOR_TOKEN='replace-with-a-random-development-token'
 export LIVE_RCS_ALLOWED_FLOW_IDS='singapore-airlines-boarding-pass'
 npm start
 ```
 
-Open the simulator, select the Singapore Airlines RCS scenario, paste the token into **Live RCS demo**, and start the run. Fake sessions can be driven through the webhook routes for automated/manual testing.
+Open the simulator, select the Singapore Airlines RCS scenario, and start the run from **Live RCS demo**. Fake sessions can be driven through the webhook routes for automated/manual testing.
 
 ## Vonage Okta SSO (optional)
 
-`server/auth.ts` can gate the whole app (static files and `/api/*`) behind Okta OIDC (authorization code + PKCE, confidential client). It is **off unless `AUTH_ENABLED=true`**. `/_/health`, `/webhooks/vonage/*` and `/manifest.webmanifest` are never gated (webhooks keep their own JWT check). Sessions are stateless signed cookies (`HttpOnly`, `SameSite=Lax`, `Secure` over HTTPS, 8h by default), so any VCR instance can serve any request. The ID token is validated once at the callback. `/api/live/conversations*` still also require their bearer password.
+`server/auth.ts` can gate the whole app (static files and `/api/*`) behind Okta OIDC (authorization code + PKCE, confidential client). It is **off unless `AUTH_ENABLED=true`**. `/_/health`, `/webhooks/vonage/*` and `/manifest.webmanifest` are never gated (webhooks keep their own JWT check). Sessions are stateless signed cookies (`HttpOnly`, `SameSite=Lax`, `Secure` over HTTPS, 8h by default), so any VCR instance can serve any request. The ID token is validated once at the callback. The Live RCS, Conversations and Live logs routes have no separate password or token, so keep `AUTH_ENABLED=true` on any VCR instance that sets `LIVE_RCS_MODE`.
 
 | Variable | Purpose |
 |---|---|
@@ -92,7 +90,7 @@ Before setting `LIVE_RCS_MODE=vonage`:
    - `POST https://<vcr-domain>/webhooks/vonage/status`
 4. Messages callbacks use a signed HS256 JWT in the `Authorization: Bearer` header. The server validates its issuer, application ID, issue time, replay ID, and raw-body `payload_hash` with `LIVE_RCS_VONAGE_SIGNATURE_SECRET`; do not configure a custom `X-Vonage-Signature` HMAC header.
 5. For production, attach `LIVE_RCS_STORE_PATH` to durable VCR storage and set `LIVE_RCS_STORAGE_DURABLE=true`. For one controlled Developer Mode demo only, set `LIVE_RCS_DEMO_EPHEMERAL_STORAGE=true` instead; any restart, redeploy, or instance replacement loses active sessions and prevents the phone from continuing that flow.
-6. Allowlist only tested flow IDs and rotate the operator token/JWT after demos.
+6. Allowlist only tested flow IDs and rotate any explicit `LIVE_RCS_VONAGE_JWT` after demos.
 
 The public readiness endpoint is `GET /api/live/diagnostics`. It deliberately returns only mode, masked recipient, allowlisted IDs, storage readiness, and missing-configuration messages — never tokens, JWTs, or secrets.
 
@@ -104,7 +102,7 @@ The checked-in `VonageRcsGateway` serializes documented Messages API RCS text/su
 
 ## Live diagnostics page
 
-The **Live logs** page is protected by the operator token and polls the authenticated session list and log endpoint. Use it after a test click to select the live session, inspect the sanitized inbound webhook field shapes, identity/correlation result, errors, and outbound provider IDs, then use **Copy diagnostics** to copy the JSON. Bearer tokens, webhook signatures, and raw callback bodies are never included in the copied output. Diagnostic entries are held in the running VCR instance, so copy them before restarting or redeploying it.
+The **Live logs** page sits behind the Okta gate and polls the session list and log endpoint. Use it after a test click to select the live session, inspect the sanitized inbound webhook field shapes, identity/correlation result, errors, and outbound provider IDs, then use **Copy diagnostics** to copy the JSON. Bearer tokens, webhook signatures, and raw callback bodies are never included in the copied output. Diagnostic entries are held in the running VCR instance, so copy them before restarting or redeploying it.
 
 ## Webhook behavior and recovery
 

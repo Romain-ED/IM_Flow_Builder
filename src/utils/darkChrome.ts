@@ -1,11 +1,11 @@
 /**
  * Class tokens for the app's menu chrome: the top header bar and the left
  * sidebar. The export names keep their original `dark*` prefix, but the
- * palette is now light, except the top header bar, which stays dark
- * (slate-950) to contrast with the white sidebar and page content.
+ * palette is light, except the top header bar (slate-950) and the left sidebar
+ * (slate-700, the background of the logo PNG) which are dark.
  *
  * Palette (Tailwind slate/indigo, literal strings so the JIT scanner sees
- * them): header and sidebar = white on slate-200 borders, body text =
+ * them): header = slate-950, sidebar = slate-700, body text =
  * slate-800/600, labels/muted = slate-500 (>= 4.6:1 on white), accent =
  * indigo. Solid buttons use the -600/-700 shades so white text stays >= 4.5:1.
  * Tinted buttons and notices use the -50 wash with -700/-800 text.
@@ -18,7 +18,7 @@ export const darkFocusRing =
 
 export const darkSurface = {
   header: 'bg-slate-950 border-b border-slate-800',
-  sidebar: 'bg-white',
+  sidebar: 'bg-slate-700',
   border: 'border-slate-200',
   divider: 'bg-slate-200',
   title: 'text-slate-900',

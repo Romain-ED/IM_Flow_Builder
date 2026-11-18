@@ -25,7 +25,6 @@ export function getLiveDemoConfig(env: Env = process.env, projectRoot = process.
   const configuredRecipient = validRecipient(env.LIVE_RCS_TEST_RECIPIENT)
   const errors: string[] = []
   if (mode !== 'disabled' && !configuredRecipient) errors.push('LIVE_RCS_TEST_RECIPIENT must be a 7 to 15 digit phone number.')
-  if (mode !== 'disabled' && !env.LIVE_RCS_OPERATOR_TOKEN) errors.push('LIVE_RCS_OPERATOR_TOKEN is required.')
   if (mode !== 'disabled' && allowedFlowIds.length === 0) errors.push('LIVE_RCS_ALLOWED_FLOW_IDS is required.')
   if (mode === 'vonage') {
     if (!env.LIVE_RCS_RCS_AGENT_ID) errors.push('LIVE_RCS_RCS_AGENT_ID is required for Vonage mode.')
@@ -45,7 +44,6 @@ export function getLiveDemoConfig(env: Env = process.env, projectRoot = process.
     errors,
     recipient: env.LIVE_RCS_TEST_RECIPIENT ?? null,
     allowedFlowIds,
-    operatorToken: env.LIVE_RCS_OPERATOR_TOKEN ?? '',
     vonageJwt: env.LIVE_RCS_VONAGE_JWT ?? '',
     vonagePrivateKey: env.LIVE_RCS_VONAGE_PRIVATE_KEY ?? '',
     vonageApplicationId: env.LIVE_RCS_VONAGE_APPLICATION_ID ?? '',
@@ -736,10 +734,6 @@ export class LiveDemoService {
     if (this.webhookReplayIds.has(jti)) return false
     this.webhookReplayIds.set(jti, nowMs + 5 * 60 * 1000)
     return true
-  }
-
-  authorize(token: string): boolean {
-    return Boolean(this.config.operatorToken) && token === this.config.operatorToken
   }
 
   loadAlwaysOnFlow() {

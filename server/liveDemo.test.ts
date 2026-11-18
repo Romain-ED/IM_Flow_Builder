@@ -19,7 +19,6 @@ class MemoryStore {
 const env = {
   LIVE_RCS_MODE: 'fake',
   LIVE_RCS_TEST_RECIPIENT: '+15551234567',
-  LIVE_RCS_OPERATOR_TOKEN: 'test-operator-token',
   LIVE_RCS_ALLOWED_FLOW_IDS: 'test-live-flow',
 }
 
@@ -288,7 +287,7 @@ describe('LiveDemoService', () => {
     const diagnostics = new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway()).diagnostics()
     const rawBody = Buffer.from(JSON.stringify({ message_uuid: 'message' }))
 
-    expect(JSON.stringify(diagnostics)).not.toContain('test-operator-token')
+    expect(JSON.stringify(diagnostics)).not.toContain('+15551234567')
     expect(verifyWebhook(config, rawBody)).toEqual({ valid: true, jti: null })
   })
 })
@@ -299,7 +298,6 @@ describe('ephemeral Live RCS demo storage', () => {
     const config = getLiveDemoConfig({
       LIVE_RCS_MODE: 'vonage',
       LIVE_RCS_TEST_RECIPIENT: '+15551234567',
-      LIVE_RCS_OPERATOR_TOKEN: 'operator-token',
       LIVE_RCS_ALLOWED_FLOW_IDS: 'test-live-flow',
       LIVE_RCS_RCS_AGENT_ID: 'agent-123',
       LIVE_RCS_VONAGE_APPLICATION_ID: 'application-123',
@@ -318,7 +316,6 @@ describe('ephemeral Live RCS demo storage', () => {
     const config = getLiveDemoConfig({
       LIVE_RCS_MODE: 'vonage',
       LIVE_RCS_TEST_RECIPIENT: '+15551234567',
-      LIVE_RCS_OPERATOR_TOKEN: 'operator-token',
       LIVE_RCS_ALLOWED_FLOW_IDS: 'test-live-flow',
       LIVE_RCS_RCS_AGENT_ID: 'agent-123',
       LIVE_RCS_VONAGE_APPLICATION_ID: 'application-123',
@@ -351,7 +348,6 @@ describe('always-on flow auto-start', () => {
   const vonageEnv = {
     LIVE_RCS_MODE: 'vonage',
     LIVE_RCS_TEST_RECIPIENT: '+15551234567',
-    LIVE_RCS_OPERATOR_TOKEN: 'test-operator-token',
     LIVE_RCS_ALLOWED_FLOW_IDS: 'test-live-flow',
     LIVE_RCS_DEMO_EPHEMERAL_STORAGE: 'true',
     LIVE_RCS_RCS_AGENT_ID: 'agent-123',

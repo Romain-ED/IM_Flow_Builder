@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertCircle, Check, ClipboardList, Copy, LoaderCircle, RefreshCw, ShieldCheck } from 'lucide-react'
+import { AlertCircle, Check, ClipboardList, Copy, LoaderCircle, RefreshCw } from 'lucide-react'
 import { copyToClipboard } from '../../utils/shareLink'
 
 type LiveSessionRecord = {
@@ -19,8 +19,8 @@ type LiveLogs = {
   diagnostics: Array<Record<string, unknown>>
 }
 
-async function request<T>(path: string, token: string): Promise<T> {
-  const response = await fetch(path, { headers: { Authorization: `Bearer ${token}` } })
+async function request<T>(path: string): Promise<T> {
+  const response = await fetch(path)
   const body = await response.json().catch(() => ({})) as T & { error?: string | { message?: string } }
   if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : body.error?.message ?? `Live RCS request failed (${response.status}).`)
   return body
@@ -32,7 +32,6 @@ function formatValue(value: unknown): string {
 }
 
 export function LiveDiagnosticsPage() {
-  const [token, setToken] = useState('')
   const [sessions, setSessions] = useState<LiveSessionRecord[]>([])
   const [selectedSessionId, setSelectedSessionId] = useState('')
   const [logs, setLogs] = useState<LiveLogs | null>(null)
@@ -41,14 +40,10 @@ export function LiveDiagnosticsPage() {
   const [copied, setCopied] = useState(false)
 
   async function loadSessions() {
-    if (!token) {
-      setError('Enter the operator access token used to start the live session.')
-      return
-    }
     setIsLoading(true)
     setError(null)
     try {
-      const nextSessions = await request<LiveSessionRecord[]>('/api/live/sessions', token)
+      const nextSessions = await request<LiveSessionRecord[]>('/api/live/sessions')
       setSessions(nextSessions)
       setSelectedSessionId((current) => current && nextSessions.some((session) => session.id === current) ? current : nextSessions[0]?.id ?? '')
     } catch (loadError) {
@@ -60,11 +55,11 @@ export function LiveDiagnosticsPage() {
 
   useEffect(() => {
     setLogs(null)
-    if (!token || !selectedSessionId) return
+    if (!selectedSessionId) return
     let cancelled = false
     const refresh = async () => {
       try {
-        const nextLogs = await request<LiveLogs>(`/api/live/logs?sessionId=${encodeURIComponent(selectedSessionId)}`, token)
+        const nextLogs = await request<LiveLogs>(`/api/live/logs?sessionId=${encodeURIComponent(selectedSessionId)}`)
         if (!cancelled) setLogs(nextLogs)
       } catch (loadError) {
         if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Could not load live diagnostics.')
@@ -76,7 +71,7 @@ export function LiveDiagnosticsPage() {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [selectedSessionId, token])
+  }, [selectedSessionId])
 
   async function copyLogs() {
     if (!logs) return
@@ -103,23 +98,8 @@ export function LiveDiagnosticsPage() {
         </header>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3">
-          <div className="flex items-start gap-2 text-[12px] text-slate-600">
-            <ShieldCheck size={16} className="text-emerald-600 shrink-0 mt-0.5" />
-            <span>The operator token is used only for this page request and is never included in copied diagnostics.</span>
-          </div>
           <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-            <label className="flex-1 flex flex-col gap-1">
-              <span className="text-[11.5px] font-medium text-slate-600">Operator access token</span>
-              <input
-                type="password"
-                autoComplete="off"
-                value={token}
-                onChange={(event) => setToken(event.target.value)}
-                placeholder="Paste the token used for the live run"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-[12.5px] bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              />
-            </label>
-            <button type="button" onClick={() => void loadSessions()} disabled={isLoading || !token} className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[12.5px] font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+            <button type="button" onClick={() => void loadSessions()} disabled={isLoading} className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[12.5px] font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
               {isLoading ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCw size={14} />} Load sessions
             </button>
           </div>
@@ -135,7 +115,7 @@ export function LiveDiagnosticsPage() {
               </select>
             </label>
           )}
-          {sessions.length === 0 && token && !isLoading && <p className="text-[12px] text-slate-500 m-0">No sessions loaded yet. Click “Load sessions”.</p>}
+          {sessions.length === 0 && !isLoading && <p className="text-[12px] text-slate-500 m-0">No sessions loaded yet. Click “Load sessions”.</p>}
         </section>
 
         {error && (

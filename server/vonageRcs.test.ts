@@ -6,7 +6,6 @@ import { toVonageRcsMessage, verifyVonageSignedWebhook } from './vonageRcs.js'
 const config = getLiveDemoConfig({
   LIVE_RCS_MODE: 'vonage',
   LIVE_RCS_TEST_RECIPIENT: '+6597502284',
-  LIVE_RCS_OPERATOR_TOKEN: 'operator-token',
   LIVE_RCS_ALLOWED_FLOW_IDS: 'singapore-airlines-boarding-pass',
   LIVE_RCS_RCS_AGENT_ID: 'agent-123',
   LIVE_RCS_VONAGE_APPLICATION_ID: 'application-123',

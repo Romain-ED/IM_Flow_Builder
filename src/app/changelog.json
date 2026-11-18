@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.31.1",
+    "date": "2026-11-18",
+    "changes": [
+      "Security: removed the Live RCS operator token and the hardcoded Conversations password. Live RCS, Conversations and Live logs now rely on the Okta SSO gate alone. Vonage webhook signature checks are unchanged."
+    ]
+  },
+  {
     "version": "0.31.0",
     "date": "2026-11-17",
     "changes": [
