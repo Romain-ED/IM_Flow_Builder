@@ -4,7 +4,7 @@ import type { SimulatorState } from '../storeTypes'
 import type { StoreContext } from '../storeContext'
 import { persistPrefs } from '../storeHelpers'
 
-export const createUiSlice = (ctx: StoreContext): StateCreator<SimulatorState, [], [], Pick<SimulatorState, 'openListSheet' | 'closeListSheet' | 'openBoardingPassPreview' | 'closeBoardingPassPreview' | 'closeExternalActionModal' | 'showToast' | 'dismissToast' | 'togglePause' | 'toggleFastMode' | 'togglePresenterMode' | 'toggleDebugPanel' | 'toggleDebugWarnings' | 'setChannel' | 'setPhonePlatform' | 'setStartNodeOverride'>> => (set) => {
+export const createUiSlice = (ctx: StoreContext): StateCreator<SimulatorState, [], [], Pick<SimulatorState, 'openListSheet' | 'closeListSheet' | 'openBoardingPassPreview' | 'closeBoardingPassPreview' | 'closeExternalActionModal' | 'showToast' | 'dismissToast' | 'togglePause' | 'toggleFastMode' | 'togglePresenterMode' | 'toggleDebugPanel' | 'toggleRcsMessagesPanel' | 'toggleDebugWarnings' | 'setChannel' | 'setPhonePlatform' | 'setStartNodeOverride'>> => (set) => {
   const { isLocked } = ctx
   return {
     openListSheet: (message) => set({ activeListSheet: message }),
@@ -31,6 +31,7 @@ export const createUiSlice = (ctx: StoreContext): StateCreator<SimulatorState, [
         return next
       }),
     toggleDebugPanel: () => set((s) => (isLocked() ? s : { debugPanelOpen: !s.debugPanelOpen })),
+    toggleRcsMessagesPanel: () => set((s) => (isLocked() ? s : { rcsMessagesPanelOpen: !s.rcsMessagesPanelOpen })),
     toggleDebugWarnings: () =>
       set((s) => {
         if (isLocked()) return s

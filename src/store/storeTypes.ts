@@ -50,6 +50,7 @@ export interface SimulatorState {
    */
   sharedLinkError: string | null
   debugPanelOpen: boolean
+  rcsMessagesPanelOpen: boolean
   debugWarningsEnabled: boolean
   /** True while the real device, rather than the browser simulator, owns the next interaction. */
   liveSessionActive: boolean
@@ -133,6 +134,7 @@ export interface SimulatorState {
   toggleFastMode: () => void
   togglePresenterMode: () => void
   toggleDebugPanel: () => void
+  toggleRcsMessagesPanel: () => void
   toggleDebugWarnings: () => void
   setChannel: (channel: ChannelId) => void
   setPhonePlatform: (platform: PhonePlatform) => void

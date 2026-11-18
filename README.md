@@ -80,7 +80,8 @@ src/
     editor/                ScenarioEditorModal (paste/import/validate/export),
                            ToolbarButton
     debug/                 DebugDrawer (flow inspector), FlowGraphView (visual
-                           node graph, List/Graph toggle)
+                           node graph, List/Graph toggle), RcsMessagesPanel
+                           (live RCS log, reuses live/LiveLogsView)
     scenarios/             ScenariosPage, ScenarioCard, CustomScenarioEditorModal
                            (has its own Source/Graph tabs)
     manual/                ManualPage (usage guide + parameter reference +

@@ -10,6 +10,8 @@ export function DebugOptions() {
   const toggleDebugWarnings = useSimulatorStore((s) => s.toggleDebugWarnings)
   const debugPanelOpen = useSimulatorStore((s) => s.debugPanelOpen)
   const toggleDebugPanel = useSimulatorStore((s) => s.toggleDebugPanel)
+  const rcsMessagesPanelOpen = useSimulatorStore((s) => s.rcsMessagesPanelOpen)
+  const toggleRcsMessagesPanel = useSimulatorStore((s) => s.toggleRcsMessagesPanel)
   const flow = useSimulatorStore((s) => s.flow)
   const startNodeOverride = useSimulatorStore((s) => s.startNodeOverride)
   const setStartNodeOverride = useSimulatorStore((s) => s.setStartNodeOverride)
@@ -29,6 +31,12 @@ export function DebugOptions() {
         checked={debugPanelOpen}
         onChange={toggleDebugPanel}
         trackClass="peer-checked:bg-teal-500"
+      />
+      <ToggleRow
+        label="RCS messages panel"
+        checked={rcsMessagesPanelOpen}
+        onChange={toggleRcsMessagesPanel}
+        trackClass="peer-checked:bg-indigo-500"
       />
       {flow && (
         <label className="flex flex-col gap-0.5">

@@ -10,6 +10,7 @@ import { SharedLinkFloatingControls } from './components/layout/SharedLinkFloati
 import { PhoneFrame } from './components/phone/PhoneFrame'
 import { PhoneScreen } from './components/phone/PhoneScreen'
 import { DebugDrawer } from './components/debug/DebugDrawer'
+import { RcsMessagesPanel } from './components/debug/RcsMessagesPanel'
 import { ScenarioEditorModal } from './components/editor/ScenarioEditorModal'
 import { ScenariosPage } from './components/scenarios/ScenariosPage'
 import { FlowChartPage } from './components/flowchart/FlowChartPage'
@@ -24,6 +25,7 @@ function App() {
   const presenterMode = useSimulatorStore((s) => s.presenterMode)
   const sharedLinkMode = useSimulatorStore((s) => s.sharedLinkMode)
   const debugPanelOpen = useSimulatorStore((s) => s.debugPanelOpen)
+  const rcsMessagesPanelOpen = useSimulatorStore((s) => s.rcsMessagesPanelOpen)
   const phonePlatform = useSimulatorStore((s) => s.phonePlatform)
   const sharedLinkError = useSimulatorStore((s) => s.sharedLinkError)
   const flowLoaded = useSimulatorStore((s) => s.flow !== null)
@@ -135,6 +137,12 @@ function App() {
           {debugPanelOpen && (
             <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">
               <DebugDrawer />
+            </div>
+          )}
+
+          {rcsMessagesPanelOpen && (
+            <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">
+              <RcsMessagesPanel />
             </div>
           )}
         </div>

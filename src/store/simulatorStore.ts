@@ -38,6 +38,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get, api) => {
     sharedLinkMode: startedFromShareLink,
     sharedLinkError: null,
     debugPanelOpen: false,
+    rcsMessagesPanelOpen: false,
     debugWarningsEnabled: true,
     liveSessionActive: false,
     liveSessionId: null,

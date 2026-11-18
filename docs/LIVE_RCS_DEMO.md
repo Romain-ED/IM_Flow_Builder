@@ -104,6 +104,8 @@ The checked-in `VonageRcsGateway` serializes documented Messages API RCS text/su
 
 The **Live logs** page sits behind the Okta gate and polls the session list and log endpoint. Use it after a test click to select the live session, inspect the sanitized inbound webhook field shapes, identity/correlation result, errors, and outbound provider IDs, then use **Copy diagnostics** to copy the JSON. Bearer tokens, webhook signatures, and raw callback bodies are never included in the copied output. Diagnostic entries are held in the running VCR instance, so copy them before restarting or redeploying it.
 
+The same log is available beside the phone: turn on **RCS messages panel** under Debug options. The panel follows the current live session (the one started from Live RCS) and uses the same view, so it needs no session selection. It is hidden below the `lg` breakpoint.
+
 ## Webhook behavior and recovery
 
 - Webhook bodies are capped at 100 KB and must be JSON.

@@ -112,7 +112,7 @@
     ],
     [
       "Debug options",
-      "\"Fast demo mode\" shrinks all typing/message delays; \"Show capability warnings\" toggles the inline notes shown when a message type falls back to a generic rendering on a channel that doesn't natively support it; \"Flow inspector panel\" toggles the right-hand debug drawer; \"Start node\" overrides which node Restart jumps to."
+      "\"Fast demo mode\" shrinks all typing/message delays; \"Show capability warnings\" toggles the inline notes shown when a message type falls back to a generic rendering on a channel that doesn't natively support it; \"Flow inspector panel\" toggles the right-hand debug drawer; \"RCS messages panel\" opens a second right-hand panel with the live RCS session's webhook and delivery log; \"Start node\" overrides which node Restart jumps to."
     ],
     [
       "Playback",

@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.32.0",
+    "date": "2026-11-18",
+    "changes": [
+      "New: RCS messages panel. Turn on \"RCS messages panel\" under Debug options to open a right-hand log of the live RCS session's webhook and delivery timeline. It reuses the Live RCS logs view, auto-refreshes, and keeps the last session after Stop until Reset."
+    ]
+  },
+  {
     "version": "0.31.1",
     "date": "2026-11-18",
     "changes": [
