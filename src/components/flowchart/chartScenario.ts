@@ -13,7 +13,7 @@ export interface ChartScenarioOption {
   badge: 'Built-in' | 'Custom'
 }
 
-/** Stable key for a scenario in the flow chart picker, e.g. "builtin:ecommerce" or "custom:abc123". */
+/** Stable key for a scenario in the flow chart picker, e.g. "builtin:restaurant" or "custom:abc123". */
 export function chartScenarioKey(kind: ChartScenarioKind, id: string): string {
   return `${kind}:${id}`
 }

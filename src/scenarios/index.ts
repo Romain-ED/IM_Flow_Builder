@@ -1,5 +1,4 @@
 import singaporeAirlinesSource from './singapore-airlines.yaml?raw'
-import ecommerceSource from './ecommerce.yaml?raw'
 import restaurantSource from './restaurant.yaml?raw'
 import beerlaoSource from './beerlao.yaml?raw'
 import progadgetLaosSource from './progadget-laos.yaml?raw'
@@ -21,12 +20,6 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
     name: 'Airline boarding pass',
     description: 'Check-in reminder → seat selection → digital boarding pass.',
     source: singaporeAirlinesSource,
-  },
-  {
-    id: 'ecommerce',
-    name: 'E-commerce delivery',
-    description: 'Shipping notice → delivery preferences → confirmation.',
-    source: ecommerceSource,
   },
   {
     id: 'restaurant',
@@ -76,6 +69,6 @@ export const BUILT_IN_SCENARIOS: BuiltInScenario[] = [
  * Built-in scenario ids that were removed. A browser that persisted one of these
  * (the last-loaded flow is stored as full source) falls back to the default scenario.
  */
-export const REMOVED_SCENARIO_IDS: readonly string[] = ['dominos-rcs-video-campaign']
+export const REMOVED_SCENARIO_IDS: readonly string[] = ['dominos-rcs-video-campaign', 'ecommerce']
 
 export const DEFAULT_SCENARIO = BUILT_IN_SCENARIOS[0]

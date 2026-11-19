@@ -56,7 +56,7 @@ start: otp_delivery
 
 # Global keyword trigger, matching the spec's "1:1 chat handling" note —
 # inbound customer messages continue to route to the shop's existing
-# WhatsApp Business account. Same pattern as the ecommerce demo's help trigger.
+# WhatsApp Business account.
 triggers:
   - keywords: ["help", "support"]
     next: help

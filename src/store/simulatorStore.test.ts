@@ -93,7 +93,7 @@ describe('simulator RCS entry triggers', () => {
     const before = useSimulatorStore.getState().flow?.metadata.id
     useSimulatorStore.getState().handleAction({ type: 'reply', label: 'Unknown', startScenarioId: 'missing' })
     expect(useSimulatorStore.getState().flow?.metadata.id).toBe(before)
-    useSimulatorStore.getState().handleAction({ type: 'reply', label: 'WhatsApp', startScenarioId: 'ecommerce' })
+    useSimulatorStore.getState().handleAction({ type: 'reply', label: 'WhatsApp', startScenarioId: 'restaurant' })
     expect(useSimulatorStore.getState().flow?.metadata.id).toBe(before)
   })
 })

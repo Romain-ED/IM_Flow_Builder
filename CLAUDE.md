@@ -99,7 +99,7 @@ Outbound HTTPS goes through a policy proxy: `WebFetch`/`curl` to arbitrary domai
 
 ## Where things are (quick index)
 
-- Built-in scenarios: `src/scenarios/{singapore-airlines,ecommerce,restaurant,beerlao,progadget-laos}.yaml`, registered in `src/scenarios/index.ts`.
+- Built-in scenarios: `src/scenarios/{singapore-airlines,restaurant,beerlao,progadget-laos}.yaml`, registered in `src/scenarios/index.ts`.
 - Schema: `src/schema/messages.ts` (types), `src/schema/flow.ts` (nodes/flow).
 - Channels: `src/channels/{rcs,whatsapp}/{capabilities,normalize}.ts`, shared `src/channels/capabilities.ts`.
 - Engine core: `src/engine/ConversationEngine.ts` (computeNodePlan).

@@ -35,14 +35,14 @@ describe('FlowChartView', () => {
   })
 
   it('shows WhatsApp message text with variables left as written', () => {
-    const flow = flowFor('ecommerce')
+    const flow = flowFor('restaurant')
     render(<FlowChartView flow={flow} />)
 
     expect(screen.getAllByText(/\{\{customerName\}\}/).length).toBeGreaterThan(0)
   })
 
   it('draws one arrow per transition, and every button with a transition has an anchor on the chart', async () => {
-    const flow = flowFor('ecommerce')
+    const flow = flowFor('restaurant')
     const { container } = render(<FlowChartView flow={flow} />)
     const ids = new Set(flow.nodes.map((node) => node.id))
     const expected = flow.nodes.flatMap((node) => anchoredEdges(node)).filter((edge) => ids.has(edge.to))

@@ -847,7 +847,7 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_bugis
                   selectedStoreName: "Bugis Junction"
-                next: choose_crust
+                next: pickup_gate
           - id: store-tampines
             image: "{{storeTampinesImage}}"
             title: "🏪 Tampines Mall"
@@ -859,7 +859,7 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_tampines
                   selectedStoreName: "Tampines Mall"
-                next: choose_crust
+                next: pickup_gate
           - id: store-jem
             image: "{{storeJemImage}}"
             title: "🏪 JEM — Jurong East"
@@ -871,7 +871,7 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_jem
                   selectedStoreName: "JEM — Jurong East"
-                next: choose_crust
+                next: pickup_gate
           - id: store-nex
             image: "{{storeNexImage}}"
             title: "🏪 NEX — Serangoon"
@@ -883,7 +883,7 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_nex
                   selectedStoreName: "NEX — Serangoon"
-                next: choose_crust
+                next: pickup_gate
           - id: store-causeway-point
             image: "{{storeWoodlandsImage}}"
             title: "🏪 Causeway Point — Woodlands"
@@ -895,7 +895,7 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_causeway_point
                   selectedStoreName: "Causeway Point — Woodlands"
-                next: choose_crust
+                next: pickup_gate
           - id: store-clementi
             image: "{{storeClementiImage}}"
             title: "🏪 The Clementi Mall"
@@ -907,7 +907,7 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_clementi
                   selectedStoreName: "The Clementi Mall"
-                next: choose_crust
+                next: pickup_gate
           - id: store-hdb-hub
             image: "{{storeToaPayohImage}}"
             title: "🏪 HDB Hub — Toa Payoh"
@@ -919,7 +919,7 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_hdb_hub
                   selectedStoreName: "HDB Hub — Toa Payoh"
-                next: choose_crust
+                next: pickup_gate
           - id: store-white-sands
             image: "{{storePasirRisImage}}"
             title: "🏪 White Sands — Pasir Ris"
@@ -931,15 +931,41 @@ nodes:
                   orderMode: pickup
                   selectedStoreId: store_white_sands
                   selectedStoreName: "White Sands — Pasir Ris"
-                next: choose_crust
+                next: pickup_gate
       - type: text
         text: "Found your store? 🎉 Ready to order or need anything else?"
       - type: suggested_replies
         options:
           - label: "🛒 Order Now"
-            next: choose_crust
+            next: pickup_gate
           - label: "🔥 Today's Deals"
             next: promotions
+          - label: "🏠 Main Menu"
+            next: welcome
+
+  # Store picked: keep an existing cart, or open the menu to start one when empty.
+  - id: pickup_gate
+    label: "Store Finder — Cart Check"
+    condition:
+      variable: selectedPizza
+      operator: not_equals
+      value: "Not selected"
+    then: pickup_ready
+    else: menu_categories
+
+  - id: pickup_ready
+    label: "Store Finder — Pick-Up Ready"
+    messages:
+      - type: text
+        text: "🏪 Pick-up set at {{selectedStoreName}}. Your order is still in your cart:"
+      - type: text
+        text: "🍕 {{selectedQuantity}}x {{selectedPizza}} ({{selectedSize}}, {{selectedCrust}})\n🍗 Side: {{selectedSide}}\n🥤 Drink: {{selectedDrink}}\n🍫 Dessert: {{selectedDessert}}\n🏷️ Promotion: {{promoCode}}"
+      - type: text
+        text: "Open the Domino's Singapore app to pay and confirm your pick-up order: {{appCheckoutUrl}}"
+      - type: suggested_replies
+        options:
+          - label: "➕ Add More Items"
+            next: menu_categories
           - label: "🏠 Main Menu"
             next: welcome
 
@@ -1067,16 +1093,22 @@ nodes:
       - type: suggested_replies
         options:
           - label: "🛵 Faster delivery"
+            set: { npsComment: "Faster delivery" }
             next: survey_recap
           - label: "🍕 Food quality"
+            set: { npsComment: "Food quality" }
             next: survey_recap
           - label: "💰 Better prices"
+            set: { npsComment: "Better prices" }
             next: survey_recap
           - label: "📞 Customer service"
+            set: { npsComment: "Customer service" }
             next: survey_recap
           - label: "👍 Nothing, all good!"
+            set: { npsComment: "Nothing, all good!" }
             next: survey_recap
           - label: "⏭️ Skip"
+            set: { npsComment: "No additional comments provided." }
             next: survey_recap
 
   - id: survey_recap

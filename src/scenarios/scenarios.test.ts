@@ -165,7 +165,6 @@ describe('built-in RCS profile audit', () => {
     'dominos-singapore-rcs-demo': { owner: 'dominos-singapore-rcs-demo', displayName: "Domino's Pizza Singapore", subtitle: 'Pizza delivery, takeaway, and customer care', phone: '+1 202 555 0174', website: 'dominos-sg.example', email: 'care@dominos-sg.example', verified: true, banner: '/assets/dominos-singapore-rcs-demo/image-4.png', imageCount: 44, images: ['/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg', '/assets/dominos-singapore-rcs-demo/imgi_5_SG_460691_en_MenuImage_17096.jpg', '/assets/dominos-singapore-rcs-demo/imgi_13_SG_50R1_en_MenuImage_16018.jpg'] },
     'vbank-multifinance-first-repayment': { owner: 'V Bank', displayName: 'V Bank', subtitle: 'Personal banking and lending', phone: '+1 202 555 0183', website: 'vbank.example', email: 'care@vbank.example', verified: true, banner: '/assets/V%20Bank/banner%20wide.jpg', imageCount: 3, images: ['/assets/V%20Bank/2.jpg', '/assets/V%20Bank/car%20loan.jpg', '/assets/V%20Bank/home%20mortgage.jpg'] },
     'rcs-demo-menu': { owner: 'rcs-demo-menu', displayName: 'RCS Business Messaging', subtitle: 'Explore business messaging experiences', phone: '+1 202 555 0192', website: 'rcs-messaging.example', email: 'support@rcs-messaging.example', verified: true, banner: '/assets/rcs-demo-menu/profile-banner.svg', imageCount: 0, images: [] },
-    ecommerce: { owner: 'ecommerce', displayName: 'Northwind Store', subtitle: 'Order tracking and delivery support', phone: '+1 202 555 0107', website: 'northwind-store.example', email: 'support@northwind-store.example', verified: true, banner: '/assets/ecommerce/package.svg', imageCount: 0, images: [] },
     restaurant: { owner: 'restaurant', displayName: 'Riverside Bistro', subtitle: 'Reservations and dining support', phone: '+1 202 555 0116', website: 'riverside-bistro.example', email: 'hello@riverside-bistro.example', verified: false, banner: '/assets/restaurant/restaurant-table.svg', imageCount: 0, images: [] },
     beerlao: { owner: 'beerlao', displayName: 'Beerlao', subtitle: 'Account access and event information', phone: '+1 202 555 0125', website: 'beerlao.example', email: 'support@beerlao.example', verified: true, banner: '/assets/beerlao/event-boun-souang-heua-promo.png', imageCount: 1, images: ['/assets/beerlao/event-boun-souang-heua-promo.png'] },
     'progadget-laos': { owner: 'progadget-laos', displayName: 'Pro Gadget Laos', subtitle: 'Orders, products, and delivery support', phone: '+1 202 555 0134', website: 'progadget-laos.example', email: 'support@progadget-laos.example', verified: true, banner: '/assets/progadget-laos/garmin_cirqa.jpeg', imageCount: 1, images: ['/assets/progadget-laos/garmin_cirqa.jpeg'] },
@@ -182,8 +181,8 @@ describe('built-in RCS profile audit', () => {
     return []
   }
 
-  it('audits all nine profiles, contacts, policies, owned assets, and customer-facing identity', () => {
-    expect(BUILT_IN_SCENARIOS).toHaveLength(9)
+  it('audits all eight profiles, contacts, policies, owned assets, and customer-facing identity', () => {
+    expect(BUILT_IN_SCENARIOS).toHaveLength(8)
     expect(new Set(BUILT_IN_SCENARIOS.map((scenario) => scenario.id))).toEqual(new Set(Object.keys(expected)))
 
     const authoredTriggers = ['SIA START', 'DOMINOS START', 'VBANK START', 'RCS MENU']

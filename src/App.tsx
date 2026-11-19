@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useSimulatorStore } from './store/simulatorStore'
 import { BUILT_IN_SCENARIOS } from './scenarios'
 import type { AppPage } from './app/pages'
 import { AppHeader } from './components/layout/AppHeader'
 import { Sidebar } from './components/layout/Sidebar'
+import { ResizableSidePanel } from './components/layout/ResizableSidePanel'
 import { PresenterFloatingControls } from './components/layout/PresenterFloatingControls'
 import { SharedLinkFloatingControls } from './components/layout/SharedLinkFloatingControls'
 import { PhoneFrame } from './components/phone/PhoneFrame'
@@ -19,6 +20,12 @@ import { ManualPage } from './components/manual/ManualPage'
 import { LiveDiagnosticsPage } from './components/live/LiveDiagnosticsPage'
 import { ConversationsPage } from './components/live/ConversationsPage'
 import { darkFocusRing, darkSurface } from './utils/darkChrome'
+
+const PANEL_DEFAULT_WIDTH = 320
+const PANEL_MIN_WIDTH = 240
+const PANEL_MAX_WIDTH = 720
+/** Room the phone keeps when a right-hand panel is widened. */
+const PHONE_MIN_WIDTH = 420
 
 function App() {
   const initialize = useSimulatorStore((s) => s.initialize)
@@ -40,6 +47,19 @@ function App() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [mobileDebugOpen, setMobileDebugOpen] = useState(false)
+  const [flowPanelWidth, setFlowPanelWidth] = useState(PANEL_DEFAULT_WIDTH)
+  const [rcsPanelWidth, setRcsPanelWidth] = useState(PANEL_DEFAULT_WIDTH)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+
+  // Largest width for one right-hand panel: the stage minus the sidebar, the other open
+  // panel, and the phone's minimum width. Read at drag start, so it follows the window size.
+  const maxPanelWidth = (otherPanelWidth: number) => () => {
+    const stage = stageRef.current
+    if (!stage) return PANEL_MAX_WIDTH
+    const room = stage.clientWidth - (sidebarRef.current?.offsetWidth ?? 0) - otherPanelWidth - PHONE_MIN_WIDTH
+    return Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, room))
+  }
 
   useEffect(() => {
     initialize()
@@ -121,8 +141,8 @@ function App() {
       {page === 'conversations' && <ConversationsPage />}
 
       {page === 'simulator' && (
-        <div className="flex-1 min-h-0 flex">
-          <div className={`hidden lg:block shrink-0 border-r ${darkSurface.border} ${darkSurface.sidebar}`}>
+        <div ref={stageRef} className="flex-1 min-h-0 flex">
+          <div ref={sidebarRef} className={`hidden lg:block shrink-0 border-r ${darkSurface.border} ${darkSurface.sidebar}`}>
             <Sidebar collapsible onOpenEditor={() => setEditorOpen(true)} />
           </div>
 
@@ -135,15 +155,27 @@ function App() {
           </main>
 
           {debugPanelOpen && (
-            <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">
+            <ResizableSidePanel
+              label="Resize flow inspector"
+              width={flowPanelWidth}
+              onWidthChange={setFlowPanelWidth}
+              minWidth={PANEL_MIN_WIDTH}
+              getMaxWidth={maxPanelWidth(rcsMessagesPanelOpen ? rcsPanelWidth : 0)}
+            >
               <DebugDrawer />
-            </div>
+            </ResizableSidePanel>
           )}
 
           {rcsMessagesPanelOpen && (
-            <div className="hidden lg:block w-[320px] shrink-0 border-l border-slate-200 bg-white">
+            <ResizableSidePanel
+              label="Resize RCS messages panel"
+              width={rcsPanelWidth}
+              onWidthChange={setRcsPanelWidth}
+              minWidth={PANEL_MIN_WIDTH}
+              getMaxWidth={maxPanelWidth(debugPanelOpen ? flowPanelWidth : 0)}
+            >
               <RcsMessagesPanel />
-            </div>
+            </ResizableSidePanel>
           )}
         </div>
       )}

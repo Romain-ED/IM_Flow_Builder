@@ -66,7 +66,7 @@ describe('read-only shared link', { timeout: 60_000 }, () => {
     store.getState().restart()
     expect(store.getState().events[0]?.type).toBe('scenario_restarted')
 
-    store.getState().loadBuiltInScenario(store.getState().customScenarios[0]?.id ?? 'ecommerce')
+    store.getState().loadBuiltInScenario(store.getState().customScenarios[0]?.id ?? 'restaurant')
     expect(store.getState().loadScenarioSource('version: "1.0"')).toBe(false)
     expect(store.getState().importCustomScenario(DEFAULT_SCENARIO.source).success).toBe(false)
     store.getState().updateConfiguredVariable('customerName', 'Mallory')

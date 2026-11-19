@@ -1,5 +1,26 @@
 [
   {
+    "version": "0.34.1",
+    "date": "2026-11-19",
+    "changes": [
+      "Fixed: the Domino's Singapore NPS recap shows the quick option picked for \"What could we improve?\" (for example \"Faster delivery\") instead of \"No additional comments provided.\" Picking a store after Checkout keeps the cart: the flow shows the pick-up summary and app checkout link without asking for crust and items again. With an empty cart, a store pick opens the menu."
+    ]
+  },
+  {
+    "version": "0.34.0",
+    "date": "2026-11-18",
+    "changes": [
+      "Removed: the E-commerce delivery scenario (Northwind Store) is no longer a built-in scenario. A browser that had it loaded falls back to the default airline boarding-pass scenario."
+    ]
+  },
+  {
+    "version": "0.33.0",
+    "date": "2026-11-18",
+    "changes": [
+      "New: the flow inspector and the RCS messages panel can be resized. Drag the left edge of either right-hand panel, or focus it and use the left and right arrow keys. The phone keeps at least 420px. Widths reset to 320px on reload."
+    ]
+  },
+  {
     "version": "0.32.0",
     "date": "2026-11-18",
     "changes": [

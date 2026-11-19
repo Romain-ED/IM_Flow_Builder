@@ -10,7 +10,7 @@ It defaults to a **local simulator** for demos, customer workshops, sales engine
 - Runs that flow through a channel-agnostic **conversation engine** (deterministic, no `eval`, fully unit-testable).
 - Renders the live conversation through a **channel renderer** (RCS / WhatsApp) inside a polished phone mockup.
 - Lets a presenter tweak variables (customer name, booking reference, seat, …), restart, step back, jump to any node, switch channels live, and demo cleanly in **Presenter Mode**.
-- Ships with five complete example scenarios — an airline check-in/boarding-pass journey (the default), an e-commerce delivery tracker, a restaurant reservation flow, a Beerlao OTP login + event promotion flow, and a Pro Gadget Laos phone-verified pre-order + product-launch broadcast flow.
+- Ships with four complete example scenarios — an airline check-in/boarding-pass journey (the default), a restaurant reservation flow, a Beerlao OTP login + event promotion flow, and a Pro Gadget Laos phone-verified pre-order + product-launch broadcast flow.
 - Has three pages, reachable from the top nav: **Simulator** (the demo tool itself), **Scenarios** (load/duplicate/edit/import/export/delete flow definitions — custom ones are saved to `localStorage`), and **Manual** (an in-app guide covering usage, every parameter, the technical architecture, and a changelog).
 - Installable and fully offline-capable (PWA) after the first load, and supports **shareable scenario links** (a flow encoded straight into a URL, opening in a read-only viewer with just the phone, an iOS / Android switch, and a Restart button — no access to Scenarios/Manual or any editing controls) and a **side-by-side channel comparison** view.
 
@@ -122,7 +122,7 @@ src/
     persistence.ts           localStorage read/write helpers (prefs, last
                              scenario, custom scenarios)
 
-  scenarios/                 singapore-airlines.yaml (default), ecommerce.yaml,
+  scenarios/                 singapore-airlines.yaml (default),
                              restaurant.yaml, index.ts (registry)
 
   utils/                     flowSource (JSON/YAML parse+serialize),
@@ -264,7 +264,7 @@ A small, safe (no HTML injection, no markdown library) formatter — `src/compon
 
 ### Official vs. simulator-only types
 
-All five built-in scenarios (`singapore-airlines.yaml`, `ecommerce.yaml`, `restaurant.yaml`, `beerlao.yaml`, `progadget-laos.yaml`) only use types with a real, documented equivalent on the channel they demonstrate — verified against [Meta's WhatsApp interactive-message guide](https://developers.facebook.com/docs/whatsapp/guides/interactive-messages/), [WhatsApp's interactive message templates reference](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/interactive-message-templates/), [WhatsApp's commerce/product-sharing guide](https://developers.facebook.com/docs/whatsapp/guides/commerce-guides/share-products-with-customers/), and [Google's RCS Business Messaging spec](https://developers.google.com/business-communications/rcs-business-messaging). `flight_card`, `boarding_pass`, `otp`, `payment_request`, and `calendar_event` remain in the schema — a custom scenario can still use them, and they render honestly with a fallback note explaining they're simulator conveniences — but a real integration would express those same moments with official primitives, e.g.:
+All four built-in scenarios (`singapore-airlines.yaml`, `restaurant.yaml`, `beerlao.yaml`, `progadget-laos.yaml`) only use types with a real, documented equivalent on the channel they demonstrate — verified against [Meta's WhatsApp interactive-message guide](https://developers.facebook.com/docs/whatsapp/guides/interactive-messages/), [WhatsApp's interactive message templates reference](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/interactive-message-templates/), [WhatsApp's commerce/product-sharing guide](https://developers.facebook.com/docs/whatsapp/guides/commerce-guides/share-products-with-customers/), and [Google's RCS Business Messaging spec](https://developers.google.com/business-communications/rcs-business-messaging). `flight_card`, `boarding_pass`, `otp`, `payment_request`, and `calendar_event` remain in the schema — a custom scenario can still use them, and they render honestly with a fallback note explaining they're simulator conveniences — but a real integration would express those same moments with official primitives, e.g.:
 
 `beerlao.yaml` (the fourth built-in) verifies a one-time code the user types back, with a wrong-code error and retry loop — but it uses `input`, not `otp`. `otp`'s segmented 4-box UI claims a message structure WhatsApp doesn't have (a bubble with an embedded Verify button and 4 separate digit fields), so it always shows the capability warning. `input` doesn't claim any special wire format — it's just "prompt with body text, then treat the next free-text reply as this value," which is exactly how every real WhatsApp bot already has to handle typed replies, so it's genuinely supported and shows no warning.
 
