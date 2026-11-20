@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.35.0",
+    "date": "2026-11-20",
+    "changes": [
+      "Redesigned the sidebar and header: dark zinc surfaces (header zinc-950, sidebar zinc-900) with hairline white/10 borders replace the pastel per-section washes. All tokens live in utils/darkChrome.ts, which is only used on these two dark surfaces.",
+      "One accent: indigo marks open sections, selected channel/phone, toggles and the primary Restart/Start buttons. Secondary buttons are neutral ghost buttons; only destructive actions (Stop, Clear) keep a rose tint, and Live RCS notices use translucent amber/rose/emerald washes.",
+      "Sidebar sections are now rounded cards with an icon chip; header page tabs are a segmented control. Phone mockup unchanged."
+    ]
+  },
+  {
     "version": "0.34.1",
     "date": "2026-11-19",
     "changes": [

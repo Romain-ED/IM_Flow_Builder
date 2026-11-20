@@ -19,18 +19,18 @@ export function DebugOptions() {
   return (
     <div className="flex flex-col gap-2.5">
       <SectionHeading accent={sectionAccents.debug} tone="dark">Debug options</SectionHeading>
-      <ToggleRow label="Fast demo mode" checked={fastMode} onChange={toggleFastMode} trackClass="peer-checked:bg-emerald-500" />
+      <ToggleRow label="Fast demo mode" checked={fastMode} onChange={toggleFastMode} trackClass="peer-checked:bg-indigo-500" />
       <ToggleRow
         label="Show capability warnings"
         checked={debugWarningsEnabled}
         onChange={toggleDebugWarnings}
-        trackClass="peer-checked:bg-amber-500"
+        trackClass="peer-checked:bg-indigo-500"
       />
       <ToggleRow
         label="Flow inspector panel"
         checked={debugPanelOpen}
         onChange={toggleDebugPanel}
-        trackClass="peer-checked:bg-teal-500"
+        trackClass="peer-checked:bg-indigo-500"
       />
       <ToggleRow
         label="RCS messages panel"
@@ -70,12 +70,12 @@ function ToggleRow({
   trackClass: string
 }) {
   return (
-    <label className="flex items-center justify-between cursor-pointer select-none">
+    <label className="flex items-center justify-between gap-3 cursor-pointer select-none">
       <span className={`text-[12.5px] ${darkSurface.body}`}>{label}</span>
       <span className="relative inline-flex h-5 w-9 items-center">
         <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
         <span
-          className={`absolute inset-0 rounded-full bg-slate-400 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo-600 ${trackClass}`}
+          className={`absolute inset-0 rounded-full bg-zinc-700 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo-400 ${trackClass}`}
         />
         <span className="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
       </span>

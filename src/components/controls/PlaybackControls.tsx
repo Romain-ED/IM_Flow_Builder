@@ -1,6 +1,6 @@
 import { RotateCcw, Undo2, Pause, Play, Eraser } from 'lucide-react'
 import { useSimulatorStore } from '../../store/simulatorStore'
-import { sectionAccents } from '../../utils/accents'
+import { accents } from '../../utils/accents'
 import { SectionHeading } from '../common/SectionHeading'
 import { darkFocusRing, darkSolids, darkTints } from '../../utils/darkChrome'
 
@@ -18,7 +18,7 @@ export function PlaybackControls() {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <SectionHeading accent={sectionAccents.playback} tone="dark">Playback</SectionHeading>
+      <SectionHeading accent={accents.indigo} tone="dark">Playback</SectionHeading>
       <div className="grid grid-cols-2 gap-1.5">
         <ControlButton icon={RotateCcw} label="Restart" onClick={restart} disabled={!flow || liveSessionActive} variant="primary" />
         <ControlButton icon={Undo2} label="Back" onClick={back} disabled={snapshotCount === 0 || liveSessionActive} variant="neutral" />

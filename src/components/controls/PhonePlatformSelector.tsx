@@ -7,7 +7,7 @@ import { BrandIcon } from './BrandIcon'
 import { darkFocusRing } from '../../utils/darkChrome'
 
 const OPTIONS: { id: PhonePlatform; label: string; description: string; brand: 'apple' | 'android'; color: string }[] = [
-  { id: 'ios', label: 'iPhone', description: 'Apple iPhone preview', brand: 'apple', color: 'bg-slate-950 hover:bg-slate-800' },
+  { id: 'ios', label: 'iPhone', description: 'Apple iPhone preview', brand: 'apple', color: 'bg-zinc-700 hover:bg-zinc-600' },
   { id: 'android', label: 'Android', description: 'Android Pixel-style preview', brand: 'android', color: 'bg-[#137a46] hover:bg-[#0d6339]' },
 ]
 
@@ -47,8 +47,8 @@ export function PhonePlatformSelector() {
               }}
               className={`flex h-9 w-11 cursor-pointer items-center justify-center rounded-lg border text-white transition ${darkFocusRing} ${option.color} ${
                 isActive
-                  ? 'border-white shadow-sm ring-2 ring-indigo-600 ring-offset-1 ring-offset-white'
-                  : 'border-transparent opacity-70 hover:opacity-100'
+                  ? 'border-white/20 shadow-sm ring-2 ring-indigo-400 ring-offset-2 ring-offset-zinc-900'
+                  : 'border-transparent opacity-45 grayscale-[35%] hover:opacity-90 hover:grayscale-0'
               }`}
             >
               <BrandIcon brand={option.brand} />

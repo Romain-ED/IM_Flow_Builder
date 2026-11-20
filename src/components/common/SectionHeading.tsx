@@ -17,7 +17,7 @@ export function SectionHeading({
   return (
     <span
       className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${
-        tone === 'dark' ? 'text-slate-500' : 'text-slate-500'
+        tone === 'dark' ? 'text-zinc-500 tracking-[0.08em]' : 'text-slate-500'
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} aria-hidden="true" />

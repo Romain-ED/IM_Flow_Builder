@@ -42,7 +42,7 @@ export function ChannelSelector() {
                 if (event.key === 'Home') { event.preventDefault(); move(0) }
                 if (event.key === 'End') { event.preventDefault(); move(CHANNEL_OPTIONS.length - 1) }
               }}
-              className={`flex h-9 w-11 items-center justify-center rounded-lg border text-white transition ${darkFocusRing} ${brandClass} ${isActive ? 'border-white shadow-sm ring-2 ring-indigo-600 ring-offset-1 ring-offset-white' : 'border-transparent opacity-70 hover:opacity-100'} cursor-pointer`}
+              className={`flex h-9 w-11 items-center justify-center rounded-lg border text-white transition ${darkFocusRing} ${brandClass} ${isActive ? 'border-white/20 shadow-sm ring-2 ring-indigo-400 ring-offset-2 ring-offset-zinc-900' : 'border-transparent opacity-45 grayscale-[35%] hover:opacity-90 hover:grayscale-0'} cursor-pointer`}
             >
               <BrandIcon brand={opt.id} />
               <span className="sr-only">{isActive ? 'Selected' : 'Not selected'}. {descriptions[opt.id]}</span>

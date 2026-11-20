@@ -219,13 +219,13 @@ function MobileOverlay({
       <button type="button" aria-label="Close" className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className={`relative w-[86%] max-w-[340px] h-full shadow-2xl flex flex-col ${dark ? darkSurface.sidebar : 'bg-white'}`}>
         <div className={`flex items-center justify-between px-4 py-3 border-b shrink-0 ${dark ? darkSurface.border : 'border-slate-100'}`}>
-          <h2 className={`text-[14px] font-semibold m-0 ${dark ? 'text-slate-100' : 'text-slate-900'}`}>{title}</h2>
+          <h2 className={`text-[14px] font-semibold m-0 ${dark ? 'text-zinc-100' : 'text-slate-900'}`}>{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
             className={`h-8 w-8 flex items-center justify-center rounded-full cursor-pointer ${
-              dark ? 'text-slate-300 hover:bg-slate-600 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+              dark ? 'text-zinc-400 hover:bg-white/[0.06] hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
             } ${darkFocusRing}`}
           >
             <X size={16} />
