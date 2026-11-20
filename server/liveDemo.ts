@@ -429,24 +429,40 @@ function presenterSnapshot(session: LiveSession) {
   }
 }
 
+/** Masks phone-like digit runs and bounds length. Diagnostics are copied into support requests, so raw numbers stay out. */
+function maskedText(value: unknown, limit: number): string | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null
+  return boundedText(String(value).replace(/\d{7,}/g, '[number]'), limit) || null
+}
 function safeDiagnostic(entry: Json, index: number) {
+  const masked = {
+    error: maskedText(entry.error, 300),
+    reason: maskedText(entry.reason, 200),
+    providerCode: maskedText(entry.providerCode, 40),
+    providerDetail: maskedText(entry.providerDetail, 300),
+  }
   return {
     id: String(index + 1),
     at: entry.at,
     type: entry.type,
     ...(entry.nodeId ? { nodeId: entry.nodeId } : {}),
     ...(entry.status ? { status: normalizedProviderStatus(entry.status) } : {}),
+    ...(entry.providerStatus ? { providerStatus: boundedText(String(entry.providerStatus), 40) } : {}),
+    ...(entry.sessionStatus ? { sessionStatus: boundedText(String(entry.sessionStatus), 40) } : {}),
     ...(typeof entry.recognized === 'boolean' ? { recognized: entry.recognized } : {}),
     ...(entry.messageType ? { messageType: boundedText(entry.messageType, 80) } : {}),
-    ...(entry.error ? { safeCode: 'WEBHOOK_PROCESSING_ERROR' } : {}),
-    ...(providerRejection(entry.error) ? { providerRejection: providerRejection(entry.error) } : {}),
+    ...Object.fromEntries(Object.entries(masked).filter(([, value]) => value !== null)),
   }
 }
 
-/** Vonage's own rejection text ("Vonage Messages API rejected the message (422): ..."), with phone-like digit runs masked. */
-function providerRejection(error: unknown): string | null {
-  if (typeof error !== 'string' || !error.startsWith('Vonage Messages API rejected the message')) return null
-  return boundedText(error.replace(/\d{7,}/g, '[number]'), 400)
+/** Vonage reports a rejection reason in the status callback's `error` object: `title` is the numeric code, `detail` the text. */
+function providerErrorFields(error: unknown): { providerCode?: string; providerDetail?: string } {
+  if (!error || typeof error !== 'object') return {}
+  const { title, detail } = error as Json
+  return {
+    ...(title != null ? { providerCode: boundedText(String(title), 40) } : {}),
+    ...(typeof detail === 'string' ? { providerDetail: boundedText(detail, 300) } : {}),
+  }
 }
 
 function matchTrigger(triggers: Json[] | undefined, text: string): Json {
@@ -1094,6 +1110,7 @@ export class LiveDemoService {
     session.provider = { latestStatus: normalizedStatus, updatedAt }
     session.activity.latestProvider = { at: updatedAt, nodeId: outbound.nodeId ?? null, preview: `Provider status: ${normalizedStatus}`, kind: 'provider' }
     event(session, 'status', { outboundId: outbound.id, providerMessageId, status: normalizedStatus })
+    this.recordDiagnostic({ type: 'provider_status', status: normalizedStatus, providerStatus: String(status), ...providerErrorFields(payload.error) })
     session.updatedAt = updatedAt
     this.store.save(session)
     return presenterSnapshot(session)

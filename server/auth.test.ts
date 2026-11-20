@@ -92,6 +92,21 @@ describe('SSO gate', () => {
     expect((await webhook.json()).error?.code).not.toBe('SSO_REQUIRED')
   })
 
+  it('serves Live RCS promo images to Vonage without a session, and nothing else under that folder', async () => {
+    const base = await start()
+    const image = await fetch(`${base}/assets/dominos-singapore-rcs-demo/imgi_3_SG_130045_en_MenuImage_17018.jpg`, { redirect: 'manual' })
+    expect(image.status).not.toBe(401)
+    expect(image.status).not.toBe(302)
+    for (const path of [
+      '/assets/dominos-singapore-rcs-demo/download.svg',
+      '/assets/dominos-singapore-rcs-demo/nested/imgi_3.jpg',
+      '/assets/dominos-singapore-rcs-demo/%2e%2e/%2e%2e/package.json',
+      '/assets/other-folder/imgi_3.jpg',
+    ]) {
+      expect((await fetch(`${base}${path}`, { redirect: 'manual' })).status, path).toBe(401)
+    }
+  })
+
   it('accepts a valid signed session and rejects tampered, wrongly signed and expired ones', async () => {
     const base = await start()
     const session = { sub: 'user-1', exp: now() + 600 }

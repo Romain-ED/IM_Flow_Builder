@@ -240,7 +240,7 @@ async function handleWebhook(request: IncomingMessage, response: ServerResponse,
       route: url.pathname,
       eventId: summarizeInboundPayload(payload).eventId,
       sessionId: result?.id ?? null,
-      status: result?.status ?? null,
+      sessionStatus: result?.status ?? null,
       currentNodeId: result?.currentNodeId ?? null,
     })
     sendJson(response, 202, { accepted: true })

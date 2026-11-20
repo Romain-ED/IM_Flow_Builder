@@ -82,6 +82,23 @@ describe('LiveDemoService', () => {
     expect(withStatus.provider.latestStatus).toBe('read')
   })
 
+  it('logs a provider rejection with its code and a masked detail, not the session status', async () => {
+    const config = getLiveDemoConfig(env, process.cwd())
+    const service = new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway())
+    const started = await service.createSession({ flow })
+    const providerMessageId = service.store.get(started.id).outbound[0].providerMessageId
+
+    service.handleStatus({
+      message_uuid: providerMessageId,
+      status: 'rejected',
+      error: { type: 'https://developer.vonage.com/api-errors/messages#1380', title: 1380, detail: 'Invalid resource: could not fetch media for 15551234567', instance: 'abc' },
+    })
+
+    const rejection = service.diagnosticsLog().diagnostics.find((entry) => entry.type === 'provider_status')
+    expect(rejection).toMatchObject({ status: 'rejected', providerStatus: 'rejected', providerCode: '1380' })
+    expect(rejection.providerDetail).toBe('Invalid resource: could not fetch media for [number]')
+  })
+
   it('keeps near-match text in the RCS MENU waiting state and rejects missing triggers', async () => {
     const config = getLiveDemoConfig({ ...env, LIVE_RCS_ALLOWED_FLOW_IDS: 'rcs-demo-menu' }, process.cwd())
     const service = new LiveDemoService(config, new MemoryStore(), new FakeRcsGateway())

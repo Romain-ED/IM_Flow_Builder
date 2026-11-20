@@ -172,9 +172,11 @@ function redirect(response: ServerResponse, location: string, cookies: string[] 
 const EXEMPT_PATHS = new Set(['/_/health', '/manifest.webmanifest', '/sw.js', '/registerSW.js'])
 /** Service worker code is public static JS. If it is gated, browsers cannot fetch a SW update and a stale SW keeps serving the cached app shell for /auth and /api navigations (blank page at the callback URL). */
 const WORKBOX_PATH = /^\/workbox-[\w-]+\.js$/
+/** Raster promo images that Live RCS sends to Vonage as card media. Vonage fetches them without signing in, so only image files directly in this folder are public. SVG is left out because it can carry script. */
+const PUBLIC_RCS_MEDIA_PATH = /^\/assets\/dominos-singapore-rcs-demo\/[^/]+\.(?:jpe?g|png|gif|webp)$/i
 
 function isExempt(pathname: string, publicShare: boolean): boolean {
-  return EXEMPT_PATHS.has(pathname) || WORKBOX_PATH.test(pathname) || pathname.startsWith('/webhooks/vonage/') || (publicShare && (pathname === '/api/share' || pathname.startsWith('/api/share/')))
+  return EXEMPT_PATHS.has(pathname) || WORKBOX_PATH.test(pathname) || PUBLIC_RCS_MEDIA_PATH.test(pathname) || pathname.startsWith('/webhooks/vonage/') || (publicShare && (pathname === '/api/share' || pathname.startsWith('/api/share/')))
 }
 
 export function createAuth(env: Env, provider?: OidcProvider): Auth {
